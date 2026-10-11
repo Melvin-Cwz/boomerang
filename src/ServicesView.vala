@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * "Services Apple" tab: what goes through the Internet with the Apple account,
  * kept apart from the iPhone (Bluetooth). iCloud account (mail, calendars,
@@ -47,7 +47,7 @@ public class Boomerang.ServicesView : Gtk.Box {
         account_button = new Gtk.Button.with_label (_("Se connecter…")) { valign = Gtk.Align.CENTER };
         account_button.clicked.connect (() => Setup.run_helper ("boomerang-icloud-signin"));
         var account = card_row ("preferences-desktop-online-accounts", _("Compte iCloud"), account_state,
-                                { Guide.help_button ("apple", _("Mot de passe pour app : comment faire")),
+                                { Guide.help_button ("apple", _("Mot de passe pour app : procédure")),
                                   account_button, account_switch });
 
         // iCloud Drive (rclone)
@@ -104,7 +104,7 @@ public class Boomerang.ServicesView : Gtk.Box {
         agenda_row = new OptionalAppRow (daemon, "agenda", "io.github.melvincouwez.Agenda", _("Agenda"),
                                          _("Vos agendas iCloud, l'agenda de Boomerang"));
         cassette_row = new OptionalAppRow (daemon, "cassette", "io.github.melvincouwez.Cassette",
-                                           _("Apple Music"), _("Écouter avec Cassette, votre compte Apple Music"));
+                                           _("Apple Music"), _("Votre compte Apple Music dans l'app Cassette"));
         apps = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE, show_separators = true };
         apps.add_css_class (Granite.CssClass.CARD);
         fill_apps ();

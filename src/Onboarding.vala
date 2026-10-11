@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * First-run setup, full window: welcome, what to connect (iPhone and/or Apple
  * services), the iPhone steps, the Apple services steps, the apps, done.
@@ -245,7 +245,7 @@ public class Boomerang.Onboarding : Gtk.Box {
         cards.append (want_apple);
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
         box.append (title (_("Que voulez-vous connecter ?")));
-        box.append (body (_("Les deux sont indépendants : vous pourrez ajouter l'autre plus tard.")));
+        box.append (body (_("Les deux connexions sont indépendantes : vous pourrez ajouter l'autre plus tard.")));
         cards.margin_top = 12;
         box.append (cards);
         return centered (box, 620);
@@ -261,7 +261,7 @@ public class Boomerang.Onboarding : Gtk.Box {
         card.add_css_class ("setup-column");
         card.append (guide);
         box.append (card);
-        var later = body (_("Une étape peut attendre : chaque réglage reste disponible dans Boomerang."));
+        var later = body (_("Vous pouvez passer une étape : chaque réglage reste disponible dans Boomerang."));
         later.add_css_class (Granite.CssClass.SMALL);
         box.append (later);
         return centered (box);
@@ -305,7 +305,7 @@ public class Boomerang.Onboarding : Gtk.Box {
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
         box.append (title (_("Apps séparées")));
         box.append (body (_("Messages, Téléphone, Contacts et Écouteurs sont toujours dans Boomerang. Vous pouvez aussi "
-                          + "les avoir comme apps à part dans le menu des applications et le dock.")));
+                          + "les afficher comme apps séparées dans le menu Applications et le dock.")));
         list.margin_top = 12;
         box.append (list);
         return centered (box);
@@ -314,10 +314,10 @@ public class Boomerang.Onboarding : Gtk.Box {
     private Gtk.Widget done_page () {
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
         box.append (new Gtk.Image.from_icon_name ("process-completed") { pixel_size = 96 });
-        box.append (title (_("C'est prêt")));
-        box.append (body (_("Boomerang tourne en arrière-plan : les notifications, messages et appels "
-                          + "arrivent même fenêtre fermée. Pour refaire cette configuration, ouvrez le "
-                          + "menu en haut à droite de Boomerang.")));
+        box.append (title (_("Configuration terminée")));
+        box.append (body (_("Boomerang fonctionne en arrière-plan : les notifications, les messages et "
+                          + "les appels arrivent même quand la fenêtre est fermée. Pour refaire cette "
+                          + "configuration, ouvrez le menu en haut à droite de Boomerang.")));
         return centered (box);
     }
 }

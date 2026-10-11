@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Internet through the iPhone: Bluetooth tethering (PAN, the iPhone as network access point).
 
 NetworkManager does the work. Boomerang reuses a Bluetooth "panu" connection

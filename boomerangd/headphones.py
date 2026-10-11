@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 # SPDX-FileCopyrightText: 2025 LibrePods contributors
 #
-# Contains a Python rewrite (modified by melvincouwez-alt, 2026) of parts of
+# Contains a Python rewrite (modified by MelvinCwz, 2026) of parts of
 # LibrePods (https://github.com/librepods-org/librepods): linux/airpods_packets.h,
 # linux/main.cpp, docs/AAP Definitions.md, docs/control_commands.md, and of the
 # head gestures of the Android app (utils/GestureDetector.kt, utils/HeadOrientation.kt,

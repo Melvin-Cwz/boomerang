@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Messages and Contacts as apps of their own: same program, launched as
  * io.github.melvincouwez.Boomerang.Messages or .Contacts (symlinks), so each has

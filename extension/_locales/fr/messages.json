@@ -3,7 +3,7 @@
     "message": "Boomerang : codes SMS"
   },
   "description": {
-    "message": "Propose sous le champ de code d'un site le code reçu par SMS sur votre iPhone (Boomerang, alpha)."
+    "message": "Affiche, sous le champ de code d'un site, le code reçu par SMS sur votre iPhone (Boomerang, alpha)."
   },
   "pill": {
     "message": "Code de Boomerang : $CODE$",
@@ -14,7 +14,7 @@
     }
   },
   "pillTitle": {
-    "message": "Cliquer pour remplir le champ. Échap pour fermer."
+    "message": "Cliquez pour remplir le champ ; appuyez sur Échap pour fermer."
   },
   "pillFrom": {
     "message": "Code de $SENDER$ : $CODE$",

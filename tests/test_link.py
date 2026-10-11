@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Offline checks of the iPhone link's connection handling: python3 -m unittest
 
 BlueZ is a fake: nothing here touches the real Bluetooth adapter."""

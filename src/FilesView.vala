@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Fichiers: send and receive files with the free LocalSend app of the iPhone
  * (boomerangd/files.py, boomerangd/localsend.py). Off until turned on here: it
@@ -61,8 +61,9 @@ public class Boomerang.FilesView : Gtk.Box {
         content.append (switch_card);
 
         var privacy = new Gtk.Label (
-            _("Tant que c'est activé, Boomerang écoute le réseau local (port 53317). Chaque envoi vers "
-              + "ce PC vous est demandé, sauf depuis un appareil que vous avez choisi de toujours accepter.")
+            _("Tant que cette option est activée, Boomerang écoute le réseau local (port 53317). "
+              + "Boomerang vous demande d'accepter chaque envoi vers ce PC, sauf depuis un appareil que "
+              + "vous avez choisi de toujours accepter.")
         ) { xalign = 0, wrap = true };
         privacy.add_css_class (Granite.CssClass.DIM);
         privacy.add_css_class (Granite.CssClass.SMALL);

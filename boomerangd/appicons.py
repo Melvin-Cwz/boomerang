@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Icons of the iPhone apps behind ANCS notifications.
 
 ANCS only gives the app's bundle identifier. Built-in Apple apps map to local

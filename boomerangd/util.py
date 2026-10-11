@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Shared helpers: logging, D-Bus shortcuts and desktop notifications.
 
 Privacy rule from the design document: logs record events, never content

@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 # Covalence was renamed Boomerang in 0.7.0. Covalence 0.6 updates itself only to a
 # package named « covalence » (its install helper refuses any other name), so each
 # release also carries covalence_<version>_<arch>.deb: the same files as Boomerang

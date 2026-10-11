@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Fichiers: LocalSend on the daemon side (see localsend.py for the protocol).
 
 Off by default. Turned on, it listens on the local network (port 53317) and

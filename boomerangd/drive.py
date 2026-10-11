@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Boomerang iCloud Drive sign-in: connect iCloud Drive (or iCloud Photos) through rclone.
 
 Apple's app-specific passwords do not open iCloud Drive: rclone's iclouddrive
@@ -309,9 +309,10 @@ class Window(Gtk.ApplicationWindow):
         self.password = Gtk.PasswordEntry(show_peek_icon=True, placeholder_text=_("Mot de passe du compte Apple"))
         self.password.connect("activate", lambda *_: self._sign_in())
         note = Gtk.Label(
-            label=_("Le mot de passe va directement à rclone, qui le garde dans une configuration "
-                    "chiffrée dont la clé est dans votre trousseau. Il n'est jamais écrit en clair "
-                    "ni transmis ailleurs qu'à Apple."), wrap=True, xalign=0)
+            label=_("Le mot de passe est transmis directement à rclone, qui le conserve dans une "
+                    "configuration chiffrée ; la clé de chiffrement est dans votre trousseau. Le "
+                    "mot de passe n'est jamais écrit en clair ni transmis à un autre destinataire "
+                    "qu'Apple."), wrap=True, xalign=0)
         note.add_css_class("dim-label")
         note.add_css_class("small-label")
         risks = Gtk.Label(
@@ -348,7 +349,8 @@ class Window(Gtk.ApplicationWindow):
                 _("{service} passe par rclone 1.69 ou plus récent, absent de ce système. "
                   "Boomerang peut télécharger la version officielle depuis "
                   '<a href="https://rclone.org">rclone.org</a> (licence MIT, environ 25 Mo) et '
-                  "vérifier son empreinte avant de l'installer pour vous seul.").format(
+                  "vérifier son empreinte avant de l'installer pour votre seul compte "
+                  "utilisateur.").format(
                       service=SERVICE.name)):
             box.append(widget)
         self.fetch_bar = Gtk.ProgressBar(visible=False)
@@ -499,12 +501,12 @@ class Window(Gtk.ApplicationWindow):
         try:
             enable_mount()
             folder = os.path.basename(mount_point())
-            where = (_("Il apparaît dans Fichiers, dans le dossier « {folder} » (lecture seule).")
+            where = (_("Le dossier « {folder} » apparaît dans Fichiers, en lecture seule.")
                      if SERVICE.key == "photos"
-                     else _("Il apparaît dans Fichiers, dans le dossier « {folder} ».")).format(folder=folder)
+                     else _("Le dossier « {folder} » apparaît dans Fichiers.")).format(folder=folder)
         except subprocess.CalledProcessError:
-            where = _("Le dossier « {service} » n'a pas pu être monté : voir « journalctl --user -u "
-                      "{unit} ».").format(service=SERVICE.name, unit=SERVICE.unit)
+            where = _("Le dossier « {service} » n'a pas pu être monté : consultez « journalctl "
+                      "--user -u {unit} ».").format(service=SERVICE.name, unit=SERVICE.unit)
         found = (ngettext("{count} album", "{count} albums", count) if SERVICE.key == "photos"
                  else ngettext("{count} élément à la racine", "{count} éléments à la racine",
                                count)).format(count=count)

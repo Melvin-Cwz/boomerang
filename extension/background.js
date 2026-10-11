@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 // Asks boomerang-otp-host (native messaging) for the latest code on behalf of the pages.
 // Chrome runs this file as a service worker, Firefox as a background script after compat.js.
 if (typeof importScripts === "function") {

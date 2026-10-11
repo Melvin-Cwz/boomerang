@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * A row for an app Boomerang can install for you (boomerangd/apps.py): Agenda
  * and Cassette. Installed, it opens the app; not yet, it downloads the package

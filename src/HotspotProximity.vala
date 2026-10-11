@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
- * SPDX-FileCopyrightText: 2026 melvincouwez-alt
+ * SPDX-FileCopyrightText: 2026 MelvinCwz
  *
  * Two cards, each usable on its own page:
  * HotspotCard: Internet through the iPhone (Bluetooth tethering: Tethering, TetheringState,
@@ -116,15 +116,16 @@ namespace Boomerang {
 
             toggle = new Gtk.Switch () { valign = Gtk.Align.CENTER };
             list.append (row (_("Verrouiller le PC quand l'iPhone s'éloigne"),
-                         _("Verrouille seulement, ne déverrouille jamais. Rien pendant un appel, ni tant "
-                           + "que l'iPhone n'a pas été vu depuis l'ouverture de session."), toggle));
+                         _("Boomerang verrouille le PC mais ne le déverrouille jamais. Aucun "
+                           + "verrouillage pendant un appel, ni tant que Boomerang n'a pas détecté "
+                           + "l'iPhone depuis l'ouverture de session."), toggle));
             distance = new Gtk.DropDown.from_strings ({ _("Proche (même bureau)"), _("Moyenne (même pièce)"),
                                                         _("Loin (portée Bluetooth)") }) {
                 valign = Gtk.Align.CENTER
             };
             list.append (row (_("Distance"),
-                         _("Selon la force du signal, quand le Bluetooth la donne ; sinon, perte de la "
-                           + "liaison (une dizaine de mètres)."), distance));
+                         _("Mesurée d'après la force du signal quand le Bluetooth la fournit ; sinon, "
+                           + "Boomerang attend la perte de la liaison (une dizaine de mètres)."), distance));
             delay = new Gtk.DropDown.from_strings ({ _("10 secondes"), _("30 secondes"), _("1 minute"),
                                                      _("2 minutes") }) {
                 valign = Gtk.Align.CENTER

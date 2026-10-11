@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Does the iPhone honour a MAP delete (SetMessageStatus, deletedStatus)?
 
 Only acts on a test message: its text must contain the marker "boomerang-test".

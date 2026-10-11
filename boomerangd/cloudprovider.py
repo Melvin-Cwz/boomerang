@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """iCloud Drive in Files' sidebar, with its sync state (libcloudproviders).
 
 Files (io.elementary.files) has a cloud providers plugin: it reads

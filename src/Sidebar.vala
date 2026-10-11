@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Navigation of the main window: sections grouped by where they come from
  * (the iPhone over Bluetooth, accessories, the Apple account over the

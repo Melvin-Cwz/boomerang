@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Guided steps shared by the first-run setup and the tabs:
  * PhoneGuide for the iPhone (Bluetooth), AppleGuide for Apple's online
@@ -160,20 +160,22 @@ namespace Boomerang {
             pair_button = pair.add_button (_("Appairer…"), true);
             pair_button.clicked.connect (() => pair_requested ());
             settings = new SetupStep (2, _("Autoriser messages et contacts"),
-                _("Sur l'iPhone : Réglages › Bluetooth › ⓘ à côté de « %s », activez "
-                + "<b>Afficher les notifications</b> (messages) et <b>Synchroniser les contacts</b> "
-                + "(noms, photos, journal d'appels). Ces options n'apparaissent qu'après une "
-                + "première demande de Boomerang : attendez quelques secondes après l'appairage. "
-                + "Boomerang redemande ensuite toute seule pendant 10 minutes ; "
-                + "<b>Vérifier</b> relance tout de suite.").printf (pc));
+                _("Sur l'iPhone : Réglages › Bluetooth › ⓘ à côté de « %s », activez <b>Afficher "
+                + "les notifications</b> (messages) et <b>Synchroniser les contacts</b> (noms, "
+                + "photos, journal d'appels). Ces options apparaissent seulement après une première "
+                + "demande de Boomerang : attendez quelques secondes après l'appairage. Boomerang "
+                + "renouvelle ensuite la demande automatiquement pendant 10 minutes ; "
+                + "<b>Vérifier</b> la relance immédiatement.").printf (pc));
             settings.add_button (_("Vérifier")).clicked.connect (() => daemon.call.begin ("SyncMessages"));
             notifications = new SetupStep (3, _("Notifications et musique"),
-                _("L'iPhone ouvre seul la liaison basse consommation après l'appairage. Sous ⓘ à côté "
-                + "de « %s », activez <b>Partager les notifications système</b>. Si rien n'arrive, "
-                + "coupez puis réactivez le Bluetooth de l'iPhone.").printf (pc));
+                _("L'iPhone ouvre automatiquement la liaison Bluetooth basse consommation après "
+                + "l'appairage. Sous ⓘ à côté de « %s », activez <b>Partager les notifications "
+                + "système</b>. Si aucune notification n'arrive, désactivez puis réactivez le "
+                + "Bluetooth de l'iPhone.").printf (pc));
             calls = new SetupStep (4, _("Appels sur ce PC"),
-                _("Le profil mains libres se connecte seul. Les appels sonnent alors ici ; pendant "
-                + "l'appel, le son passe par ce PC ou reste sur l'iPhone, au choix."));
+                _("Le profil mains libres se connecte automatiquement. Les appels sonnent alors "
+                + "sur ce PC ; pendant l'appel, vous choisissez si le son passe par ce PC ou reste "
+                + "sur l'iPhone."));
             append (pair);
             append (settings);
             append (notifications);
@@ -224,14 +226,14 @@ namespace Boomerang {
             });
             signin = new SetupStep (2, _("Courriel, agendas, rappels et contacts"),
                 _("Saisissez votre identifiant Apple et ce mot de passe pour app : Boomerang le vérifie "
-                + "auprès d'Apple et le range dans le trousseau. Vos comptes apparaissent alors dans "
-                + "Courriel, Tâches et Agenda."));
+                + "auprès d'Apple et l'enregistre dans le trousseau. Vos comptes apparaissent alors "
+                + "dans Courriel, Tâches et Agenda."));
             signin_button = signin.add_button (_("Se connecter…"), true);
             signin_button.clicked.connect (() => Setup.run_helper ("boomerang-icloud-signin"));
             drive = new SetupStep (3, _("iCloud Drive (facultatif)"),
-                _("Vos fichiers iCloud comme un dossier dans Fichiers. Demande le mot de passe du "
-                + "<b>compte Apple</b> et un code affiché sur l'iPhone, et la <b>Protection avancée "
-                + "des données</b> désactivée."));
+                _("Vos fichiers iCloud comme un dossier dans Fichiers. La connexion demande le mot "
+                + "de passe du <b>compte Apple</b> et un code affiché sur l'iPhone. La "
+                + "<b>Protection avancée des données</b> doit être désactivée."));
             drive_button = drive.add_button (_("Connecter iCloud Drive…"));
             drive_button.clicked.connect (() => {
                 if (Setup.drive_state () == "mounted") {

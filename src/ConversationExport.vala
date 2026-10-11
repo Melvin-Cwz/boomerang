@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Export of a conversation, from its right-click menu: plain text, or a PDF
  * laid out like the thread (my bubbles on the right, received ones on the left).

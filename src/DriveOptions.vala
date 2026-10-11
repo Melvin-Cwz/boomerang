@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * iCloud Drive (or iCloud Photos) options. They are written to
  * ~/.config/boomerang/drive.env (photos.env), which the boomerang-icloud-drive
@@ -71,13 +71,13 @@ public class Boomerang.DriveOptions : Gtk.Window {
         list.append (row (_("Emplacement"), folder_label, choose));
 
         at_login = new Gtk.Switch () { valign = Gtk.Align.CENTER, active = Setup.drive_state (photos) != "absent" };
-        list.append (row (_("Monter à l'ouverture de session"), sub (_("Le dossier apparaît dès la connexion.")), at_login));
+        list.append (row (_("Monter à l'ouverture de session"), sub (_("Le dossier est disponible dès l'ouverture de session.")), at_login));
         read_only = new Gtk.Switch () {
             valign = Gtk.Align.CENTER,
             active = values["RCLONE_READ_ONLY"] == "true"
         };
         if (!photos) {
-            list.append (row (_("Lecture seule"), sub (_("Consulter sans risquer de modifier ou supprimer dans iCloud.")),
+            list.append (row (_("Lecture seule"), sub (_("Consulter les fichiers sans risque de modification ni de suppression dans iCloud.")),
                               read_only));
         }
 
@@ -103,10 +103,10 @@ public class Boomerang.DriveOptions : Gtk.Window {
                                  refresh));
         } else {
             network.append (row (_("Voir les changements d'iCloud"),
-                                 sub (_("Délai avant qu'un ajout fait ailleurs apparaisse.")), refresh));
+                                 sub (_("Délai avant qu'un fichier ajouté depuis un autre appareil apparaisse.")), refresh));
         }
         bandwidth = drop (BW_LABELS, BW_VALUES, values["RCLONE_BWLIMIT"] ?? "off");
-        network.append (row (_("Débit maximal"), sub (_("Utile en partage de connexion avec l'iPhone.")), bandwidth));
+        network.append (row (_("Débit maximal"), sub (_("Utile quand ce PC utilise le partage de connexion de l'iPhone.")), bandwidth));
 
         var note = new Gtk.Label (photos
             ? _("iCloud Photos est en lecture seule : rien ne peut être modifié ni supprimé depuis ce PC. "

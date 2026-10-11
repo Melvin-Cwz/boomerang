@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Apple Media Service client: what the iPhone is playing, and remote control.
 
 The PC registers for player, queue and track attributes on Entity Update and

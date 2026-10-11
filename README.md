@@ -7,11 +7,11 @@
 **Votre iPhone et votre compte Apple, chez eux sur elementary OS.**
 
 [![Licence : GPL-3.0-or-later](https://img.shields.io/badge/licence-GPL--3.0--or--later-blue)](LICENSE)
-![Version 0.8.2 alpha](https://img.shields.io/badge/version-0.8.2%20alpha-orange)
+![Version 0.8.3 alpha](https://img.shields.io/badge/version-0.8.3%20alpha-orange)
 ![elementary OS 8+](https://img.shields.io/badge/elementary%20OS-8%2B-64baff)
 
-[Site](https://melvincouwez-alt.github.io/boomerang/fr/) ·
-[Télécharger](https://github.com/melvincouwez-alt/boomerang/releases/latest) ·
+[Site](https://melvin-cwz.github.io/boomerang/fr/) ·
+[Télécharger](https://github.com/Melvin-Cwz/boomerang/releases/latest) ·
 [English](README.en.md)
 
 <img src="docs/screenshots/fr/device.png" width="760" alt="Boomerang : aperçu de l'iPhone">
@@ -75,10 +75,10 @@ vos réglages, vos messages et vos comptes iCloud.*
 
 ### Depuis le paquet (conseillé)
 
-1. Téléchargez `boomerang_0.8.2-1_amd64.deb` depuis la
-   [dernière version](https://github.com/melvincouwez-alt/boomerang/releases/latest).
+1. Téléchargez `boomerang_0.8.3-1_amd64.deb` depuis la
+   [dernière version](https://github.com/Melvin-Cwz/boomerang/releases/latest).
 2. Installez-le dans un terminal, depuis le dossier du téléchargement :
-   `sudo apt install ./boomerang_0.8.2-1_amd64.deb`. apt installe également les dépendances
+   `sudo apt install ./boomerang_0.8.3-1_amd64.deb`. apt installe également les dépendances
    nécessaires. Sur Ubuntu, un double-clic sur le fichier l'ouvre aussi dans l'App Center.
 3. Fermez puis rouvrez votre session (ou lancez `systemctl --user start boomerangd`), puis
    ouvrez Boomerang. L'assistant vous guide pour appairer l'iPhone et vous connecter à iCloud.
@@ -157,7 +157,7 @@ Depuis la 0.7.0 :
 Boomerang contient un guide intégré, en français et en anglais (F1, ou Guide dans la barre latérale). Il
 explique l'appairage, les réglages à activer sur l'iPhone, iCloud, les AirPods et le
 dépannage. Questions et signalements :
-[Issues](https://github.com/melvincouwez-alt/boomerang/issues).
+[Issues](https://github.com/Melvin-Cwz/boomerang/issues).
 
 ## Auteur
 
@@ -168,7 +168,7 @@ nous corrigeons ensemble. Le code est ouvert pour que les personnes qui s'y conn
 puissent le lire, signaler les erreurs et aider. Contributions, signalements et conseils
 bienveillants sont les bienvenus.
 
-melvincouwez-alt
+MelvinCwz
 
 ## Fonctionnement
 
@@ -205,10 +205,10 @@ Boomerang repose sur le travail de nombreux logiciels libres. La page **Contribu
 
 Boomerang installe deux applications compagnes depuis l'onglet Services Apple, chacune publiée
 dans son propre dépôt avec ses versions : **Agenda**
-([code source et téléchargements](https://github.com/melvincouwez-alt/agenda), GPL-3.0-or-later) et **Cassette**,
+([code source et téléchargements](https://github.com/Melvin-Cwz/agenda), GPL-3.0-or-later) et **Cassette**,
 un client Apple Music issu de [Sidra](https://github.com/wimpysworld/sidra), de Martin Wimpress,
 et construit sur [CastLabs Electron](https://github.com/castlabs/electron-releases)
-([code source et téléchargements](https://github.com/melvincouwez-alt/cassette), Blue Oak Model License 1.0.0).
+([code source et téléchargements](https://github.com/Melvin-Cwz/cassette), Blue Oak Model License 1.0.0).
 
 Un merci particulier à l'équipe de LibrePods pour son remarquable travail de rétro-ingénierie,
 et à [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile)

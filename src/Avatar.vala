@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Round contact picture: the iPhone contact's photo when PBAP provided one,
  * otherwise initials. The CSS node is "avatar" so that the elementary

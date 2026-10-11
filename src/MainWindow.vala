@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Main window: link status, guided pairing, one switch per module, iCloud.
  */
@@ -201,7 +201,7 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         detached.append (launcher_row (Mode.HEADPHONES, _("Écouteurs"), _("Batterie et réglages de vos AirPods")));
         detached.append (launcher_row (Mode.MIRROR, _("Recopie"), _("L'écran de l'iPhone et son contrôle depuis le PC")));
         var detached_hint = new Gtk.Label (
-            _("Chaque app a sa propre fenêtre et son icône. L'interrupteur l'affiche ou non dans le menu Applications.")
+            _("Chaque app a sa propre fenêtre et son icône. L'interrupteur affiche ou masque l'app dans le menu Applications.")
         ) { xalign = 0, wrap = true };
         detached_hint.add_css_class (Granite.CssClass.DIM);
         detached_hint.add_css_class (Granite.CssClass.SMALL);
@@ -224,8 +224,8 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         language.append (Language.settings_row (this));
 
         var alpha_hint = new Gtk.Label (
-            _("Ces fonctionnalités reposent sur des comportements de l'iPhone pas encore vérifiés. "
-              + "Elles peuvent ne rien faire. Désactivées par défaut.")
+            _("Ces fonctionnalités reposent sur des comportements de l'iPhone qui ne sont pas "
+              + "encore vérifiés. Elles peuvent rester sans effet. Elles sont désactivées par défaut.")
         ) { xalign = 0, wrap = true };
         alpha_hint.add_css_class (Granite.CssClass.DIM);
         alpha_hint.add_css_class (Granite.CssClass.SMALL);
@@ -352,8 +352,9 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
     private Gtk.Widget build_calls_quiet_card () {
         var title_label = new Gtk.Label (_("Appels de l'iPhone en silence")) { xalign = 0 };
         var subtitle_label = new Gtk.Label (
-            _("Ni sonnerie, ni notification, ni fenêtre, et le son de l'appel reste sur l'iPhone. "
-              + "Utile quand Teams sonne déjà sur l'ordinateur : l'appel reste visible dans Téléphone.")
+            _("Boomerang ne joue aucune sonnerie et n'affiche ni notification ni fenêtre ; le son "
+              + "de l'appel reste sur l'iPhone. Ce mode est utile quand Teams sonne déjà sur "
+              + "l'ordinateur. L'appel reste visible dans Téléphone.")
         ) { xalign = 0, wrap = true };
         subtitle_label.add_css_class (Granite.CssClass.DIM);
         subtitle_label.add_css_class (Granite.CssClass.SMALL);
@@ -440,8 +441,8 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
     private Gtk.Widget build_read_full_card () {
         var title_label = new Gtk.Label (_("Toujours lire les messages en entier")) { xalign = 0 };
         var subtitle_label = new Gtk.Label (
-            _("Récupère tout de suite le texte complet des messages de plus de 120 caractères. "
-              + "Ils passent alors en lu sur l'iPhone.")
+            _("Boomerang récupère dès leur arrivée le texte complet des messages de plus de "
+              + "120 caractères. Ces messages sont alors marqués comme lus sur l'iPhone.")
         ) { xalign = 0, wrap = true };
         subtitle_label.add_css_class (Granite.CssClass.DIM);
         subtitle_label.add_css_class (Granite.CssClass.SMALL);
@@ -461,9 +462,9 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
             }
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (
                 _("Toujours lire les messages en entier ?"),
-                _("Pour avoir le texte complet d'un message non lu, Boomerang doit le télécharger : "
-                  + "il passera en lu sur l'iPhone dès son arrivée, même si vous ne l'avez pas "
-                  + "ouvert."),
+                _("Pour obtenir le texte complet d'un message non lu, Boomerang doit le télécharger "
+                  + ": le message sera marqué comme lu sur l'iPhone dès son arrivée, même si vous ne "
+                  + "l'avez pas ouvert."),
                 Config.APP_ID + ".Messages", Gtk.ButtonsType.CANCEL) {
                 transient_for = this,
                 modal = true
@@ -511,9 +512,9 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
 
     /* ":)" becomes 🙂 while typing (kept by the app in apps.conf, see ComposeField). */
     private Gtk.Widget auto_emoji_row () {
-        var title_label = new Gtk.Label (_("Émojis automatiques")) { xalign = 0 };
+        var title_label = new Gtk.Label (_("Emojis automatiques")) { xalign = 0 };
         var subtitle_label = new Gtk.Label (
-            _("« :) » devient 🙂, « :D » devient 😃, « <3 » devient ❤️… Retour arrière annule.")
+            _("« :) » devient 🙂, « :D » devient 😃, « <3 » devient ❤️… La touche Retour arrière annule la conversion.")
         ) { xalign = 0, wrap = true };
         subtitle_label.add_css_class (Granite.CssClass.DIM);
         subtitle_label.add_css_class (Granite.CssClass.SMALL);
@@ -546,14 +547,14 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         var list = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE, show_separators = true };
         list.add_css_class (Granite.CssClass.CARD);
         list.append (alpha_row ("map_history", _("Historique étendu des messages"),
-                                _("Demande à l'iPhone les messages au-delà de la liste habituelle "
-                                  + "(pages suivantes, un an en arrière)")));
+                                _("Boomerang demande à l'iPhone les messages antérieurs à la "
+                                  + "liste habituelle (pages suivantes, jusqu'à un an en arrière)")));
         list.append (alpha_row ("mark_read", _("Marquer comme lu sur l'iPhone"),
-                                _("Ouvrir une conversation dans Boomerang la marque lue sur l'iPhone")));
+                                _("Ouvrir une conversation dans Boomerang la marque comme lue sur l'iPhone")));
         list.append (alpha_row ("ancs_actions", _("Actions des notifications"),
                                 _("Boutons de l'iPhone (Marquer comme lu, Supprimer…) dans Notifications")));
         list.append (alpha_row ("pbap_favorites", _("Favoris de l'iPhone"),
-                                _("Étoile sur les contacts favoris, lus à la prochaine synchronisation")));
+                                _("Une étoile signale les contacts favoris, récupérés à la prochaine synchronisation")));
         list.append (alpha_row ("iphone_control", _("Contrôler l'iPhone depuis le PC"),
                                 _("Le PC comme souris et clavier Bluetooth de l'iPhone (app Recopie)")));
         list.append (alpha_row ("head_gestures", _("Répondre d'un geste de tête"),
@@ -727,8 +728,9 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
     private void confirm_forget () {
         var dialog = new Granite.MessageDialog.with_image_from_icon_name (
             _("Oublier cet iPhone ?"),
-            _("Ce PC efface l'appairage. Pour un nouveau départ propre, oubliez aussi ce PC sur "
-              + "l'iPhone (Réglages › Bluetooth › ⓘ › Oublier cet appareil), puis appairez à nouveau."),
+            _("Boomerang supprime l'appairage sur ce PC. Pour repartir de zéro, oubliez aussi ce "
+              + "PC sur l'iPhone (Réglages › Bluetooth › ⓘ › Oublier cet appareil), puis appairez de "
+              + "nouveau les deux appareils."),
             "bluetooth", Gtk.ButtonsType.CANCEL) {
             transient_for = this,
             modal = true
@@ -803,11 +805,11 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         sound_output.sensitive = state != "off";
         string status;
         if (state == "off") {
-            status = _("Refusé : vidéos et musique restent sur l'iPhone");
+            status = _("Désactivé : le son des vidéos et de la musique reste sur l'iPhone");
         } else if (state == "playing") {
             status = _("En lecture sur ce PC");
         } else if (connected) {
-            status = _("Choisissez ce PC dans le bouton AirPlay de l'iPhone pour y envoyer le son");
+            status = _("Pour envoyer le son vers ce PC, choisissez-le avec le bouton AirPlay de l'iPhone");
         } else {
             status = _("iPhone absent");
         }

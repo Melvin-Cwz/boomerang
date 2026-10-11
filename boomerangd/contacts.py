@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Contact cards managed through iCloud (CardDAV in Evolution Data Server).
 
 Bluetooth cannot change the iPhone's contacts: PBAP only reads them and iOS

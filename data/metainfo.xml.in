@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: CC0-1.0 -->
-<!-- SPDX-FileCopyrightText: 2026 melvincouwez-alt -->
+<!-- SPDX-FileCopyrightText: 2026 MelvinCwz -->
 <component type="desktop-application">
   <id>@APP_ID@</id>
   <metadata_license>CC0-1.0</metadata_license>
@@ -16,13 +16,19 @@
   </description>
   <launchable type="desktop-id">@APP_ID@.desktop</launchable>
   <developer id="io.github.melvincouwez">
-    <name>melvincouwez-alt</name>
+    <name>MelvinCwz</name>
   </developer>
-  <url type="homepage">https://github.com/melvincouwez-alt/boomerang</url>
-  <url type="vcs-browser">https://github.com/melvincouwez-alt/boomerang</url>
+  <url type="homepage">https://github.com/Melvin-Cwz/boomerang</url>
+  <url type="vcs-browser">https://github.com/Melvin-Cwz/boomerang</url>
   <content_rating type="oars-1.1"/>
   <releases>
-    <release version="@VERSION@" date="2026-10-08" type="development">
+    <release version="@VERSION@" date="2026-10-11" type="development">
+      <description>
+        <p>French texts reviewed, MelvinCwz signature, and the new GitHub address: github.com/Melvin-Cwz/boomerang. The website moves to melvin-cwz.github.io/boomerang.</p>
+        <p xml:lang="fr">Relecture des textes en français, signature MelvinCwz et nouvelle adresse GitHub : github.com/Melvin-Cwz/boomerang. Le site est désormais à l'adresse melvin-cwz.github.io/boomerang.</p>
+      </description>
+    </release>
+    <release version="0.8.2" date="2026-10-08" type="development">
       <description>
         <p>The package installs again with Granite 7.7, its description is in French, and the English demo names its headphones "Demo AirPods Pro".</p>
         <p xml:lang="fr">Le paquet s'installe de nouveau avec Granite 7.7, sa description est en français, et la démo anglaise nomme ses écouteurs « Demo AirPods Pro ».</p>
@@ -31,7 +37,7 @@
     <release version="0.8.1" date="2026-10-08" type="development">
       <description>
         <p>Boomerang and its daemon do much less in the background (fewer commands and refreshes, conversations that update without being redrawn), and Boomerang gets a new icon drawn like elementary's own: the raspberry tile in front of the iPhone.</p>
-        <p xml:lang="fr">Boomerang et son démon travaillent beaucoup moins en arrière-plan (moins de commandes et de rafraîchissements, conversations mises à jour sans être redessinées), et Boomerang a une nouvelle icône, dessinée dans le style d'elementary : une tuile framboise devant l'iPhone.</p>
+        <p xml:lang="fr">Boomerang et son démon consomment beaucoup moins de ressources en arrière-plan (moins de commandes et de rafraîchissements, conversations mises à jour sans être redessinées), et Boomerang a une nouvelle icône, dessinée dans le style d'elementary : une tuile framboise devant l'iPhone.</p>
         <p>Messages: conversations open on the newest message; each conversation can get a nickname, an emoji, its own bubble colours, background, text size and notification settings (priority, muted, own sound). Search within a conversation (Ctrl+F), a button back to the newest message, an "Unread" line, keyboard shortcuts, optional link previews, custom quick replies and export to PDF or text. The standalone Messages app gets elementary header bars, and Boomerang raspberry header bars and a left column that folds to icons with badges.</p>
         <p xml:lang="fr">Messages : les conversations s'ouvrent sur le dernier message ; chaque conversation peut avoir un surnom, un emoji, ses couleurs de bulles, son fond, sa taille de texte et ses notifications (prioritaires, muettes, son propre). Recherche dans la conversation (Ctrl+F), bouton pour revenir au dernier message, repère « Non lus », raccourcis clavier, aperçu des liens facultatif, réponses rapides personnalisées et export en PDF ou en texte. L'app Messages séparée utilise désormais les barres d'en-tête d'elementary, et Boomerang des barres d'en-tête framboise et une colonne de gauche repliable en icônes avec pastilles.</p>
         <p>New Contributors page, under Settings: every project Boomerang builds on, with its authors, license and link. Experimental: answer or decline a call with a nod or a shake of the head while wearing AirPods (from LibrePods), and a Bluetooth beacon for screen mirroring. Mirroring keeps the screen awake and can record to the Videos folder.</p>
@@ -89,7 +95,7 @@
     <release version="0.3.3" date="2026-09-27" type="development">
       <description>
         <p>Automatic emojis while typing; updates no longer stay shown as in progress.</p>
-        <p xml:lang="fr">Émojis automatiques à la saisie ; une mise à jour ne reste plus affichée « en cours ».</p>
+        <p xml:lang="fr">Emojis automatiques à la saisie ; une mise à jour ne reste plus affichée « en cours ».</p>
       </description>
     </release>
     <release version="0.3.2" date="2026-09-27" type="development">
@@ -116,7 +122,7 @@
           <li>Update checker and installer in Settings.</li>
           <li xml:lang="fr">Recherche et installation des mises à jour dans Réglages.</li>
           <li>Alpha features in Settings: extended history, mark read on the iPhone, notification actions, favourites.</li>
-          <li xml:lang="fr">Fonctions alpha dans Réglages : historique étendu, marquer lu sur l'iPhone, actions des notifications, favoris.</li>
+          <li xml:lang="fr">Fonctions alpha dans Réglages : historique étendu, marquer comme lu sur l'iPhone, actions des notifications, favoris.</li>
         </ul>
       </description>
     </release>

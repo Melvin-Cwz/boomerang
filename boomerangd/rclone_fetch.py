@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Download the official rclone build, only when the user asks for it.
 
 iCloud Drive and iCloud Photos need rclone 1.69 or later, newer than some

@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Optional apps Boomerang offers to install: Agenda and Cassette.
 
 Each one is published in the releases of its own GitHub repository
-(melvincouwez-alt/agenda, melvincouwez-alt/cassette); the releases up to
+(Melvin-Cwz/agenda, Melvin-Cwz/cassette); the releases up to
 0.6.0 (under the name Covalence) carried them too and are read as a fallback. Installing one goes the same way as an update of
 Boomerang (updates.py): the newest release carrying the package is found, its .deb
 is downloaded to ~/.cache/boomerang/apps, checked against the SHA-256 digest GitHub
@@ -27,8 +27,8 @@ CATALOG = {"agenda": "io.github.melvincouwez.Agenda",
            "cassette": "io.github.melvincouwez.Cassette"}
 
 # package -> the releases of its own repository
-SOURCES = {"agenda": "https://api.github.com/repos/melvincouwez-alt/agenda/releases",
-           "cassette": "https://api.github.com/repos/melvincouwez-alt/cassette/releases"}
+SOURCES = {"agenda": "https://api.github.com/repos/Melvin-Cwz/agenda/releases",
+           "cassette": "https://api.github.com/repos/Melvin-Cwz/cassette/releases"}
 
 TYPES = {"state": "s", "version": "s", "size": "x", "progress": "d", "error": "s",
          "installed": "b"}

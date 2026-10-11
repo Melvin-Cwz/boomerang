@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Pure helpers for the MAP and PBAP formats: no D-Bus, no I/O.
 
 - bMessage (MAP 1.x, section 3.1.3): the envelope of one message, with the

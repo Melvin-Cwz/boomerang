@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 namespace Boomerang.Config {
     public const string APP_ID = "@APP_ID@";
     public const string VERSION = "@VERSION@";

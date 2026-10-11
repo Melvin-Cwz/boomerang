@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Files with the LocalSend app of the iPhone (LocalSend protocol v2).
 
 LocalSend (https://localsend.org, protocol: https://github.com/localsend/protocol)

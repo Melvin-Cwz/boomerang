@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * One-time codes received by SMS (boomerangd/otp.py finds them).
  *
@@ -87,7 +87,7 @@ public class Boomerang.CodesCard : Gtk.Box {
         list.add_css_class (Granite.CssClass.CARD);
         list.append (row ("dialog-password", _("Codes de vérification"),
                           _("Quand un SMS contient un code, la notification propose « Copier le code ». "
-                            + "Le presse-papiers est vidé au bout de 2 minutes."), mode));
+                            + "Boomerang vide le presse-papiers au bout de 2 minutes."), mode));
 
         auto_copy = new Gtk.Switch () { valign = Gtk.Align.CENTER, active = true };
         auto_copy.notify["active"].connect (() => {
@@ -96,7 +96,7 @@ public class Boomerang.CodesCard : Gtk.Box {
             }
         });
         auto_copy_row = row ("edit-copy", _("Copier dès la réception"),
-                             _("Le code va dans le presse-papiers dès que le SMS arrive, sans cliquer."), auto_copy);
+                             _("Boomerang copie le code dans le presse-papiers dès l'arrivée du SMS, sans clic de votre part."), auto_copy);
         list.append (auto_copy_row);
 
         var install = new Gtk.Button.with_label (_("Installer l'intégration navigateur")) {
@@ -112,8 +112,9 @@ public class Boomerang.CodesCard : Gtk.Box {
         buttons.append (folder);
         buttons.append (install);
         browser_status = new Gtk.Label (
-            _("Chrome, Chromium, Edge et Firefox. Installez l'intégration, puis chargez l'extension "
-              + "(mode d'emploi dans le dossier). Le code n'est mis dans la page que si vous cliquez dessus.")
+            _("Pour Chrome, Chromium, Edge et Firefox. Installez l'intégration, puis chargez l'extension "
+              + "(le mode d'emploi se trouve dans le dossier). L'extension insère le code dans la page "
+              + "seulement si vous cliquez dessus.")
         ) { xalign = 0, wrap = true };
         browser_row = (Gtk.ListBoxRow) row ("applications-internet", _("Remplissage dans le navigateur (expérimental)"), "",
                                             buttons, browser_status);
@@ -154,8 +155,9 @@ public class Boomerang.CodesCard : Gtk.Box {
             if (browsers.length == 0) {
                 browser_status.label = _("Aucun navigateur pris en charge trouvé (Chrome, Chromium, Edge, Firefox).");
             } else {
-                browser_status.label = _("Installée pour : %s. Chargez maintenant l'extension, "
-                                         + "le mode d'emploi est dans le dossier.").printf (string.joinv (", ", browsers));
+                browser_status.label = _("Intégration installée pour : %s. Chargez maintenant "
+                                         + "l'extension ; le mode d'emploi se trouve dans le "
+                                         + "dossier.").printf (string.joinv (", ", browsers));
             }
         } catch (Error e) {
             browser_status.label = _("Installation impossible : %s").printf (e.message);

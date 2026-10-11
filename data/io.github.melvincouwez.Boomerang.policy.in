@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<!-- SPDX-FileCopyrightText: 2026 melvincouwez-alt -->
+<!-- SPDX-FileCopyrightText: 2026 MelvinCwz -->
 <!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
 <policyconfig>
   <vendor>Boomerang</vendor>
-  <vendor_url>https://github.com/melvincouwez-alt/boomerang</vendor_url>
+  <vendor_url>https://github.com/Melvin-Cwz/boomerang</vendor_url>
   <action id="io.github.melvincouwez.Boomerang.install-update">
     <description>Install a Boomerang update</description>
     <description xml:lang="fr">Installer une mise à jour de Boomerang</description>

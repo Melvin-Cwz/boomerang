@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Messages: SMS and iMessage from the iPhone through MAP (obexd), cached locally.
 
 Sources, in order of preference:

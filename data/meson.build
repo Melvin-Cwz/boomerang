@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 # System install (the .deb): /usr/lib/systemd/user; user install: ~/.local/share/systemd/user.
 user_unit_dir = prefix == '/usr' ? '/usr/lib/systemd/user' : datadir / 'systemd' / 'user'
 

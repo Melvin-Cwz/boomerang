@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Stand-in for boomerangd with made-up data, for screenshots and demos.
 
 It serves the real D-Bus interface (boomerangd.service.XML) under another bus
@@ -32,7 +32,7 @@ NOW = int(time.time())
 MIN, HOUR, DAY = 60, 3600, 86400
 
 PROPS = {
-    "Version": "0.8.2", "BluetoothAvailable": True, "Advertising": True, "Pairing": False, "LinkProblem": "", "AdapterName": "Boomerang-PC",
+    "Version": "0.8.3", "BluetoothAvailable": True, "Advertising": True, "Pairing": False, "LinkProblem": "", "AdapterName": "Boomerang-PC",
     "DeviceName": "iPhone de Camille", "DeviceAddress": "00:11:22:33:44:55", "Paired": True,
     "Connected": True, "NotificationsLinked": True, "MediaLinked": True, "CallsLinked": True,
     "CallsSupported": True, "Battery": 78, "ICloudState": "connected", "MessagesState": "ready",

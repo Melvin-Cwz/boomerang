@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Default apps for the calendar and the contacts: the app made for Boomerang, or
  * elementary's own (Flatpak from AppCenter). Both read the same iCloud account
@@ -175,7 +175,7 @@ namespace Boomerang {
             } else {
                 action.label = _("Installer…");
                 action.tooltip_text = _("Ouvrir la fiche dans AppCenter");
-                state.label = _("Pas encore installée : elle deviendra l'app par défaut une fois installée");
+                state.label = _("Pas encore installée : cette app deviendra l'app par défaut après son installation");
             }
         }
     }

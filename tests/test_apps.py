@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Optional apps (boomerangd/apps.py) and the package filter they rely on."""
 
 import os
@@ -17,7 +17,7 @@ SHA_M = "c" * 64
 
 
 def asset(name, sha):
-    return {"name": name, "browser_download_url": f"https://github.com/melvincouwez-alt/boomerang/releases/download/x/{name}",
+    return {"name": name, "browser_download_url": f"https://github.com/Melvin-Cwz/boomerang/releases/download/x/{name}",
             "size": 1000, "digest": f"sha256:{sha}"}
 
 

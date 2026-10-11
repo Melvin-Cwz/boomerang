@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Phone calls on this PC through the iPhone (HFP): the in-call window and the
  * keypad. The daemon opens the window when a call rings out or is answered;

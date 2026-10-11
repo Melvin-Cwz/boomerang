@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """New versions of Boomerang, from the project's GitHub releases.
 
 Only one request leaves the PC: GET on the public releases list, with Boomerang's version
@@ -33,7 +33,7 @@ from . import __version__
 from .i18n import _
 from .util import log
 
-RELEASES = "https://api.github.com/repos/melvincouwez-alt/boomerang/releases"
+RELEASES = "https://api.github.com/repos/Melvin-Cwz/boomerang/releases"
 FIRST_CHECK = 60          # seconds after start
 CHECK_EVERY = 24 * 3600   # seconds between automatic checks
 TIMEOUT = 15
@@ -294,7 +294,7 @@ class Updates:
         self.notification = self.notifier.notify(
             "Boomerang", "io.github.melvincouwez.Boomerang",
             _("Boomerang {version} est disponible").format(version=latest),
-            _("La mise à jour se trouve dans Réglages."), actions,
+            _("Vous pouvez l'installer depuis Réglages › Mises à jour."), actions,
             replaces=self.notification, on_action=self._on_action, own=True)
 
     def _on_action(self, action):

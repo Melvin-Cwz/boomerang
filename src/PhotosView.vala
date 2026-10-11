@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Photos: import the iPhone's photos and videos over a USB cable
  * (boomerangd/photos_usb.py, libimobiledevice). The page looks for the iPhone
@@ -52,8 +52,8 @@ public class Boomerang.PhotosView : Gtk.Box {
         device_box.append (device_label);
 
         pair_hint = new Gtk.Label (
-            _("Cet iPhone ne fait pas encore confiance à ce PC. Touchez « Faire confiance », puis "
-              + "« Se fier » sur l'iPhone et saisissez son code.")
+            _("Cet iPhone ne fait pas encore confiance à ce PC. Cliquez sur « Faire confiance », "
+              + "puis touchez « Se fier » sur l'iPhone et saisissez son code.")
         ) { xalign = 0, wrap = true };
         pair_button = new Gtk.Button.with_label (_("Faire confiance")) { halign = Gtk.Align.START };
         pair_button.add_css_class (Granite.CssClass.SUGGESTED);
@@ -164,8 +164,8 @@ public class Boomerang.PhotosView : Gtk.Box {
         heic.active = Props.flag (photos, "convert_heic");
         updating = false;
         heic.sensitive = tool;
-        heic_hint.label = tool ? _("Plus compatible, un peu moins léger. Sinon les HEIC sont gardées telles quelles.")
-                               : _("Demande l'outil heif-convert (paquet libheif-examples).");
+        heic_hint.label = tool ? _("Le JPEG est plus compatible mais un peu plus lourd. Sans conversion, les photos HEIC sont conservées telles quelles.")
+                               : _("Nécessite l'outil heif-convert (paquet libheif-examples).");
         var total = Props.count (photos, "total");
         var done = Props.count (photos, "done");
         progress_box.visible = state == "importing";

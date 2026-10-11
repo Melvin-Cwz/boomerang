@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Messages: conversations on the left, the selected thread as bubbles on the
  * right (sent on the right in the accent colour, received on the left), the
@@ -754,8 +754,8 @@ namespace Boomerang {
             });
             var compose_row = entry;
             send_hint = new Gtk.Label (
-                _("Premier envoi depuis ce PC : Boomerang saura alors si l'iPhone accepte l'envoi "
-                + "par Bluetooth. Le message est demandé en SMS, pas en iMessage.")
+                _("Premier envoi depuis ce PC : cet envoi indique à Boomerang si l'iPhone accepte "
+                + "l'envoi par Bluetooth. Boomerang demande un envoi en SMS, pas en iMessage.")
             ) { wrap = true, xalign = 0 };
             send_hint.add_css_class (Granite.CssClass.DIM);
             send_hint.add_css_class (Granite.CssClass.SMALL);
@@ -1066,7 +1066,7 @@ namespace Boomerang {
             bool retry = false;
             switch (state) {
                 case "disabled":
-                    text = _("Le module Messages est désactivé dans l'onglet iPhone.");
+                    text = _("Le module Messages et contacts est désactivé dans la page iPhone.");
                     break;
                 case "no-obex":
                     text = _("Le service Bluetooth OBEX (paquet bluez-obexd) est absent : "
@@ -1079,7 +1079,7 @@ namespace Boomerang {
                     text = _("Connexion aux messages de l'iPhone…");
                     break;
                 case "forbidden":
-                    text = _("L'iPhone refuse l'accès aux messages. Sur l'iPhone, ouvrez Réglages > "
+                    text = _("L'iPhone refuse l'accès aux messages. Sur l'iPhone, ouvrez Réglages › "
                            + "Bluetooth, touchez ⓘ à côté de ce PC et activez « Afficher les "
                            + "notifications », puis réessayez.");
                     retry = true;
@@ -1092,7 +1092,7 @@ namespace Boomerang {
                     if (contacts == "forbidden") {
                         text = _("Pour afficher les noms, activez « Synchroniser les contacts » "
                                + "dans les réglages Bluetooth de l'iPhone pour ce PC. Boomerang "
-                               + "redemande toute seule pendant 10 minutes.");
+                               + "renouvelle la demande automatiquement pendant 10 minutes.");
                         retry = true;
                     }
                     break;
@@ -1691,8 +1691,8 @@ namespace Boomerang {
 
         private void confirm_delete_message (string id) {
             confirm (_("Supprimer ce message de Boomerang ?"),
-                     _("Il reste sur l'iPhone : iOS ne permet pas de supprimer un message par "
-                     + "Bluetooth. Il ne réapparaîtra pas dans Boomerang."),
+                     _("Le message reste sur l'iPhone, car iOS ne permet pas de supprimer un "
+                     + "message par Bluetooth. Il ne réapparaîtra pas dans Boomerang."),
                      () => daemon.call.begin ("DeleteMessage", new Variant ("(s)", id)));
         }
 
@@ -1816,9 +1816,9 @@ namespace Boomerang {
             }
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (
                 _("Lire le message en entier ?"),
-                _("L'iPhone ne donne que les 120 premiers caractères d'un message non lu. Pour "
-                  + "récupérer la suite, Boomerang doit le télécharger : le message passera alors "
-                  + "en lu sur l'iPhone."),
+                _("L'iPhone transmet seulement les 120 premiers caractères d'un message non lu. "
+                  + "Pour récupérer la suite, Boomerang doit télécharger le message : il sera "
+                  + "alors marqué comme lu sur l'iPhone."),
                 Config.APP_ID + ".Messages", Gtk.ButtonsType.CANCEL) {
                 transient_for = get_root () as Gtk.Window,
                 modal = true
@@ -1860,9 +1860,9 @@ namespace Boomerang {
             }
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (
                 _("Réagir par SMS ?"),
-                _("Le Bluetooth ne transmet que du texte : la réaction part en SMS, par exemple "
-                  + "« A adoré « à demain » ». Un iPhone récent peut l'afficher comme une "
-                  + "réaction ; d'autres téléphones montreront simplement ce texte."),
+                _("Le Bluetooth transmet seulement du texte : Boomerang envoie la réaction en "
+                  + "SMS, par exemple « A adoré « à demain » ». Un iPhone récent peut l'afficher "
+                  + "comme une réaction ; les autres téléphones affichent ce texte tel quel."),
                 Config.APP_ID + ".Messages", Gtk.ButtonsType.CANCEL) {
                 transient_for = get_root () as Gtk.Window,
                 modal = true
@@ -2108,7 +2108,7 @@ namespace Boomerang {
             if (!outgoing && !complete && dict_string (d, "source") == "map") {
                 var more = new Gtk.Button.with_label (_("Tout lire")) {
                     halign = Gtk.Align.START,
-                    tooltip_text = _("Récupérer le texte complet (le message passera en lu sur l'iPhone)")
+                    tooltip_text = _("Récupérer le texte complet (le message sera marqué comme lu sur l'iPhone)")
                 };
                 more.add_css_class ("flat");
                 more.add_css_class (Granite.CssClass.SMALL);
@@ -2278,8 +2278,9 @@ namespace Boomerang {
             var send = daemon.get_string ("MessagesSend");
             string limit = "";
             if (current_group) {
-                limit = _("Les conversations de groupe se lisent ici mais se répondent sur l'iPhone : "
-                        + "le Bluetooth ne sait envoyer qu'un SMS à un seul destinataire.");
+                limit = _("Vous pouvez lire les conversations de groupe ici, mais il faut y répondre "
+                        + "depuis l'iPhone : par Bluetooth, l'iPhone envoie un SMS à un seul "
+                        + "destinataire.");
             } else if (!current_can_send) {
                 limit = _("Pas de numéro de téléphone connu pour cette conversation : "
                         + "répondez depuis l'iPhone.");
@@ -2289,12 +2290,12 @@ namespace Boomerang {
             // Hints only: the field always stays usable; a message that cannot
             // leave is kept in the thread with "Réessayer".
             if (state != "ready") {
-                send_hint.label = _("iPhone non connecté pour les messages : ce que vous envoyez sera "
-                                  + "gardé ici et pourra être renvoyé.");
+                send_hint.label = _("L'iPhone n'est pas connecté pour les messages : les messages que "
+                                  + "vous écrivez sont conservés ici et pourront être renvoyés.");
             } else if (send == "no") {
                 send_hint.label = _("Le dernier envoi a été refusé par l'iPhone. Vous pouvez réessayer.");
             } else if (send == "unknown") {
-                send_hint.label = _("Premier envoi depuis ce PC : il part en SMS par l'iPhone.");
+                send_hint.label = _("Premier envoi depuis ce PC : l'iPhone envoie ce message en SMS.");
             } else {
                 send_hint.label = "";
             }
@@ -2328,7 +2329,7 @@ namespace Boomerang {
                     send_bar_hide = 0;
                 }
                 send_bar.visible = false;
-                toast.title = _("Message non envoyé : il est gardé, touchez « Réessayer »");
+                toast.title = _("Message non envoyé mais conservé : cliquez sur « Réessayer »");
                 toast.send_notification ();
             }
         }

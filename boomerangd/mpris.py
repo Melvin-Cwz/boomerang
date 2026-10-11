@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """MPRIS player backed by the iPhone's Apple Media Service.
 
 The player appears in the sound indicator like any desktop player. It is only

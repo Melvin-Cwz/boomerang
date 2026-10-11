@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Offline checks of the proximity lock and the Bluetooth tethering: python3 -m unittest
 
 Nothing here locks the screen or touches NetworkManager: both are fakes."""

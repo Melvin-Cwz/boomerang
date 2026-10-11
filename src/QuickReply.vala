@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Quick reply, opened by "Répondre" in a message notification. elementary's
  * notification server has no inline reply (its capabilities are actions, body

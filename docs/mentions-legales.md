@@ -9,7 +9,7 @@ la Free Software Foundation. Le texte complet est dans le fichier `LICENSE`.
 Ce logiciel est distribué dans l'espoir qu'il sera utile, mais **sans aucune garantie**, sans même la
 garantie implicite de qualité marchande ou d'adéquation à un usage particulier.
 
-Identifiant SPDX : `GPL-3.0-or-later`. Copyright © 2026 melvincouwez-alt et les contributeurs de Boomerang.
+Identifiant SPDX : `GPL-3.0-or-later`. Copyright © 2026 MelvinCwz et les contributeurs de Boomerang.
 
 ## Indépendance
 

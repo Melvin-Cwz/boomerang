@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Translations of the daemon and its helper windows (gettext domain "boomerang").
 
 The source strings are French; po/en.po holds the English translation (beta).

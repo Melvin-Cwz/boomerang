@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Recopie d'écran: the iPhone's screen on the PC through UxPlay (experimental).
 
 UxPlay (https://github.com/FDH2/UxPlay, GPL-3.0) is a free AirPlay mirroring

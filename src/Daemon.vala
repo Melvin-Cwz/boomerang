@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Client of the boomerangd session bus API. Properties are read from the proxy
  * cache, which GDBus keeps current from PropertiesChanged.

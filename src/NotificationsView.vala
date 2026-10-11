@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Notifications tab: what the iPhone shows (ANCS), newest first, and one switch
  * per app to have its notifications pop up on this PC or not. The list is kept
@@ -421,7 +421,7 @@ public class Boomerang.AppNotifyEditor : Gtk.Box {
         var privacy = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) { margin_top = 8 };
         var texts = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { hexpand = true };
         texts.append (new Gtk.Label (_("Masquer le contenu")) { xalign = 0 });
-        var detail = new Gtk.Label (_("La bannière dit seulement quelle application. Le texte reste lisible ici.")) {
+        var detail = new Gtk.Label (_("La bannière indique seulement le nom de l'application. Le texte reste lisible dans Boomerang.")) {
             xalign = 0, wrap = true, max_width_chars = 36
         };
         detail.add_css_class (Granite.CssClass.DIM);

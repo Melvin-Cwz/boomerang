@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
- * SPDX-FileCopyrightText: 2026 melvincouwez-alt
+ * SPDX-FileCopyrightText: 2026 MelvinCwz
  *
  * Boomerang in the top bar (Wingpanel): the iPhone's state at a glance, with a dot for
  * unread messages or missed calls, and a popover with battery, what is playing, the call
@@ -305,8 +305,8 @@ public class Boomerang.Indicator : Wingpanel.Indicator {
         dot.visible = unread > 0 || missed > 0;
         var name = prop_string ("DeviceName");
         display_widget.tooltip_text = connected
-            ? _("%s relié").printf (name != "" ? name : "iPhone")
-            : _("%s non relié").printf (name != "" ? name : "iPhone");
+            ? _("%s connecté").printf (name != "" ? name : "iPhone")
+            : _("%s non connecté").printf (name != "" ? name : "iPhone");
 
         if (popover_widget == null) {
             return;
@@ -314,11 +314,11 @@ public class Boomerang.Indicator : Wingpanel.Indicator {
         title.label = name != "" ? name : "iPhone";
         var battery = prop_number ("Battery", -1);
         if (!connected) {
-            status.label = _("Non relié");
+            status.label = _("Non connecté");
         } else if (battery >= 0) {
-            status.label = _("Relié · batterie %d %%").printf ((int) battery);
+            status.label = _("Connecté · batterie %d %%").printf ((int) battery);
         } else {
-            status.label = _("Relié");
+            status.label = _("Connecté");
         }
 
         var track = media_string ("title");

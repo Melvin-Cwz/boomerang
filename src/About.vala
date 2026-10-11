@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * About Boomerang: version, licence, independence from Apple and trademarks.
  */
@@ -30,9 +30,9 @@ namespace Boomerang {
             version = Config.VERSION,
             comments = _("Pour utiliser un iPhone et iCloud depuis elementary OS.\n"
                        + "Projet libre, non affilié à Apple Inc."),
-            copyright = _("© 2026 melvincouwez-alt et les contributeurs de Boomerang"),
-            authors = { "melvincouwez-alt" },
-            website = "https://github.com/melvincouwez-alt/boomerang",
+            copyright = _("© 2026 MelvinCwz et les contributeurs de Boomerang"),
+            authors = { "MelvinCwz" },
+            website = "https://github.com/Melvin-Cwz/boomerang",
             website_label = _("Code source")
         };
         // The legal notice is long prose: in the wrapped licence page, not in a credit line.
@@ -78,8 +78,8 @@ namespace Boomerang {
             "PyGObject (LGPL-2.1-or-later) https://gitlab.gnome.org/GNOME/pygobject"
         });
         about.add_credit_section (_("Applications compagnes"), {
-            _("Agenda, melvincouwez-alt (GPL-3.0-or-later) https://github.com/melvincouwez-alt/agenda"),
-            _("Cassette, issue de Sidra de Martin Wimpress, sur CastLabs Electron (BlueOak-1.0.0) https://github.com/melvincouwez-alt/cassette")
+            _("Agenda, MelvinCwz (GPL-3.0-or-later) https://github.com/Melvin-Cwz/agenda"),
+            _("Cassette, issue de Sidra de Martin Wimpress, sur CastLabs Electron (BlueOak-1.0.0) https://github.com/Melvin-Cwz/cassette")
         });
         about.present ();
     }

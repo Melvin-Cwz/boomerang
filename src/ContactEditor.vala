@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Edit or create a contact card in iCloud (Contacts managed through iCloud).
  * iCloud then brings the change to the iPhone. Deleting asks first.
@@ -50,7 +50,7 @@ public class Boomerang.ContactEditor : Gtk.Window {
         add_phone.add_css_class ("flat");
         add_phone.clicked.connect (() => add_entry (phones, PHONE_KEYS, PHONE_NAMES, "mobile", "", true));
         emails = list_box ();
-        var add_email = new Gtk.Button.with_label (_("Ajouter une adresse e-mail")) { halign = Gtk.Align.START };
+        var add_email = new Gtk.Button.with_label (_("Ajouter une adresse de courriel")) { halign = Gtk.Align.START };
         add_email.add_css_class ("flat");
         add_email.clicked.connect (() => add_entry (emails, EMAIL_KEYS, EMAIL_NAMES, "domicile", "", true));
 
@@ -82,7 +82,7 @@ public class Boomerang.ContactEditor : Gtk.Window {
         form.append (new Granite.HeaderLabel (_("Téléphone")));
         form.append (phones);
         form.append (add_phone);
-        form.append (new Granite.HeaderLabel (_("E-mail")));
+        form.append (new Granite.HeaderLabel (_("Adresse de courriel")));
         form.append (emails);
         form.append (add_email);
         form.append (new Granite.HeaderLabel (_("Notes")));

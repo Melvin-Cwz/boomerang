@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Draw the conversation backgrounds offered in Personnaliser › Fond
 (data/backgrounds/*.svg). Soft, low-contrast pictures: a light veil is laid
 over them in the app, so bubbles stay readable. Run from the repository root."""

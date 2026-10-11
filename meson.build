@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 project('io.github.melvincouwez.Boomerang', 'vala', 'c',
-  version: '0.8.2',
+  version: '0.8.3',
   license: 'GPL-3.0-or-later',
   meson_version: '>= 1.0',
 )

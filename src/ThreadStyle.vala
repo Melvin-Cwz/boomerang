@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * The look of one conversation: a nickname and an emoji shown instead of the
  * contact's name, colour of my bubbles and of received ones, background, text

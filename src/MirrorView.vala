@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Recopie d'écran (experimental): the iPhone's screen in a window on the PC,
  * through UxPlay, a free AirPlay receiver (boomerangd/mirror.py). The receiver
@@ -86,8 +86,9 @@ public class Boomerang.MirrorView : Gtk.Box {
         ready_box.append (new Granite.HeaderLabel (_("Sur l'iPhone")));
         ready_box.append (steps);
         var note = new Gtk.Label (
-            _("Boomerang utilise UxPlay, un récepteur AirPlay libre. Il n'écoute le réseau que pendant "
-              + "la recopie. Fermez la fenêtre de recopie ou touchez « Arrêter » pour finir.")
+            _("Boomerang utilise UxPlay, un récepteur AirPlay libre. UxPlay écoute le réseau seulement "
+              + "pendant la recopie. Pour terminer, fermez la fenêtre de recopie ou cliquez sur « "
+              + "Arrêter ».")
         ) { xalign = 0, wrap = true };
         note.add_css_class (Granite.CssClass.DIM);
         note.add_css_class (Granite.CssClass.SMALL);
@@ -139,8 +140,8 @@ public class Boomerang.MirrorView : Gtk.Box {
             }
         });
         list.append (option_row (_("Profil"),
-                                 _("Fluide : le moins de retard, pour piloter l'iPhone. Qualité : le son "
-                                   + "reste calé sur l'image, pour une vidéo."), profile));
+                                 _("Fluide : le moins de retard possible, pour piloter l'iPhone. Qualité "
+                                   + ": le son reste synchronisé avec l'image, pour une vidéo."), profile));
 
         rotation = new Gtk.DropDown.from_strings ({ _("Aucune"), _("Vers la droite"), _("Vers la gauche") });
         rotation.notify["selected"].connect (() => {
@@ -157,7 +158,7 @@ public class Boomerang.MirrorView : Gtk.Box {
                 set_option ("fullscreen", fullscreen.active ? "true" : "false");
             }
         });
-        list.append (option_row (_("Plein écran"), _("Échap ou F11 dans la fenêtre de recopie pour en sortir"),
+        list.append (option_row (_("Plein écran"), _("Appuyez sur Échap ou F11 dans la fenêtre de recopie pour quitter le plein écran"),
                                  fullscreen));
 
         record = new Gtk.Switch ();
@@ -173,7 +174,7 @@ public class Boomerang.MirrorView : Gtk.Box {
         decoder_label = new Gtk.Label ("") { xalign = 1 };
         decoder_label.add_css_class (Granite.CssClass.DIM);
         list.append (option_row (_("Décodage vidéo"),
-                                 _("Choisi selon la carte graphique ; repli en logiciel en cas d'échec"),
+                                 _("Boomerang choisit le décodage selon la carte graphique et passe au décodage logiciel en cas d'échec"),
                                  decoder_label));
         var hint = new Gtk.Label (_("Les changements s'appliquent au prochain démarrage de la recopie.")) {
             xalign = 0, wrap = true
@@ -253,14 +254,14 @@ public class Boomerang.MirrorView : Gtk.Box {
         shortcuts.append (shortcut_button (_("Recherche"), _("⌘Espace : recherche de l'iPhone"), KEY_SPACE));
         shortcuts.append (shortcut_button (_("Changer d'app"), _("⌘Tab : app précédente"), KEY_TAB));
         command_held = new Gtk.ToggleButton.with_label ("⌘") {
-            tooltip_text = _("Maintenir ⌘ enfoncé pour la prochaine touche (la touche Super du PC "
-                             + "est souvent prise par le bureau)")
+            tooltip_text = _("Maintient ⌘ enfoncé pour la touche suivante (le bureau intercepte "
+                             + "souvent la touche Super du PC)")
         };
         command_held.toggled.connect (() => {
             daemon.call.begin ("ControlKey", new Variant ("(ub)", EVDEV_LEFTMETA, command_held.active));
         });
         shortcuts.append (command_held);
-        var center = new Gtk.Button.with_label (_("Recaler le pointeur")) {
+        var center = new Gtk.Button.with_label (_("Recentrer le pointeur")) {
             tooltip_text = _("Ramène le pointeur au centre de l'écran de l'iPhone")
         };
         center.clicked.connect (() => daemon.call.begin ("ControlGoto", new Variant ("(dd)", 0.5, 0.5)));
@@ -286,7 +287,7 @@ public class Boomerang.MirrorView : Gtk.Box {
         width_spin.value_changed.connect (send_size);
         height_spin.value_changed.connect (send_size);
         size_list.append (option_row (_("Largeur de l'écran pour le pointeur"),
-                                      _("Si « Recaler » ne tombe pas au centre, ajustez ces deux valeurs"),
+                                      _("Si « Recentrer le pointeur » ne place pas le pointeur au centre, ajustez ces deux valeurs"),
                                       width_spin));
         size_list.append (option_row (_("Hauteur de l'écran pour le pointeur"), "", height_spin));
         var expander = new Gtk.Expander (_("Réglage du pointeur")) { child = size_list };
@@ -482,8 +483,8 @@ public class Boomerang.MirrorView : Gtk.Box {
         } else if (Props.flag (control, "connected")) {
             control_state.label = _("L'iPhone utilise la souris et le clavier de Boomerang.");
         } else {
-            control_state.label = _("Publiés. Sur l'iPhone : Réglages › Bluetooth, touchez « Boomerang » "
-                                    + "sous Autres appareils (ou reconnectez-le).");
+            control_state.label = _("Souris et clavier publiés. Sur l'iPhone : Réglages › Bluetooth, "
+                                    + "touchez « Boomerang » sous Autres appareils (ou reconnectez-le).");
         }
         var width = Props.integer (control, "width");
         var height = Props.integer (control, "height");

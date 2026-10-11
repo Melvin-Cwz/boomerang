@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Apple-style message field shared by the Messages page and the quick reply
  * window: rounded, grows up to a few lines, Enter sends, Shift+Enter starts a
@@ -190,7 +190,7 @@ public class Boomerang.ComposeField : Gtk.Box {
         var emoji_button = new Gtk.MenuButton () {
             icon_name = "face-smile-symbolic",
             popover = chooser,
-            tooltip_text = _("Émoji"),
+            tooltip_text = _("Emoji"),
             valign = Gtk.Align.END
         };
         emoji_button.add_css_class ("compose-round");

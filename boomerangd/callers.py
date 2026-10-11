@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Who is calling the daemon's session bus API.
 
 Every program of the user's session can reach io.github.melvincouwez.Boomerang1,

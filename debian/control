@@ -1,7 +1,7 @@
 Source: boomerang
 Section: utils
 Priority: optional
-Maintainer: melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>
+Maintainer: MelvinCwz <301110918+Melvin-Cwz@users.noreply.github.com>
 Build-Depends: debhelper-compat (= 13),
                meson (>= 1.0),
                valac,
@@ -14,7 +14,7 @@ Build-Depends: debhelper-compat (= 13),
                desktop-file-utils,
                appstream
 Standards-Version: 4.7.0
-Homepage: https://github.com/melvincouwez-alt/boomerang
+Homepage: https://github.com/Melvin-Cwz/boomerang
 Rules-Requires-Root: no
 
 Package: boomerang

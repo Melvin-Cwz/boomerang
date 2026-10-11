@@ -1,3 +1,13 @@
+boomerang (0.8.3-1) unstable; urgency=medium
+
+  * French texts reviewed (interface, guide, documentation).
+  * MelvinCwz signature.
+  * New GitHub address: links, update checks, package metadata and website
+    point to github.com/Melvin-Cwz and melvin-cwz.github.io (the account
+    melvincouwez-alt is renamed). Application ids are unchanged.
+
+ -- MelvinCwz <301110918+Melvin-Cwz@users.noreply.github.com>  Sun, 11 Oct 2026 20:00:00 +0200
+
 boomerang (0.8.2-1) unstable; urgency=medium
 
   * Package: Depends on Granite 7.7.0 or later again. The 0.8.1 package
@@ -8,7 +18,7 @@ boomerang (0.8.2-1) unstable; urgency=medium
     transitional package.
   * English demo: the made-up headphones are called "Demo AirPods Pro".
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Thu, 08 Oct 2026 22:30:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Thu, 08 Oct 2026 22:30:00 +0200
 
 boomerang (0.8.1-1) unstable; urgency=medium
 
@@ -25,7 +35,7 @@ boomerang (0.8.1-1) unstable; urgency=medium
     clocks and polls run only on screen.
   * Panel indicator shows the call in progress again.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Thu, 08 Oct 2026 12:00:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Thu, 08 Oct 2026 12:00:00 +0200
 
 boomerang (0.8.0-1) unstable; urgency=medium
 
@@ -75,7 +85,7 @@ boomerang (0.8.0-1) unstable; urgency=medium
     experimental Bluetooth LE beacon (AlphaFeatures mirror_ble, UxPlay -ble
     with uxplay-beacon) lets the iPhone find the PC without mDNS.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 05 Oct 2026 15:00:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 05 Oct 2026 15:00:00 +0200
 
 boomerang (0.7.0-1) unstable; urgency=medium
 
@@ -90,7 +100,7 @@ boomerang (0.7.0-1) unstable; urgency=medium
   * Each release also carries a covalence package with the same files, so
     Covalence 0.6 updates itself to Boomerang.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 04 Oct 2026 21:30:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 04 Oct 2026 21:30:00 +0200
 
 covalence (0.6.1-1) unstable; urgency=medium
 
@@ -106,7 +116,7 @@ covalence (0.6.1-1) unstable; urgency=medium
   * Credits: companion apps in About; Apple trademark notice in
     debian/copyright; SPDX headers completed.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 04 Oct 2026 20:30:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 04 Oct 2026 20:30:00 +0200
 
 covalence (0.6.0-1) unstable; urgency=medium
 
@@ -125,7 +135,7 @@ covalence (0.6.0-1) unstable; urgency=medium
     ifuse, libheif and the sounds listed in the README, the site and About;
     debian/copyright covers every icon.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Tue, 29 Sep 2026 20:45:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Tue, 29 Sep 2026 20:45:00 +0200
 
 covalence (0.5.1-1) unstable; urgency=medium
 
@@ -137,7 +147,7 @@ covalence (0.5.1-1) unstable; urgency=medium
     (no monospace font switch in the middle of the line).
   * Demo daemon: headphone features taken from the daemon's own table.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 17:45:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 17:45:00 +0200
 
 covalence (0.5.0-1) unstable; urgency=medium
 
@@ -169,7 +179,7 @@ covalence (0.5.0-1) unstable; urgency=medium
   * Guide in the sidebar, above Settings; icons missing from the
     elementary theme replaced (Photos, Bluetooth, browser).
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 12:30:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 12:30:00 +0200
 
 covalence (0.4.2-1) unstable; urgency=medium
 
@@ -182,7 +192,7 @@ covalence (0.4.2-1) unstable; urgency=medium
   * Reconnection backs off from 10 s to 5 min and restarts after sleep.
   * No GATT subscription on BlueZ's cached services while disconnected.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 11:30:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 11:30:00 +0200
 
 covalence (0.4.1-1) unstable; urgency=medium
 
@@ -194,7 +204,7 @@ covalence (0.4.1-1) unstable; urgency=medium
   * Settings: one tab per kind of feature; "experimental" instead of "alpha".
   * About: narrower window, short credits.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 02:40:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 02:40:00 +0200
 
 covalence (0.4.0-1) unstable; urgency=medium
 
@@ -208,7 +218,7 @@ covalence (0.4.0-1) unstable; urgency=medium
   * Screen mirroring with UxPlay (experimental); photo import over USB.
   * Settings in tabs; Covalence's free sounds with preview and "Use for".
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 01:10:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Mon, 28 Sep 2026 01:10:00 +0200
 
 covalence (0.3.3-1) unstable; urgency=medium
 
@@ -216,14 +226,14 @@ covalence (0.3.3-1) unstable; urgency=medium
     undoes it), switch in Settings.
   * Updates: the install no longer stays shown as in progress once done.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 27 Sep 2026 23:50:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 27 Sep 2026 23:50:00 +0200
 
 covalence (0.3.2-1) unstable; urgency=medium
 
   * Messages: a small check under a sent message once the iPhone lists it
     among its sent messages.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 27 Sep 2026 23:15:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 27 Sep 2026 23:15:00 +0200
 
 covalence (0.3.1-1) unstable; urgency=medium
 
@@ -238,7 +248,7 @@ covalence (0.3.1-1) unstable; urgency=medium
     favourites.
   * "What's new" window after an update.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 27 Sep 2026 23:30:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 27 Sep 2026 23:30:00 +0200
 
 covalence (0.2.0-1) unstable; urgency=medium
 
@@ -250,4 +260,4 @@ covalence (0.2.0-1) unstable; urgency=medium
     shown as unavailable otherwise; rclone is downloaded on request when the
     system copy is missing or too old.
 
- -- melvincouwez-alt <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 27 Sep 2026 20:00:00 +0200
+ -- MelvinCwz <301110918+melvincouwez-alt@users.noreply.github.com>  Sun, 27 Sep 2026 20:00:00 +0200

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 # Source strings are French; en.po is the English translation (beta).
 # Update the template and en.po: meson compile -C build boomerang-pot boomerang-update-po
 i18n = import('i18n')

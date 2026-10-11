@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """One-time move from the app's former names to Boomerang.
 
 The app was called Tandem until 2026-09-27, then Covalence until 2026-10-04. Each

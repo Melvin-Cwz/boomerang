@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
- * SPDX-FileCopyrightText: 2026 melvincouwez-alt
+ * SPDX-FileCopyrightText: 2026 MelvinCwz
  *
  * « Afficher dans la barre du haut »: the Boomerang indicator in Wingpanel reads
  * apps.conf [general] indicator (true unless turned off) and follows changes live.

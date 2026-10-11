@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 # Boomerang in the top bar: a Wingpanel indicator (GTK 4, wingpanel-9), built when the
 # Wingpanel development files are present (option indicator=auto) or required (enabled).
 shared_library('boomerang-indicator',

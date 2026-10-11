@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Boomerang: iPhone and Apple services on elementary OS.
  * The app is a thin client of the boomerangd daemon (io.github.melvincouwez.Boomerang1).

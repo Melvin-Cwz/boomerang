@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Which bubbles of the open conversation must be redrawn: the messages shown and the
  * messages now, one signature each, compared from the start. A new message only adds

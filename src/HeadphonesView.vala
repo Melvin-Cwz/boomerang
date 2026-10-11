@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Écouteurs: battery and settings of AirPods paired with this PC.
  *
@@ -57,9 +57,10 @@ namespace Boomerang {
             demo = Environment.get_variable ("BOOMERANG_HEADPHONES_DEMO") == "1";
 
             var none = new Granite.Placeholder (_("Aucun écouteur appairé")) {
-                description = _("Pour appairer vos AirPods : ouvrez le boîtier près du PC, écouteurs "
-                              + "dedans, puis maintenez le bouton du boîtier jusqu'à ce que le voyant "
-                              + "clignote en blanc. Choisissez-les ensuite dans les paramètres Bluetooth."),
+                description = _("Pour appairer vos AirPods : ouvrez le boîtier près du PC, avec les "
+                              + "écouteurs à l'intérieur, puis maintenez le bouton du boîtier jusqu'à ce "
+                              + "que le voyant clignote en blanc. Choisissez ensuite les écouteurs dans "
+                              + "les paramètres Bluetooth."),
                 icon = new ThemedIcon ("audio-headphones")
             };
             var open_bluetooth = none.append_button (new ThemedIcon ("bluetooth"),
@@ -235,7 +236,7 @@ namespace Boomerang {
                 cycle_checks += check;
                 checks.append (check);
             }
-            cycle_hint = small (_("Un appui long sur la tige passe d'un mode coché à l'autre (au moins deux)."));
+            cycle_hint = small (_("Un appui long sur la tige alterne entre les modes cochés (deux au minimum)."));
             cycle_hint.xalign = 0;
             cycle_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
             cycle_box.append (new Granite.HeaderLabel (_("Appui long")));
@@ -361,8 +362,8 @@ namespace Boomerang {
 
             if (!Props.flag (p, "connected")) {
                 waiting.title = Props.str (p, "name");
-                waiting.description = _("Hors de portée ou dans le boîtier fermé. Sortez-les du boîtier "
-                                      + "pour les connecter à ce PC.");
+                waiting.description = _("Les écouteurs sont hors de portée ou dans le boîtier fermé. "
+                                      + "Sortez-les du boîtier pour les connecter à ce PC.");
                 stack.visible_child_name = "waiting";
                 updating = false;
                 return;

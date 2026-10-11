@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * System components Boomerang needs (BlueZ, obexd, EDS typelibs, PipeWire…).
  *
@@ -199,8 +199,8 @@ public class Boomerang.ComponentsCard : Gtk.Box {
         installable = names;
         install.visible = names.length > 0;
         status.label = names.length > 0
-            ? _("Boomerang a besoin de ces paquets pour fonctionner entièrement. Le système demandera "
-              + "le mot de passe administrateur.")
+            ? _("Boomerang a besoin de ces paquets pour que toutes ses fonctions soient disponibles. "
+              + "Le système demandera le mot de passe administrateur.")
             : others ? _("Ces éléments demandent une version plus récente du système.")
             : _("Boomerang peut télécharger cet outil pour vous.");
         visible = found.length > 0;

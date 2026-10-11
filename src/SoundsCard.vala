@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
- * SPDX-FileCopyrightText: 2026 melvincouwez-alt
+ * SPDX-FileCopyrightText: 2026 MelvinCwz
  */
 
 /* Réglages › Sons: one sound for messages, one for iPhone notifications, one ringtone.
@@ -28,8 +28,8 @@ public class Boomerang.SoundsCard : Gtk.Box {
         append (list);
 
         var hint = new Gtk.Label (
-            _("Aucun son en mode Ne pas déranger. Si l'iPhone fait déjà sonner l'appel sur ce PC, "
-              + "la sonnerie de Boomerang se tait.")
+            _("Boomerang ne joue aucun son en mode Ne pas déranger. Si l'iPhone fait déjà sonner "
+              + "l'appel sur ce PC, Boomerang coupe sa propre sonnerie.")
         ) { xalign = 0, wrap = true };
         hint.add_css_class (Granite.CssClass.DIM);
         hint.add_css_class (Granite.CssClass.SMALL);

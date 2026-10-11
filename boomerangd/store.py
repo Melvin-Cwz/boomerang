@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Local message cache: ~/.local/share/boomerang/messages/messages.db (SQLite).
 
 iOS only exposes part of the history over MAP, so the cache is what lets

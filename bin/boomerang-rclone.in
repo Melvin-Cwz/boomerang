@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 # rclone for Boomerang's iCloud Drive and iCloud Photos mounts: the system rclone
 # when it is 1.69 or later, otherwise Boomerang's own copy (see README).
 private="$HOME/.local/libexec/boomerang/rclone"

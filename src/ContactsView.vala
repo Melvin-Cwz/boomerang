@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Contacts: the iPhone's phone book as read over PBAP (read only), with search,
  * a detail pane and "send a message" on each phone number. ContactList is also
@@ -442,10 +442,11 @@ namespace Boomerang {
             };
             box.append (title);
             box.append (choice (bluetooth_choice, _("Lecture via Bluetooth et cache local"),
-                _("Aucune modification possible. Simple : repose seulement sur la connexion avec votre iPhone.")));
+                _("Les fiches ne sont pas modifiables. Ce mode utilise seulement la connexion avec votre iPhone.")));
             box.append (choice (icloud_choice, _("Gestion via iCloud"),
-                _("Créer, modifier et supprimer des fiches. Nécessite le compte iCloud (Services Apple) "
-                + "et Internet ; iCloud transmet les changements à l'iPhone.")));
+                _("Créer, modifier et supprimer des fiches. Ce mode nécessite le compte iCloud (page "
+                + "Services Apple) et une connexion Internet ; iCloud transmet les modifications à "
+                + "l'iPhone.")));
             bluetooth_choice.toggled.connect (() => {
                 if (!updating && bluetooth_choice.active) {
                     daemon.call.begin ("SetContactsSource", new Variant ("(s)", "bluetooth"));
@@ -508,7 +509,7 @@ namespace Boomerang {
                 edit_button.visible = editable () && shown.uid != "";
             }
             note.label = icloud
-                ? _("Les changements passent par iCloud, qui les transmet à l'iPhone.")
+                ? _("Les modifications sont enregistrées dans iCloud, qui les transmet à l'iPhone.")
                 : _("Contacts lus sur l'iPhone en Bluetooth, en lecture seule. Pour les modifier, "
                   + "choisissez « Gestion via iCloud » dans le menu de la liste.");
         }

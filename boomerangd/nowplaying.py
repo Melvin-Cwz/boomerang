@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """What the iPhone is playing ("Now Playing" page), from one of two sources.
 
 - AMS (Apple Media Service, over the BLE link): app name, title, artist, album,

@@ -1,6 +1,6 @@
 #!@PYTHON@ -I
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Install a downloaded Boomerang update, as root (started by pkexec from boomerangd).
 
 Usage: boomerang-install-update <path to the .deb> <expected SHA-256> [package]

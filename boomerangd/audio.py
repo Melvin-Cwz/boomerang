@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Sound of the iPhone on the PC (A2DP: the iPhone is the source, the PC the sink).
 
 PipeWire plays the iPhone's stream (bluez_input.<address>) on the default

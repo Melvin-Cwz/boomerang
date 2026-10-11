@@ -21,8 +21,9 @@ concurrency:
 jobs:
   deploy:
     # The site is published from the public repository only: the private one has no
-    # GitHub Pages, and every push there used to fail and send a mail.
-    if: github.repository == 'melvincouwez-alt/boomerang'
+    # GitHub Pages, and every push there used to fail and send a mail. Both owner names
+    # are accepted while the account melvincouwez-alt is renamed Melvin-Cwz.
+    if: github.repository == 'Melvin-Cwz/boomerang' || github.repository == 'melvincouwez-alt/boomerang'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

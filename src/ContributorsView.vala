@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * "Contributeurs" page: every project, library, protocol and asset Boomerang
  * uses or builds on, grouped by use, with its authors, what it brings, its
@@ -35,7 +35,7 @@ public class Boomerang.ContributorsView : Gtk.Box {
         "LGPL-2.1-or-later", "https://github.com/libimobiledevice/libimobiledevice",
 
         N_("iPhone et Bluetooth"), "nRF Connect", "Nordic Semiconductor",
-        N_("Une app iPhone gratuite qui a aidé aux premiers appairages, quand Boomerang n'en était qu'au début."),
+        N_("Une app iPhone gratuite qui a servi aux premiers appairages, au début du développement de Boomerang."),
         N_("Application gratuite, non libre"),
         "https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile",
 
@@ -52,7 +52,7 @@ public class Boomerang.ContributorsView : Gtk.Box {
         "LGPL-2.1-or-later", "https://gitlab.gnome.org/GNOME/libsecret",
 
         N_("iCloud"), "libcloudproviders", N_("Projet GNOME"),
-        N_("La façon standard de montrer l'état de synchronisation d'iCloud Drive dans Fichiers."),
+        N_("La méthode standard pour afficher l'état de synchronisation d'iCloud Drive dans Fichiers."),
         "LGPL-3.0-or-later", "https://gitlab.gnome.org/GNOME/libcloudproviders",
 
         N_("iCloud"), "FUSE (libfuse)", N_("Projet libfuse"),
@@ -64,7 +64,7 @@ public class Boomerang.ContributorsView : Gtk.Box {
         N_("MIT, certaines parties LGPL-2.1-or-later"), "https://gitlab.freedesktop.org/pipewire/pipewire",
 
         N_("Son et appels"), "WirePlumber", N_("Projet PipeWire"),
-        N_("Relie l'iPhone, le micro et les haut-parleurs au bon moment."),
+        N_("Connecte l'iPhone, le micro et les haut-parleurs au moment voulu."),
         "MIT", "https://gitlab.freedesktop.org/pipewire/wireplumber",
 
         N_("Interface"), "GTK", N_("Projet GTK"),
@@ -72,15 +72,15 @@ public class Boomerang.ContributorsView : Gtk.Box {
         "LGPL-2.1-or-later", "https://gitlab.gnome.org/GNOME/gtk",
 
         N_("Interface"), "Granite", "elementary",
-        N_("Les éléments d'interface d'elementary OS, pour que Boomerang s'y sente chez lui."),
+        N_("Les éléments d'interface d'elementary OS, pour que Boomerang s'intègre au bureau."),
         "LGPL-3.0-or-later", "https://github.com/elementary/granite",
 
         N_("Interface"), N_("Icônes elementary"), "elementary",
-        N_("Les objets dont sont faites les icônes de Boomerang."),
+        N_("Les éléments graphiques qui composent les icônes de Boomerang."),
         "GPL-3.0", "https://github.com/elementary/icons",
 
         N_("Interface"), "Inter", "Rasmus Andersson",
-        N_("La police du texte de l'icône Calendrier, en tracés."),
+        N_("La police du texte de l'icône Calendrier, convertie en tracés."),
         "SIL OFL 1.1", "https://github.com/rsms/inter",
 
         N_("Interface"), "libheif", N_("Dirk Farin, struktur AG et contributeurs"),

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Réglages › Messages: link previews (off by default: showing one contacts the
  * site) and the quick replies offered in notifications and in the quick reply

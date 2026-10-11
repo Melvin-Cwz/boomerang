@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
- * SPDX-FileCopyrightText: 2026 melvincouwez-alt
+ * SPDX-FileCopyrightText: 2026 MelvinCwz
  *
  * iCloud.com shortcuts (Services Apple): Find My, Notes, Hide My Email, Reminders and
  * Photos have no protocol open to Linux, but work in a browser. Each row opens the page,

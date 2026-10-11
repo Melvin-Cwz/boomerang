@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Session bus API of the daemon: io.github.melvincouwez.Boomerang1.
 
 The app only talks to the daemon through this interface. The bus name is
@@ -599,7 +599,7 @@ class Service:
 
         state["note"] = notifier.notify(
             "Boomerang", "dialog-warning", _("Autoriser {program} ?").format(program=program),
-            _("« {program} » demande à Boomerang de {action}. Refusez si ce n'est pas vous.")
+            _("« {program} » demande à Boomerang de {action}. Refusez si vous n'êtes pas à l'origine de cette demande.")
             .format(program=program, action=action),
             actions=[("allow", _("Autoriser")), ("deny", _("Refuser"))],
             hints={"urgency": GLib.Variant("y", 2)}, own=True,

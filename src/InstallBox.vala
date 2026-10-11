@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Shared bits of the pages: reading the daemon's dictionary properties (a{sv}),
  * and, for Fichiers, Recopie d'écran and Photos, a card offering to install the tools they need

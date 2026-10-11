@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """One-time codes received by SMS ("Votre code de vérification est 482913").
 
 detect() finds the code the way iOS suggests it above the keyboard: a word such as

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Guided pairing: opens the daemon's pairing window, shows the numeric
  * comparison code and reports the outcome.
@@ -45,8 +45,8 @@ public class Boomerang.PairingDialog : Gtk.Window {
         steps.append (step (2, _("Sur l'iPhone, ouvrez Réglages › Bluetooth et touchez « %s » "
                             + "sous Autres appareils.").printf (pc_name)));
         steps.append (step (3, _("Comparez le code ci-dessous avec celui de l'iPhone. S'ils sont "
-                            + "identiques, touchez « Jumeler » sur l'iPhone et « Le code correspond » "
-                            + "ici.")));
+                            + "identiques, touchez « Jumeler » sur l'iPhone, puis cliquez sur « Le "
+                            + "code correspond » dans cette fenêtre.")));
         steps.append (step (4, _("Acceptez le partage des notifications et des contacts si l'iPhone "
                             + "le demande.")));
 
@@ -80,7 +80,7 @@ public class Boomerang.PairingDialog : Gtk.Window {
         confirm_box.append (match_button);
         steps.append (confirm_box);
 
-        var done_page = new Granite.Placeholder (_("C'est fait")) {
+        var done_page = new Granite.Placeholder (_("Appairage terminé")) {
             description = _("L'iPhone est appairé. Ses notifications arriveront ici, "
                           + "et les appels dès que le profil mains libres sera connecté."),
             icon = new ThemedIcon ("process-completed")
@@ -125,7 +125,7 @@ public class Boomerang.PairingDialog : Gtk.Window {
         daemon.pairing_code_answered.connect ((matches) => {
             confirm_box.visible = false;
             code_hint.label = matches ? _("Code confirmé, appairage en cours…")
-                                      : _("Code refusé. Recommencez depuis l'iPhone si besoin.");
+                                      : _("Code refusé. Si nécessaire, recommencez l'appairage depuis l'iPhone.");
         });
         daemon.changed.connect (() => {
             if (!daemon.touched ({ "Pairing", "Paired" })) {

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Contrôle de l'iPhone (experimental): the PC as a Bluetooth LE mouse and keyboard.
 
 HID over GATT (service 0x1812): the daemon publishes a GATT server with one

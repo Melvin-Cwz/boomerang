@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
  * Calls: the iPhone's call history read over PBAP (read only), newest first,
  * with missed calls in red, and buttons to call back (HFP, on click only) or
@@ -200,7 +200,7 @@ public class Boomerang.CallButton : Gtk.Button {
                 if (ok) {
                     dialled ();
                 } else if (toast != null) {
-                    toast.title = _("Appel impossible : l'iPhone n'est pas relié en mains libres");
+                    toast.title = _("Appel impossible : le profil mains libres de l'iPhone n'est pas connecté");
                     toast.send_notification ();
                 }
                 update ();
@@ -221,6 +221,6 @@ public class Boomerang.CallButton : Gtk.Button {
         sensitive = ready;
         tooltip_text = ready ? _("Appeler depuis l'iPhone")
                      : calls_unavailable (daemon) ? _(CALLS_UNAVAILABLE)
-                     : _("Appel indisponible : l'iPhone n'est pas relié en mains libres");
+                     : _("Appel indisponible : le profil mains libres de l'iPhone n'est pas connecté");
     }
 }

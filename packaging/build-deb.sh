@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 # Build boomerang_<version>_<arch>.deb in dist/.
 #
 # Normal path: dpkg-buildpackage (needs the Build-Depends of debian/control,

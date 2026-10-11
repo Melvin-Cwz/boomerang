@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 [Unit]
 Description=Boomerang: iCloud Photos in Files (rclone mount, read-only)
 Documentation=file://@PKGDATADIR@/guide/en/09-apple.md

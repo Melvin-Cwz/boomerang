@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Reactions ("tapbacks") carried as plain SMS text.
 
 MAP only carries text: when someone reacts to an SMS on an iPhone or in Google

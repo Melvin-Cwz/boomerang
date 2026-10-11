@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Boomerang iCloud sign-in helper: connect iCloud to Evolution Data Server.
 
 A single sign-in with an app-specific password makes iCloud Mail, Calendars,
@@ -191,9 +191,9 @@ class SignInWindow(Gtk.ApplicationWindow):
         title.add_css_class(Granite.STYLE_CLASS_H2_LABEL)
         box.append(title)
         intro = Gtk.Label(
-            label=_("Mail, calendriers, rappels et contacts iCloud apparaîtront dans les applis "
-                    "d'elementary. Utilisez un mot de passe pour app, jamais celui de votre "
-                    "identifiant Apple."),
+            label=_("Le courriel, les agendas, les rappels et les contacts iCloud apparaîtront "
+                    "dans les apps d'elementary. Utilisez un mot de passe pour app, jamais le "
+                    "mot de passe de votre identifiant Apple."),
             wrap=True, xalign=0, max_width_chars=48,
         )
         intro.add_css_class(Granite.STYLE_CLASS_DIM_LABEL)
@@ -201,7 +201,7 @@ class SignInWindow(Gtk.ApplicationWindow):
 
         self.apple_id = self._field(box, _("Identifiant Apple (adresse iCloud)"), Gtk.Entry())
         self.apple_id.set_input_purpose(Gtk.InputPurpose.EMAIL)
-        self.full_name = self._field(box, _("Nom affiché dans vos e-mails"), Gtk.Entry())
+        self.full_name = self._field(box, _("Nom affiché dans vos courriels"), Gtk.Entry())
         self.full_name.set_text(pwd.getpwuid(os.getuid()).pw_gecos.split(",")[0])
         self.password = self._field(box, _("Mot de passe pour app"), Gtk.PasswordEntry())
         self.password.set_show_peek_icon(True)
@@ -262,13 +262,14 @@ class SignInWindow(Gtk.ApplicationWindow):
                 return
             imap_user = imap_login_name(apple_id, password)
             if imap_user is None:
-                GLib.idle_add(self._done, _("Calendriers OK, mais iCloud Mail refuse la connexion. "
-                                            "iCloud Mail est-il activé sur ce compte ?"), True)
+                GLib.idle_add(self._done, _("Les agendas sont connectés, mais iCloud Mail refuse "
+                                            "la connexion. Vérifiez qu'iCloud Mail est activé sur "
+                                            "ce compte."), True)
                 return
             install(apple_id, imap_user, full_name, password)
             print("[boomerang] sources iCloud créées (calendriers, rappels, contacts, mail)", flush=True)
             notify_daemon()
-            GLib.idle_add(self._done, _("iCloud est connecté. Ouvrez Mail ou Tâches."), False)
+            GLib.idle_add(self._done, _("iCloud est connecté. Ouvrez Courriel ou Tâches."), False)
         except Exception as error:  # réseau, trousseau verrouillé…
             GLib.idle_add(self._done, _("Échec : {error}").format(error=error.__class__.__name__), True)
 

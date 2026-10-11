@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Update checks against GitHub releases (offline: the release list is made up)."""
 
 import unittest
@@ -11,12 +11,12 @@ SHA = "0" * 63 + "1"
 
 def release(tag, prerelease=False, draft=False, digest=True, name=None):
     asset = {"name": name or f"boomerang_{tag.lstrip('v')}-1_amd64.deb", "size": 1000,
-             "browser_download_url": f"https://github.com/melvincouwez-alt/boomerang/releases/"
+             "browser_download_url": f"https://github.com/Melvin-Cwz/boomerang/releases/"
                                      f"download/{tag}/boomerang_{tag.lstrip('v')}-1_amd64.deb"}
     if digest:
         asset["digest"] = "sha256:" + SHA
     return {"tag_name": tag, "prerelease": prerelease, "draft": draft, "assets": [asset],
-            "html_url": f"https://github.com/melvincouwez-alt/boomerang/releases/tag/{tag}",
+            "html_url": f"https://github.com/Melvin-Cwz/boomerang/releases/tag/{tag}",
             "body": "Nouveautés"}
 
 

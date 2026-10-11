@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Bounded download caches (artwork, app icons): files unused for a long time, and the
 least recently used beyond a count, are removed. A file is "used" when its mtime is
 refreshed with touch()."""

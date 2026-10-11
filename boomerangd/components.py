@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """System components Boomerang relies on, and the Debian package that brings each one.
 
 Run as `boomerangd --check-components`: prints one line per missing component,

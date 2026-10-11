@@ -1,15 +1,15 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Boomerang
-Source: https://github.com/melvincouwez-alt/boomerang
+Source: https://github.com/Melvin-Cwz/boomerang
 Comment: Apple, iPhone, iCloud, AirPods and Apple Music are trademarks of Apple
  Inc. Boomerang is not affiliated with or endorsed by Apple.
 
 Files: *
-Copyright: 2026 melvincouwez-alt
+Copyright: 2026 MelvinCwz
 License: GPL-3.0-or-later
 
 Files: boomerangd/headphones.py
-Copyright: 2026 melvincouwez-alt
+Copyright: 2026 MelvinCwz
            2025 LibrePods contributors
 Comment: The AirPods protocol (AAP over L2CAP, handshake, battery, ear detection,
  listening modes, conversation awareness, head tracking and the nod/shake
@@ -18,7 +18,7 @@ Comment: The AirPods protocol (AAP over L2CAP, handshake, battery, ear detection
 License: GPL-3.0-or-later
 
 Files: data/icons/*
-Copyright: 2026 melvincouwez-alt
+Copyright: 2026 MelvinCwz
            elementary, Inc.
 Comment: Built from objects of the elementary icon theme
  (https://github.com/elementary/icons), GPL-3.0: the display, the phone and the
@@ -50,7 +50,7 @@ Comment: confirmation_002.ogg, glass_001.ogg, pluck_001.ogg, drop_002.ogg and
 License: CC0-1.0
 
 Files: data/sounds/telephone.oga
-Copyright: 2026 melvincouwez-alt
+Copyright: 2026 MelvinCwz
 Comment: Bell-telephone ring synthesised for Boomerang.
 License: CC0-1.0
 

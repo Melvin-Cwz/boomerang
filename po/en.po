@@ -1,13 +1,13 @@
 # English translation of Boomerang (beta).
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 msgid ""
 msgstr ""
 "Project-Id-Version: boomerang\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-10-04 21:21+0200\n"
 "PO-Revision-Date: 2026-09-27 19:00+0200\n"
-"Last-Translator: melvincouwez-alt <301110918+melvincouwez-"
+"Last-Translator: MelvinCwz <301110918+melvincouwez-"
 "alt@users.noreply.github.com>\n"
 "Language-Team: English\n"
 "Language: en\n"
@@ -67,8 +67,8 @@ msgstr ""
 "Free software, not affiliated with Apple Inc."
 
 #: src/About.vala:33
-msgid "© 2026 melvincouwez-alt et les contributeurs de Boomerang"
-msgstr "© 2026 melvincouwez-alt and the Boomerang contributors"
+msgid "© 2026 MelvinCwz et les contributeurs de Boomerang"
+msgstr "© 2026 MelvinCwz and the Boomerang contributors"
 
 #: src/About.vala:36
 msgid "Code source"
@@ -231,19 +231,19 @@ msgstr "Companion apps"
 
 #: src/About.vala:81
 msgid ""
-"Agenda, melvincouwez-alt (GPL-3.0-or-later) https://github.com/melvincouwez-alt/"
+"Agenda, MelvinCwz (GPL-3.0-or-later) https://github.com/Melvin-Cwz/"
 "agenda"
 msgstr ""
-"Agenda, melvincouwez-alt (GPL-3.0-or-later) https://github.com/melvincouwez-alt/"
+"Agenda, MelvinCwz (GPL-3.0-or-later) https://github.com/Melvin-Cwz/"
 "agenda"
 
 #: src/About.vala:82
 msgid ""
 "Cassette, issue de Sidra de Martin Wimpress, sur CastLabs Electron "
-"(BlueOak-1.0.0) https://github.com/melvincouwez-alt/cassette"
+"(BlueOak-1.0.0) https://github.com/Melvin-Cwz/cassette"
 msgstr ""
 "Cassette, forked from Sidra by Martin Wimpress, built on CastLabs Electron "
-"(BlueOak-1.0.0) https://github.com/melvincouwez-alt/cassette"
+"(BlueOak-1.0.0) https://github.com/Melvin-Cwz/cassette"
 
 #: src/AppChoice.vala:24 src/ServicesView.vala:104 src/WhatsNew.vala:37
 msgid "Agenda"
@@ -299,7 +299,8 @@ msgstr "Open its page in AppCenter"
 
 #: src/AppChoice.vala:182
 msgid ""
-"Pas encore installée : elle deviendra l'app par défaut une fois installée"
+"Pas encore installée : cette app deviendra l'app par défaut après son "
+"installation"
 msgstr "Not installed yet: it becomes the default app once installed"
 
 #: src/AppWindow.vala:36 src/MainWindow.vala:84 src/MainWindow.vala:99
@@ -494,7 +495,8 @@ msgid "Envoyer un message"
 msgstr "Send a Message"
 
 #: src/CallsView.vala:195
-msgid "Appel impossible : l'iPhone n'est pas relié en mains libres"
+msgid ""
+"Appel impossible : le profil mains libres de l'iPhone n'est pas connecté"
 msgstr "Cannot call: the iPhone is not linked as a hands-free device"
 
 #: src/CallsView.vala:208
@@ -502,7 +504,8 @@ msgid "Appeler depuis l'iPhone"
 msgstr "Call from the iPhone"
 
 #: src/CallsView.vala:210
-msgid "Appel indisponible : l'iPhone n'est pas relié en mains libres"
+msgid ""
+"Appel indisponible : le profil mains libres de l'iPhone n'est pas connecté"
 msgstr "Calling unavailable: the iPhone is not linked as a hands-free device"
 
 #: src/Components.vala:29 boomerangd/components.py:85
@@ -539,8 +542,8 @@ msgstr "Missing components"
 
 #: src/Components.vala:202
 msgid ""
-"Boomerang a besoin de ces paquets pour fonctionner entièrement. Le système "
-"demandera le mot de passe administrateur."
+"Boomerang a besoin de ces paquets pour que toutes ses fonctions soient "
+"disponibles. Le système demandera le mot de passe administrateur."
 msgstr ""
 "Boomerang needs these packages to work fully. The system will ask for the "
 "administrator password."
@@ -606,7 +609,7 @@ msgid "Message texte"
 msgstr "Text Message"
 
 #: src/ComposeField.vala:194
-msgid "Émoji"
+msgid "Emoji"
 msgstr "Emoji"
 
 #: src/ComposeField.vala:202
@@ -658,7 +661,7 @@ msgid "Ajouter un numéro"
 msgstr "Add a Number"
 
 #: src/ContactEditor.vala:53
-msgid "Ajouter une adresse e-mail"
+msgid "Ajouter une adresse de courriel"
 msgstr "Add an Email Address"
 
 #: src/ContactEditor.vala:71
@@ -669,7 +672,7 @@ msgstr ""
 "The card is saved in iCloud, which sends it to the iPhone within seconds."
 
 #: src/ContactEditor.vala:85
-msgid "E-mail"
+msgid "Adresse de courriel"
 msgstr "Email"
 
 #: src/ContactEditor.vala:88 src/WebShortcuts.vala:26
@@ -778,7 +781,7 @@ msgstr "Read over Bluetooth, with a local cache"
 
 #: src/ContactsView.vala:437
 msgid ""
-"Aucune modification possible. Simple : repose seulement sur la connexion "
+"Les fiches ne sont pas modifiables. Ce mode utilise seulement la connexion "
 "avec votre iPhone."
 msgstr "No changes possible. Simple: relies only on the link with your iPhone."
 
@@ -788,8 +791,9 @@ msgstr "Manage through iCloud"
 
 #: src/ContactsView.vala:439
 msgid ""
-"Créer, modifier et supprimer des fiches. Nécessite le compte iCloud "
-"(Services Apple) et Internet ; iCloud transmet les changements à l'iPhone."
+"Créer, modifier et supprimer des fiches. Ce mode nécessite le compte iCloud "
+"(page Services Apple) et une connexion Internet ; iCloud transmet les "
+"modifications à l'iPhone."
 msgstr ""
 "Create, edit and delete cards. Needs the iCloud account (Apple Services) and "
 "the Internet; iCloud passes the changes on to the iPhone."
@@ -819,7 +823,8 @@ msgid "Contacts de l'iPhone, lecture seule"
 msgstr "iPhone contacts, read-only"
 
 #: src/ContactsView.vala:503
-msgid "Les changements passent par iCloud, qui les transmet à l'iPhone."
+msgid ""
+"Les modifications sont enregistrées dans iCloud, qui les transmet à l'iPhone."
 msgstr "Changes go through iCloud, which passes them on to the iPhone."
 
 #: src/ContactsView.vala:504
@@ -910,8 +915,8 @@ msgstr "Importing the iPhone's photos over a USB cable."
 
 #: src/ContributorsView.vala:38
 msgid ""
-"Une app iPhone gratuite qui a aidé aux premiers appairages, quand Boomerang "
-"n'en était qu'au début."
+"Une app iPhone gratuite qui a servi aux premiers appairages, au début du "
+"développement de Boomerang."
 msgstr "A free iPhone app that helped with the first pairings, when Boomerang was just starting."
 
 #
@@ -955,8 +960,8 @@ msgstr "Keeps passwords in the system keyring, never in a file."
 
 #: src/ContributorsView.vala:55
 msgid ""
-"La façon standard de montrer l'état de synchronisation d'iCloud Drive dans "
-"Fichiers."
+"La méthode standard pour afficher l'état de synchronisation d'iCloud Drive "
+"dans Fichiers."
 msgstr "The standard way to show the sync state of iCloud Drive in Files."
 
 #
@@ -992,7 +997,7 @@ msgid "MIT, certaines parties LGPL-2.1-or-later"
 msgstr "MIT, some parts LGPL-2.1-or-later"
 
 #: src/ContributorsView.vala:67
-msgid "Relie l'iPhone, le micro et les haut-parleurs au bon moment."
+msgid "Connecte l'iPhone, le micro et les haut-parleurs au moment voulu."
 msgstr "Connects the iPhone, the microphone and the speakers at the right time."
 
 #
@@ -1013,8 +1018,8 @@ msgstr "The toolkit of all of Boomerang's windows."
 
 #: src/ContributorsView.vala:75
 msgid ""
-"Les éléments d'interface d'elementary OS, pour que Boomerang s'y sente chez "
-"lui."
+"Les éléments d'interface d'elementary OS, pour que Boomerang s'intègre au "
+"bureau."
 msgstr "elementary OS's interface widgets, so that Boomerang feels at home there."
 
 #
@@ -1023,11 +1028,11 @@ msgid "Icônes elementary"
 msgstr "elementary icons"
 
 #: src/ContributorsView.vala:79
-msgid "Les objets dont sont faites les icônes de Boomerang."
+msgid "Les éléments graphiques qui composent les icônes de Boomerang."
 msgstr "The objects Boomerang's icons are made of."
 
 #: src/ContributorsView.vala:83
-msgid "La police du texte de l'icône Calendrier, en tracés."
+msgid "La police du texte de l'icône Calendrier, convertie en tracés."
 msgstr "The font of the Calendar icon's text, as outlines."
 
 #: src/ContributorsView.vala:86
@@ -1281,7 +1286,7 @@ msgid "Monter à l'ouverture de session"
 msgstr "Mount at login"
 
 #: src/DriveOptions.vala:74
-msgid "Le dossier apparaît dès la connexion."
+msgid "Le dossier est disponible dès l'ouverture de session."
 msgstr "The folder appears as soon as you log in."
 
 #: src/DriveOptions.vala:80
@@ -1289,7 +1294,9 @@ msgid "Lecture seule"
 msgstr "Read-only"
 
 #: src/DriveOptions.vala:80
-msgid "Consulter sans risquer de modifier ou supprimer dans iCloud."
+msgid ""
+"Consulter les fichiers sans risque de modification ni de suppression dans "
+"iCloud."
 msgstr "Browse without any risk of changing or deleting anything in iCloud."
 
 #: src/DriveOptions.vala:88
@@ -1321,7 +1328,7 @@ msgid "Voir les changements d'iCloud"
 msgstr "Show iCloud changes"
 
 #: src/DriveOptions.vala:106
-msgid "Délai avant qu'un ajout fait ailleurs apparaisse."
+msgid "Délai avant qu'un fichier ajouté depuis un autre appareil apparaisse."
 msgstr "How long before something added elsewhere shows up."
 
 #: src/DriveOptions.vala:109
@@ -1329,7 +1336,7 @@ msgid "Débit maximal"
 msgstr "Maximum speed"
 
 #: src/DriveOptions.vala:109
-msgid "Utile en partage de connexion avec l'iPhone."
+msgid "Utile quand ce PC utilise le partage de connexion de l'iPhone."
 msgstr "Useful when tethering through the iPhone."
 
 #: src/DriveOptions.vala:112
@@ -1403,9 +1410,10 @@ msgstr "No Paired Headphones"
 
 #: src/HeadphonesView.vala:60
 msgid ""
-"Pour appairer vos AirPods : ouvrez le boîtier près du PC, écouteurs dedans, "
-"puis maintenez le bouton du boîtier jusqu'à ce que le voyant clignote en "
-"blanc. Choisissez-les ensuite dans les paramètres Bluetooth."
+"Pour appairer vos AirPods : ouvrez le boîtier près du PC, avec les écouteurs "
+"à l'intérieur, puis maintenez le bouton du boîtier jusqu'à ce que le voyant "
+"clignote en blanc. Choisissez ensuite les écouteurs dans les paramètres "
+"Bluetooth."
 msgstr ""
 "To pair your AirPods: open the case near the PC with the earbuds inside, "
 "then hold the button on the case until the light flashes white. Then choose "
@@ -1477,7 +1485,7 @@ msgstr "Playback resumes when you put it back."
 
 #: src/HeadphonesView.vala:233
 msgid ""
-"Un appui long sur la tige passe d'un mode coché à l'autre (au moins deux)."
+"Un appui long sur la tige alterne entre les modes cochés (deux au minimum)."
 msgstr ""
 "Pressing and holding the stem cycles through the checked modes (at least "
 "two)."
@@ -1501,8 +1509,8 @@ msgstr "Settings"
 
 #: src/HeadphonesView.vala:374
 msgid ""
-"Hors de portée ou dans le boîtier fermé. Sortez-les du boîtier pour les "
-"connecter à ce PC."
+"Les écouteurs sont hors de portée ou dans le boîtier fermé. Sortez-les du "
+"boîtier pour les connecter à ce PC."
 msgstr ""
 "Out of range or in the closed case. Take them out of the case to connect "
 "them to this PC."
@@ -1665,8 +1673,8 @@ msgstr "The iPhone's screen, and control of it from the PC"
 
 #: src/MainWindow.vala:218
 msgid ""
-"Chaque app a sa propre fenêtre et son icône. L'interrupteur l'affiche ou non "
-"dans le menu Applications."
+"Chaque app a sa propre fenêtre et son icône. L'interrupteur affiche ou "
+"masque l'app dans le menu Applications."
 msgstr ""
 "Each app has its own window and icon. The switch shows it in the "
 "Applications menu or not."
@@ -1707,8 +1715,9 @@ msgstr "Version %s, license, acknowledgements"
 
 #: src/MainWindow.vala:241
 msgid ""
-"Ces fonctionnalités reposent sur des comportements de l'iPhone pas encore "
-"vérifiés. Elles peuvent ne rien faire. Désactivées par défaut."
+"Ces fonctionnalités reposent sur des comportements de l'iPhone qui ne sont "
+"pas encore vérifiés. Elles peuvent rester sans effet. Elles sont désactivées "
+"par défaut."
 msgstr ""
 "These features rely on iPhone behaviour not yet checked. They may do "
 "nothing. Off by default."
@@ -1787,9 +1796,9 @@ msgstr "Quiet iPhone calls"
 
 #: src/MainWindow.vala:365
 msgid ""
-"Ni sonnerie, ni notification, ni fenêtre, et le son de l'appel reste sur "
-"l'iPhone. Utile quand Teams sonne déjà sur l'ordinateur : l'appel reste "
-"visible dans Téléphone."
+"Boomerang ne joue aucune sonnerie et n'affiche ni notification ni fenêtre ; "
+"le son de l'appel reste sur l'iPhone. Ce mode est utile quand Teams sonne "
+"déjà sur l'ordinateur. L'appel reste visible dans Téléphone."
 msgstr ""
 "No ring, notification or window, and the call's audio stays on the iPhone. "
 "Handy when Teams already rings on the computer: the call still shows in "
@@ -1801,8 +1810,8 @@ msgstr "Always read whole messages"
 
 #: src/MainWindow.vala:405
 msgid ""
-"Récupère tout de suite le texte complet des messages de plus de 120 "
-"caractères. Ils passent alors en lu sur l'iPhone."
+"Boomerang récupère dès leur arrivée le texte complet des messages de plus de "
+"120 caractères. Ces messages sont alors marqués comme lus sur l'iPhone."
 msgstr ""
 "Fetches the whole text of messages over 120 characters right away. They then "
 "turn read on the iPhone."
@@ -1813,9 +1822,9 @@ msgstr "Always read whole messages?"
 
 #: src/MainWindow.vala:426
 msgid ""
-"Pour avoir le texte complet d'un message non lu, Boomerang doit le "
-"télécharger : il passera en lu sur l'iPhone dès son arrivée, même si vous ne "
-"l'avez pas ouvert."
+"Pour obtenir le texte complet d'un message non lu, Boomerang doit le "
+"télécharger : le message sera marqué comme lu sur l'iPhone dès son arrivée, "
+"même si vous ne l'avez pas ouvert."
 msgstr ""
 "To get the whole text of an unread message, Boomerang has to download it: it "
 "will turn read on the iPhone as soon as it arrives, even if you have not "
@@ -1826,13 +1835,13 @@ msgid "Activer"
 msgstr "Turn on"
 
 #: src/MainWindow.vala:473 src/WhatsNew.vala:90
-msgid "Émojis automatiques"
+msgid "Emojis automatiques"
 msgstr "Automatic emojis"
 
 #: src/MainWindow.vala:475
 msgid ""
-"« :) » devient 🙂, « :D » devient 😃, « <3 » devient ❤️… Retour arrière "
-"annule."
+"« :) » devient 🙂, « :D » devient 😃, « <3 » devient ❤️… La touche Retour "
+"arrière annule la conversion."
 msgstr "“:)” becomes 🙂, “:D” becomes 😃, “<3” becomes ❤️… Backspace undoes it."
 
 #: src/MainWindow.vala:507
@@ -1841,8 +1850,8 @@ msgstr "Extended message history"
 
 #: src/MainWindow.vala:508
 msgid ""
-"Demande à l'iPhone les messages au-delà de la liste habituelle (pages "
-"suivantes, un an en arrière)"
+"Boomerang demande à l'iPhone les messages antérieurs à la liste habituelle "
+"(pages suivantes, jusqu'à un an en arrière)"
 msgstr ""
 "Asks the iPhone for messages beyond the usual list (next pages, a year back)"
 
@@ -1851,7 +1860,7 @@ msgid "Marquer comme lu sur l'iPhone"
 msgstr "Mark as read on the iPhone"
 
 #: src/MainWindow.vala:511
-msgid "Ouvrir une conversation dans Boomerang la marque lue sur l'iPhone"
+msgid "Ouvrir une conversation dans Boomerang la marque comme lue sur l'iPhone"
 msgstr "Opening a conversation in Boomerang marks it read on the iPhone"
 
 #: src/MainWindow.vala:512
@@ -1867,7 +1876,9 @@ msgid "Favoris de l'iPhone"
 msgstr "iPhone favourites"
 
 #: src/MainWindow.vala:515
-msgid "Étoile sur les contacts favoris, lus à la prochaine synchronisation"
+msgid ""
+"Une étoile signale les contacts favoris, récupérés à la prochaine "
+"synchronisation"
 msgstr "Star on favourite contacts, read at the next sync"
 
 #: src/MainWindow.vala:516 src/MirrorView.vala:97
@@ -1957,9 +1968,9 @@ msgstr "Forget this iPhone?"
 
 #: src/MainWindow.vala:689
 msgid ""
-"Ce PC efface l'appairage. Pour un nouveau départ propre, oubliez aussi ce PC "
-"sur l'iPhone (Réglages › Bluetooth › ⓘ › Oublier cet appareil), puis "
-"appairez à nouveau."
+"Boomerang supprime l'appairage sur ce PC. Pour repartir de zéro, oubliez "
+"aussi ce PC sur l'iPhone (Réglages › Bluetooth › ⓘ › Oublier cet appareil), "
+"puis appairez de nouveau les deux appareils."
 msgstr ""
 "This PC deletes the pairing. For a clean start, also forget this PC on the "
 "iPhone (Settings › Bluetooth › ⓘ › Forget This Device), then pair again."
@@ -1977,8 +1988,8 @@ msgid "Sortie du PC pour le son de l'iPhone"
 msgstr "PC output for the iPhone's sound"
 
 #: src/MainWindow.vala:765
-msgid "Refusé : vidéos et musique restent sur l'iPhone"
-msgstr "Refused: videos and music stay on the iPhone"
+msgid "Désactivé : le son des vidéos et de la musique reste sur l'iPhone"
+msgstr "Off: video and music sound stays on the iPhone"
 
 #: src/MainWindow.vala:767
 msgid "En lecture sur ce PC"
@@ -1986,7 +1997,8 @@ msgstr "Playing on this PC"
 
 #: src/MainWindow.vala:769
 msgid ""
-"Choisissez ce PC dans le bouton AirPlay de l'iPhone pour y envoyer le son"
+"Pour envoyer le son vers ce PC, choisissez-le avec le bouton AirPlay de "
+"l'iPhone"
 msgstr "Choose this PC with the iPhone's AirPlay button to send the sound here"
 
 #: src/MainWindow.vala:771 src/MainWindow.vala:830 src/MainWindow.vala:848
@@ -2171,8 +2183,9 @@ msgstr "Conversations"
 
 #: src/MessagesView.vala:576
 msgid ""
-"Premier envoi depuis ce PC : Boomerang saura alors si l'iPhone accepte "
-"l'envoi par Bluetooth. Le message est demandé en SMS, pas en iMessage."
+"Premier envoi depuis ce PC : cet envoi indique à Boomerang si l'iPhone "
+"accepte l'envoi par Bluetooth. Boomerang demande un envoi en SMS, pas en "
+"iMessage."
 msgstr ""
 "First message sent from this PC: Boomerang will then know whether the iPhone "
 "accepts sending over Bluetooth. The message is sent as an SMS, not as an "
@@ -2187,7 +2200,7 @@ msgid "Choisissez une conversation."
 msgstr "Choose a conversation."
 
 #: src/MessagesView.vala:694
-msgid "Le module Messages est désactivé dans l'onglet iPhone."
+msgid "Le module Messages et contacts est désactivé dans la page iPhone."
 msgstr "The Messages feature is turned off on the iPhone page."
 
 #: src/MessagesView.vala:697
@@ -2208,9 +2221,9 @@ msgstr "Connecting to the iPhone's messages…"
 
 #: src/MessagesView.vala:707
 msgid ""
-"L'iPhone refuse l'accès aux messages. Sur l'iPhone, ouvrez Réglages > "
-"Bluetooth, touchez ⓘ à côté de ce PC et activez « Afficher les "
-"notifications », puis réessayez."
+"L'iPhone refuse l'accès aux messages. Sur l'iPhone, ouvrez Réglages › "
+"Bluetooth, touchez ⓘ à côté de ce PC et activez « Afficher les notifications "
+"», puis réessayez."
 msgstr ""
 "The iPhone refuses access to messages. On the iPhone, open Settings > "
 "Bluetooth, tap ⓘ next to this PC and turn on “Show Notifications”, then try "
@@ -2223,8 +2236,8 @@ msgstr "The iPhone's messages are temporarily unreadable."
 #: src/MessagesView.vala:718
 msgid ""
 "Pour afficher les noms, activez « Synchroniser les contacts » dans les "
-"réglages Bluetooth de l'iPhone pour ce PC. Boomerang redemande toute seule "
-"pendant 10 minutes."
+"réglages Bluetooth de l'iPhone pour ce PC. Boomerang renouvelle la demande "
+"automatiquement pendant 10 minutes."
 msgstr ""
 "To show names, turn on “Sync Contacts” for this PC in the iPhone's Bluetooth "
 "settings. Boomerang keeps asking on its own for 10 minutes."
@@ -2280,8 +2293,8 @@ msgstr "Delete this message from Boomerang?"
 
 #: src/MessagesView.vala:1207
 msgid ""
-"Il reste sur l'iPhone : iOS ne permet pas de supprimer un message par "
-"Bluetooth. Il ne réapparaîtra pas dans Boomerang."
+"Le message reste sur l'iPhone, car iOS ne permet pas de supprimer un message "
+"par Bluetooth. Il ne réapparaîtra pas dans Boomerang."
 msgstr ""
 "It stays on the iPhone: iOS does not allow deleting a message over "
 "Bluetooth. It will not come back in Boomerang."
@@ -2315,9 +2328,9 @@ msgstr "Read the whole message?"
 
 #: src/MessagesView.vala:1332
 msgid ""
-"L'iPhone ne donne que les 120 premiers caractères d'un message non lu. Pour "
-"récupérer la suite, Boomerang doit le télécharger : le message passera alors "
-"en lu sur l'iPhone."
+"L'iPhone transmet seulement les 120 premiers caractères d'un message non lu. "
+"Pour récupérer la suite, Boomerang doit télécharger le message : il sera "
+"alors marqué comme lu sur l'iPhone."
 msgstr ""
 "The iPhone only gives the first 120 characters of an unread message. To get "
 "the rest, Boomerang has to download it: the message will then turn read on "
@@ -2346,9 +2359,9 @@ msgstr "React by SMS?"
 
 #: src/MessagesView.vala:1376
 msgid ""
-"Le Bluetooth ne transmet que du texte : la réaction part en SMS, par exemple "
-"« A adoré « à demain » ». Un iPhone récent peut l'afficher comme une "
-"réaction ; d'autres téléphones montreront simplement ce texte."
+"Le Bluetooth transmet seulement du texte : Boomerang envoie la réaction en "
+"SMS, par exemple « A adoré « à demain » ». Un iPhone récent peut l'afficher "
+"comme une réaction ; les autres téléphones affichent ce texte tel quel."
 msgstr ""
 "Bluetooth only carries text: the reaction goes out as an SMS, for example "
 "“Loved “see you tomorrow””. A recent iPhone may show it as a reaction; other "
@@ -2438,7 +2451,8 @@ msgid "Envoyé"
 msgstr "Sent"
 
 #: src/MessagesView.vala:1616
-msgid "Récupérer le texte complet (le message passera en lu sur l'iPhone)"
+msgid ""
+"Récupérer le texte complet (le message sera marqué comme lu sur l'iPhone)"
 msgstr "Fetch the whole text (the message will turn read on the iPhone)"
 
 #: src/MessagesView.vala:1700
@@ -2447,8 +2461,9 @@ msgstr "Copied"
 
 #: src/MessagesView.vala:1725
 msgid ""
-"Les conversations de groupe se lisent ici mais se répondent sur l'iPhone : "
-"le Bluetooth ne sait envoyer qu'un SMS à un seul destinataire."
+"Vous pouvez lire les conversations de groupe ici, mais il faut y répondre "
+"depuis l'iPhone : par Bluetooth, l'iPhone envoie un SMS à un seul "
+"destinataire."
 msgstr ""
 "Group conversations can be read here but are answered on the iPhone: "
 "Bluetooth can only send an SMS to a single recipient."
@@ -2461,8 +2476,8 @@ msgstr "No known phone number for this conversation: reply from the iPhone."
 
 #: src/MessagesView.vala:1736
 msgid ""
-"iPhone non connecté pour les messages : ce que vous envoyez sera gardé ici "
-"et pourra être renvoyé."
+"L'iPhone n'est pas connecté pour les messages : les messages que vous "
+"écrivez sont conservés ici et pourront être renvoyés."
 msgstr ""
 "iPhone not connected for messages: what you send will be kept here and can "
 "be sent again."
@@ -2472,12 +2487,12 @@ msgid "Le dernier envoi a été refusé par l'iPhone. Vous pouvez réessayer."
 msgstr "The iPhone refused the last message. You can try again."
 
 #: src/MessagesView.vala:1741
-msgid "Premier envoi depuis ce PC : il part en SMS par l'iPhone."
+msgid "Premier envoi depuis ce PC : l'iPhone envoie ce message en SMS."
 msgstr ""
 "First message sent from this PC: it goes out as an SMS through the iPhone."
 
 #: src/MessagesView.vala:1775
-msgid "Message non envoyé : il est gardé, touchez « Réessayer »"
+msgid "Message non envoyé mais conservé : cliquez sur « Réessayer »"
 msgstr "Message not sent: it is kept, click “Retry”"
 
 #: src/MessagesView.vala:1793
@@ -2596,7 +2611,7 @@ msgstr "Verification codes"
 #: src/OneTimeCodes.vala:89
 msgid ""
 "Quand un SMS contient un code, la notification propose « Copier le code ». "
-"Le presse-papiers est vidé au bout de 2 minutes."
+"Boomerang vide le presse-papiers au bout de 2 minutes."
 msgstr ""
 "When an SMS contains a code, the notification offers “Copy code”. The "
 "clipboard is cleared after 2 minutes."
@@ -2606,7 +2621,9 @@ msgid "Copier dès la réception"
 msgstr "Copy on arrival"
 
 #: src/OneTimeCodes.vala:99
-msgid "Le code va dans le presse-papiers dès que le SMS arrive, sans cliquer."
+msgid ""
+"Boomerang copie le code dans le presse-papiers dès l'arrivée du SMS, sans "
+"clic de votre part."
 msgstr ""
 "The code goes to the clipboard as soon as the text arrives, no click needed."
 
@@ -2620,9 +2637,9 @@ msgstr "Open the extension folder"
 
 #: src/OneTimeCodes.vala:115
 msgid ""
-"Chrome, Chromium, Edge et Firefox. Installez l'intégration, puis chargez "
-"l'extension (mode d'emploi dans le dossier). Le code n'est mis dans la page "
-"que si vous cliquez dessus."
+"Pour Chrome, Chromium, Edge et Firefox. Installez l'intégration, puis "
+"chargez l'extension (le mode d'emploi se trouve dans le dossier). "
+"L'extension insère le code dans la page seulement si vous cliquez dessus."
 msgstr ""
 "Chrome, Chromium, Edge and Firefox. Install the integration, then load the "
 "extension (instructions in the folder). The code goes into the page only "
@@ -2640,8 +2657,8 @@ msgstr "No supported browser found (Chrome, Chromium, Edge, Firefox)."
 #: src/OneTimeCodes.vala:153
 #, c-format
 msgid ""
-"Installée pour : %s. Chargez maintenant l'extension, le mode d'emploi est "
-"dans le dossier."
+"Intégration installée pour : %s. Chargez maintenant l'extension ; le mode "
+"d'emploi se trouve dans le dossier."
 msgstr ""
 "Installed for: %s. Now load the extension, the instructions are in the "
 "folder."
@@ -2669,8 +2686,8 @@ msgstr "Ringtone, repeated while the call rings"
 
 #: src/SoundsCard.vala:30
 msgid ""
-"Aucun son en mode Ne pas déranger. Si l'iPhone fait déjà sonner l'appel sur "
-"ce PC, la sonnerie de Boomerang se tait."
+"Boomerang ne joue aucun son en mode Ne pas déranger. Si l'iPhone fait déjà "
+"sonner l'appel sur ce PC, Boomerang coupe sa propre sonnerie."
 msgstr ""
 "No sound in Do Not Disturb. If the iPhone already rings the call on this PC, "
 "Boomerang's ringtone stays quiet."
@@ -2789,12 +2806,15 @@ msgid "Que voulez-vous connecter ?"
 msgstr "What would you like to connect?"
 
 #: src/Onboarding.vala:248
-msgid "Les deux sont indépendants : vous pourrez ajouter l'autre plus tard."
+msgid ""
+"Les deux connexions sont indépendantes : vous pourrez ajouter l'autre plus "
+"tard."
 msgstr "The two are independent: you can add the other one later."
 
 #: src/Onboarding.vala:264
 msgid ""
-"Une étape peut attendre : chaque réglage reste disponible dans Boomerang."
+"Vous pouvez passer une étape : chaque réglage reste disponible dans "
+"Boomerang."
 msgstr "Any step can wait: every setting stays available in Boomerang."
 
 #: src/Onboarding.vala:298
@@ -2819,21 +2839,21 @@ msgstr "Battery, noise control and settings of your AirPods."
 #: src/Onboarding.vala:307
 msgid ""
 "Messages, Téléphone, Contacts et Écouteurs sont toujours dans Boomerang. "
-"Vous pouvez aussi les avoir comme apps à part dans le menu des applications "
+"Vous pouvez aussi les afficher comme apps séparées dans le menu Applications "
 "et le dock."
 msgstr ""
 "Messages, Phone, Contacts and Headphones are always in Boomerang. You can "
 "also have them as separate apps in the Applications menu and the dock."
 
 #: src/Onboarding.vala:317
-msgid "C'est prêt"
+msgid "Configuration terminée"
 msgstr "All Set"
 
 #: src/Onboarding.vala:318
 msgid ""
-"Boomerang tourne en arrière-plan : les notifications, messages et appels "
-"arrivent même fenêtre fermée. Pour refaire cette configuration, ouvrez le "
-"menu en haut à droite de Boomerang."
+"Boomerang fonctionne en arrière-plan : les notifications, les messages et "
+"les appels arrivent même quand la fenêtre est fermée. Pour refaire cette "
+"configuration, ouvrez le menu en haut à droite de Boomerang."
 msgstr ""
 "Boomerang runs in the background: notifications, messages and calls arrive "
 "even with the window closed. To go through this setup again, open Settings "
@@ -2858,7 +2878,8 @@ msgstr ""
 #: src/PairingDialog.vala:47
 msgid ""
 "Comparez le code ci-dessous avec celui de l'iPhone. S'ils sont identiques, "
-"touchez « Jumeler » sur l'iPhone et « Le code correspond » ici."
+"touchez « Jumeler » sur l'iPhone, puis cliquez sur « Le code correspond » "
+"dans cette fenêtre."
 msgstr ""
 "Compare the code below with the one on the iPhone. If they match, tap “Pair” "
 "on the iPhone and “The code matches” here."
@@ -2881,7 +2902,7 @@ msgid "Codes différents"
 msgstr "Codes differ"
 
 #: src/PairingDialog.vala:83
-msgid "C'est fait"
+msgid "Appairage terminé"
 msgstr "Done"
 
 #: src/PairingDialog.vala:84
@@ -2912,7 +2933,7 @@ msgid "Code confirmé, appairage en cours…"
 msgstr "Code confirmed, pairing…"
 
 #: src/PairingDialog.vala:128
-msgid "Code refusé. Recommencez depuis l'iPhone si besoin."
+msgid "Code refusé. Si nécessaire, recommencez l'appairage depuis l'iPhone."
 msgstr "Code refused. Start again from the iPhone if needed."
 
 #: src/PairingDialog.vala:141 boomerangd/signin.py:280
@@ -2944,10 +2965,11 @@ msgstr "Allow messages and contacts"
 msgid ""
 "Sur l'iPhone : Réglages › Bluetooth › ⓘ à côté de « %s », activez "
 "<b>Afficher les notifications</b> (messages) et <b>Synchroniser les "
-"contacts</b> (noms, photos, journal d'appels). Ces options n'apparaissent "
-"qu'après une première demande de Boomerang : attendez quelques secondes "
-"après l'appairage. Boomerang redemande ensuite toute seule pendant 10 "
-"minutes ; <b>Vérifier</b> relance tout de suite."
+"contacts</b> (noms, photos, journal d'appels). Ces options apparaissent "
+"seulement après une première demande de Boomerang : attendez quelques "
+"secondes après l'appairage. Boomerang renouvelle ensuite la demande "
+"automatiquement pendant 10 minutes ; <b>Vérifier</b> la relance "
+"immédiatement."
 msgstr ""
 "On the iPhone: Settings › Bluetooth › ⓘ next to “%s”, turn on <b>Show "
 "Notifications</b> (messages) and <b>Sync Contacts</b> (names, photos, call "
@@ -2966,9 +2988,10 @@ msgstr "Notifications and music"
 #: src/PhoneGuide.vala:148
 #, c-format
 msgid ""
-"L'iPhone ouvre seul la liaison basse consommation après l'appairage. Sous ⓘ "
-"à côté de « %s », activez <b>Partager les notifications système</b>. Si rien "
-"n'arrive, coupez puis réactivez le Bluetooth de l'iPhone."
+"L'iPhone ouvre automatiquement la liaison Bluetooth basse consommation après "
+"l'appairage. Sous ⓘ à côté de « %s », activez <b>Partager les notifications "
+"système</b>. Si aucune notification n'arrive, désactivez puis réactivez le "
+"Bluetooth de l'iPhone."
 msgstr ""
 "The iPhone opens the low energy link by itself after pairing. Under ⓘ next "
 "to “%s”, turn on <b>Share System Notifications</b>. If nothing arrives, turn "
@@ -2980,8 +3003,9 @@ msgstr "Calls on this PC"
 
 #: src/PhoneGuide.vala:152
 msgid ""
-"Le profil mains libres se connecte seul. Les appels sonnent alors ici ; "
-"pendant l'appel, le son passe par ce PC ou reste sur l'iPhone, au choix."
+"Le profil mains libres se connecte automatiquement. Les appels sonnent alors "
+"sur ce PC ; pendant l'appel, vous choisissez si le son passe par ce PC ou "
+"reste sur l'iPhone."
 msgstr ""
 "The hands-free profile connects by itself. Calls then ring here; during a "
 "call, the sound goes through this PC or stays on the iPhone, as you choose."
@@ -3012,7 +3036,7 @@ msgstr "Mail, calendars, reminders and contacts"
 #: src/PhoneGuide.vala:199
 msgid ""
 "Saisissez votre identifiant Apple et ce mot de passe pour app : Boomerang le "
-"vérifie auprès d'Apple et le range dans le trousseau. Vos comptes "
+"vérifie auprès d'Apple et l'enregistre dans le trousseau. Vos comptes "
 "apparaissent alors dans Courriel, Tâches et Agenda."
 msgstr ""
 "Enter your Apple Account email and this app-specific password: Boomerang "
@@ -3030,9 +3054,9 @@ msgstr "iCloud Drive (optional)"
 
 #: src/PhoneGuide.vala:205
 msgid ""
-"Vos fichiers iCloud comme un dossier dans Fichiers. Demande le mot de passe "
-"du <b>compte Apple</b> et un code affiché sur l'iPhone, et la <b>Protection "
-"avancée des données</b> désactivée."
+"Vos fichiers iCloud comme un dossier dans Fichiers. La connexion demande le "
+"mot de passe du <b>compte Apple</b> et un code affiché sur l'iPhone. La "
+"<b>Protection avancée des données</b> doit être désactivée."
 msgstr ""
 "Your iCloud files as a folder in Files. Needs the <b>Apple Account password</"
 "b>, a code shown on the iPhone, and <b>Advanced Data Protection</b> turned "
@@ -3117,7 +3141,7 @@ msgid "Compte iCloud"
 msgstr "iCloud Account"
 
 #: src/ServicesView.vala:50
-msgid "Mot de passe pour app : comment faire"
+msgid "Mot de passe pour app : procédure"
 msgstr "App-specific password: how to"
 
 #: src/ServicesView.vala:57 src/ServicesView.vala:79 src/ServicesView.vala:192
@@ -3154,7 +3178,7 @@ msgid "Apple Music"
 msgstr "Apple Music"
 
 #: src/ServicesView.vala:107
-msgid "Écouter avec Cassette, votre compte Apple Music"
+msgid "Votre compte Apple Music dans l'app Cassette"
 msgstr "Listen with Cassette, with your Apple Music account"
 
 #: src/ServicesView.vala:125
@@ -3505,9 +3529,10 @@ msgstr "Apple Account password"
 
 #: boomerangd/drive.py:312
 msgid ""
-"Le mot de passe va directement à rclone, qui le garde dans une configuration "
-"chiffrée dont la clé est dans votre trousseau. Il n'est jamais écrit en "
-"clair ni transmis ailleurs qu'à Apple."
+"Le mot de passe est transmis directement à rclone, qui le conserve dans une "
+"configuration chiffrée ; la clé de chiffrement est dans votre trousseau. Le "
+"mot de passe n'est jamais écrit en clair ni transmis à un autre destinataire "
+"qu'Apple."
 msgstr ""
 "The password goes straight to rclone, which keeps it in an encrypted "
 "configuration whose key is in your keyring. It is never written in plain "
@@ -3555,9 +3580,10 @@ msgstr "rclone is needed"
 #, python-brace-format
 msgid ""
 "{service} passe par rclone 1.69 ou plus récent, absent de ce système. "
-"Boomerang peut télécharger la version officielle depuis <a href=\"https://"
-"rclone.org\">rclone.org</a> (licence MIT, environ 25 Mo) et vérifier son "
-"empreinte avant de l'installer pour vous seul."
+"Boomerang peut télécharger la version officielle depuis <a "
+"href=\"https://rclone.org\">rclone.org</a> (licence MIT, environ 25 Mo) et "
+"vérifier son empreinte avant de l'installer pour votre seul compte "
+"utilisateur."
 msgstr ""
 "{service} goes through rclone 1.69 or later, which this system lacks. "
 "Boomerang can download the official build from <a href=\"https://"
@@ -3596,20 +3622,19 @@ msgstr "Reading {service}…"
 
 #: boomerangd/drive.py:502
 #, python-brace-format
-msgid ""
-"Il apparaît dans Fichiers, dans le dossier « {folder} » (lecture seule)."
+msgid "Le dossier « {folder} » apparaît dans Fichiers, en lecture seule."
 msgstr "It appears in Files, in the “{folder}” folder (read-only)."
 
 #: boomerangd/drive.py:504
 #, python-brace-format
-msgid "Il apparaît dans Fichiers, dans le dossier « {folder} »."
+msgid "Le dossier « {folder} » apparaît dans Fichiers."
 msgstr "It appears in Files, in the “{folder}” folder."
 
 #: boomerangd/drive.py:506
 #, python-brace-format
 msgid ""
-"Le dossier « {service} » n'a pas pu être monté : voir « journalctl --user -u "
-"{unit} »."
+"Le dossier « {service} » n'a pas pu être monté : consultez « journalctl "
+"--user -u {unit} »."
 msgstr ""
 "The “{service}” folder could not be mounted: see “journalctl --user -u "
 "{unit}”."
@@ -3861,7 +3886,8 @@ msgstr "Allow {program}?"
 #: boomerangd/service.py:565
 #, python-brace-format
 msgid ""
-"« {program} » demande à Boomerang de {action}. Refusez si ce n'est pas vous."
+"« {program} » demande à Boomerang de {action}. Refusez si vous n'êtes pas à "
+"l'origine de cette demande."
 msgstr "“{program}” asks Boomerang to {action}. Refuse if it is not you."
 
 #: boomerangd/service.py:567
@@ -3902,9 +3928,9 @@ msgstr "Connect iCloud"
 
 #: boomerangd/signin.py:194
 msgid ""
-"Mail, calendriers, rappels et contacts iCloud apparaîtront dans les applis "
-"d'elementary. Utilisez un mot de passe pour app, jamais celui de votre "
-"identifiant Apple."
+"Le courriel, les agendas, les rappels et les contacts iCloud apparaîtront "
+"dans les apps d'elementary. Utilisez un mot de passe pour app, jamais le mot "
+"de passe de votre identifiant Apple."
 msgstr ""
 "iCloud mail, calendars, reminders and contacts will appear in elementary's "
 "apps. Use an app-specific password, never your Apple Account password."
@@ -3914,7 +3940,7 @@ msgid "Identifiant Apple (adresse iCloud)"
 msgstr "Apple Account (iCloud address)"
 
 #: boomerangd/signin.py:204
-msgid "Nom affiché dans vos e-mails"
+msgid "Nom affiché dans vos courriels"
 msgstr "Name shown in your emails"
 
 #: boomerangd/signin.py:206
@@ -3943,14 +3969,14 @@ msgstr "iCloud refused the Apple Account email or app-specific password."
 
 #: boomerangd/signin.py:265
 msgid ""
-"Calendriers OK, mais iCloud Mail refuse la connexion. iCloud Mail est-il "
-"activé sur ce compte ?"
+"Les agendas sont connectés, mais iCloud Mail refuse la connexion. Vérifiez "
+"qu'iCloud Mail est activé sur ce compte."
 msgstr ""
 "Calendars OK, but iCloud Mail refuses the connection. Is iCloud Mail turned "
 "on for this account?"
 
 #: boomerangd/signin.py:271
-msgid "iCloud est connecté. Ouvrez Mail ou Tâches."
+msgid "iCloud est connecté. Ouvrez Courriel ou Tâches."
 msgstr "iCloud is connected. Open Mail or Tasks."
 
 #: boomerangd/signin.py:273
@@ -4146,7 +4172,7 @@ msgid "Boomerang {version} est disponible"
 msgstr "Boomerang {version} is available"
 
 #: boomerangd/updates.py:297
-msgid "La mise à jour se trouve dans Réglages."
+msgid "Vous pouvez l'installer depuis Réglages › Mises à jour."
 msgstr "The update is in Settings."
 
 #: boomerangd/updates.py:318
@@ -4202,8 +4228,9 @@ msgstr "Mirroring recorded"
 
 #: src/WhatsNew.vala:26
 msgid ""
-"La recopie garde l'écran allumé et peut s'enregistrer en MP4 dans Vidéos. "
-"Expérimental : une balise Bluetooth aide l'iPhone à trouver le PC."
+"Pendant la recopie, l'écran reste allumé, et la recopie peut être "
+"enregistrée en MP4 dans Vidéos. Expérimental : une balise Bluetooth aide "
+"l'iPhone à trouver le PC."
 msgstr "Mirroring keeps the screen awake and can be recorded as MP4 in Videos. Experimental: a Bluetooth beacon helps the iPhone find the PC."
 
 #: src/WhatsNew.vala:28
@@ -4245,8 +4272,9 @@ msgstr ""
 
 #: src/WhatsNew.vala:38
 msgid ""
-"Installez Agenda depuis Services Apple : vos agendas iCloud par mois, par "
-"semaine ou en fil, vérifié puis installé en un clic."
+"Installez Agenda depuis Services Apple pour afficher vos agendas iCloud par "
+"mois, par semaine ou en fil. Boomerang vérifie le paquet puis l'installe en "
+"un clic."
 msgstr ""
 "Install Agenda from Apple Services: your iCloud calendars by month, by week "
 "or as a feed, checked and installed in one click."
@@ -4269,8 +4297,8 @@ msgstr "SMS codes copied"
 
 #: src/WhatsNew.vala:44
 msgid ""
-"Le code d'un SMS va dans le presse-papiers dès sa réception. Réglable dans "
-"Réglages › Codes SMS."
+"Boomerang copie le code d'un SMS dans le presse-papiers dès sa réception. Ce "
+"réglage se trouve dans Réglages › Codes SMS."
 msgstr ""
 "A text's code goes to the clipboard as soon as it arrives. Adjustable in "
 "Settings › SMS codes."
@@ -4281,8 +4309,9 @@ msgstr "Quiet calls"
 
 #: src/WhatsNew.vala:47
 msgid ""
-"Ni sonnerie, ni fenêtre, ni son sur le PC : l'appel reste sur l'iPhone. "
-"Pratique quand Teams sonne déjà. Réglages › Connexion ou barre du haut."
+"Aucune sonnerie, aucune fenêtre et aucun son sur le PC : l'appel reste sur "
+"l'iPhone. Utile quand Teams sonne déjà. Ce réglage se trouve dans Réglages › "
+"Connexion et dans la barre du haut."
 msgstr ""
 "No ring, window or audio on the PC: the call stays on the iPhone. Handy when "
 "Teams already rings. Settings › Connection or the top bar."
@@ -4307,8 +4336,8 @@ msgstr "AirPods Pro 3"
 #: src/WhatsNew.vala:53
 msgid ""
 "Contrôle du bruit, audio adaptatif et détection de conversation sont "
-"reconnus. Des écouteurs plus récents que Boomerang gardent toutes leurs "
-"commandes."
+"reconnus. Les écouteurs que Boomerang ne connaît pas encore gardent toutes "
+"leurs commandes."
 msgstr ""
 "Noise control, adaptive audio and conversation awareness are recognised. "
 "Headphones newer than Boomerang keep every control."
@@ -4320,7 +4349,7 @@ msgstr "Stronger security"
 #: src/WhatsNew.vala:56
 msgid ""
 "Le code d'appairage se confirme aussi sur le PC. Un autre programme doit "
-"vous demander avant d'appeler, d'envoyer ou d'appairer. Mises à jour, "
+"obtenir votre accord avant d'appeler, d'envoyer ou d'appairer. Mises à jour, "
 "fichiers LocalSend et recopie mieux protégés ; codes SMS liés à leur site."
 msgstr ""
 "The pairing code is confirmed on the PC too. Another program must ask you "
@@ -4346,7 +4375,7 @@ msgstr "Easier pairing"
 
 #: src/WhatsNew.vala:63
 msgid ""
-"L'iPhone trouve ce PC dans Réglages › Bluetooth, sans app en plus. La "
+"L'iPhone trouve ce PC dans Réglages › Bluetooth, sans app supplémentaire. La "
 "reconnexion est plus stable et un bouton « Oublier » permet de repartir de "
 "zéro."
 msgstr ""
@@ -4384,7 +4413,7 @@ msgstr ""
 #: src/WhatsNew.vala:73
 msgid ""
 "Batterie, lecture en cours, appel et messages non lus à côté de l'horloge. "
-"Se déconnecter une fois pour l'afficher."
+"Fermez puis rouvrez votre session pour l'afficher."
 msgstr ""
 "Battery, now playing, call and unread messages next to the clock. Log out "
 "once to show it."
@@ -4415,8 +4444,8 @@ msgstr ""
 
 #: src/WhatsNew.vala:82
 msgid ""
-"État de synchro d'iCloud Drive dans Fichiers, raccourcis vers Localiser, "
-"Notes et Masquer mon adresse e-mail."
+"État de synchronisation d'iCloud Drive dans Fichiers, raccourcis vers "
+"Localiser, Notes et Masquer mon adresse e-mail."
 msgstr ""
 "iCloud Drive sync status in Files, shortcuts to Find My, Notes and Hide My "
 "Email."
@@ -4435,15 +4464,15 @@ msgstr "Settings in tabs"
 #: src/WhatsNew.vala:88
 msgid ""
 "Connexion, Messages, Sons, Affichage, Mises à jour, Expérimental, À propos ; "
-"les sons libres de Boomerang s'essaient d'un clic."
+"un clic suffit pour écouter les sons libres de Boomerang."
 msgstr ""
 "Connection, Messages, Sounds, Display, Updates, Experimental, About; "
 "Boomerang's free sounds can be tried with one click."
 
 #: src/WhatsNew.vala:91
 msgid ""
-"« :) » devient 🙂 pendant la saisie. Retour arrière annule ; réglable dans "
-"Réglages."
+"« :) » devient 🙂 pendant la saisie. La touche Retour arrière annule la "
+"conversion ; le réglage se trouve dans Réglages."
 msgstr ""
 "“:)” becomes 🙂 as you type. Backspace undoes it; can be turned off in "
 "Settings."
@@ -4486,8 +4515,9 @@ msgstr "Whole messages"
 
 #: src/WhatsNew.vala:101
 msgid ""
-"« Tout lire » récupère la suite d'un message long non lu, ou toujours, au "
-"choix dans Réglages. Le message passe alors en lu sur l'iPhone."
+"« Tout lire » récupère la suite d'un message long non lu, à la demande ou "
+"systématiquement selon le choix fait dans Réglages. Le message est alors "
+"marqué comme lu sur l'iPhone."
 msgstr ""
 "“Read all” fetches the rest of a long unread message, or always, as set in "
 "Settings. The message then turns read on the iPhone."
@@ -4498,7 +4528,7 @@ msgstr "Sync"
 
 #: src/WhatsNew.vala:104
 msgid ""
-"Un bouton dans Messages relit les messages, les contacts et le journal "
+"Un bouton dans Messages recharge les messages, les contacts et le journal "
 "d'appels."
 msgstr "A button in Messages reloads messages, contacts and the call log."
 
@@ -4512,7 +4542,8 @@ msgstr ""
 
 #: src/WhatsNew.vala:109
 msgid ""
-"Boomerang recherche les nouvelles versions et s'installe depuis Réglages."
+"Boomerang recherche les nouvelles versions ; la mise à jour s'installe "
+"depuis Réglages."
 msgstr "Boomerang looks for new versions and installs them from Settings."
 
 #: src/WhatsNew.vala:111
@@ -4616,26 +4647,13 @@ msgstr "The indicator is not installed with this version of Boomerang."
 
 #: indicator/Indicator.vala:294
 #, c-format
-msgid "%s relié"
+msgid "%s connecté"
 msgstr "%s connected"
 
 #: indicator/Indicator.vala:295
 #, c-format
-msgid "%s non relié"
+msgid "%s non connecté"
 msgstr "%s not connected"
-
-#: indicator/Indicator.vala:303
-msgid "Non relié"
-msgstr "Not connected"
-
-#: indicator/Indicator.vala:305
-#, c-format
-msgid "Relié · batterie %d %%"
-msgstr "Connected · battery %d %%"
-
-#: indicator/Indicator.vala:307
-msgid "Relié"
-msgstr "Connected"
 
 #: indicator/Indicator.vala:321
 #, c-format
@@ -4695,8 +4713,9 @@ msgstr "Lock the PC when the iPhone moves away"
 
 #: src/HotspotProximity.vala:120
 msgid ""
-"Verrouille seulement, ne déverrouille jamais. Rien pendant un appel, ni tant "
-"que l'iPhone n'a pas été vu depuis l'ouverture de session."
+"Boomerang verrouille le PC mais ne le déverrouille jamais. Aucun "
+"verrouillage pendant un appel, ni tant que Boomerang n'a pas détecté "
+"l'iPhone depuis l'ouverture de session."
 msgstr ""
 "Only locks, never unlocks. Nothing during a call, nor before the iPhone has "
 "been seen since you logged in."
@@ -4719,8 +4738,8 @@ msgstr "Distance"
 
 #: src/HotspotProximity.vala:127
 msgid ""
-"Selon la force du signal, quand le Bluetooth la donne ; sinon, perte de la "
-"liaison (une dizaine de mètres)."
+"Mesurée d'après la force du signal quand le Bluetooth la fournit ; sinon, "
+"Boomerang attend la perte de la liaison (une dizaine de mètres)."
 msgstr ""
 "From the signal strength when Bluetooth reports it; otherwise, when the link "
 "is lost (about ten metres)."
@@ -4901,9 +4920,9 @@ msgstr "Receive and send with LocalSend"
 
 #: src/FilesView.vala:64
 msgid ""
-"Tant que c'est activé, Boomerang écoute le réseau local (port 53317). Chaque "
-"envoi vers ce PC vous est demandé, sauf depuis un appareil que vous avez "
-"choisi de toujours accepter."
+"Tant que cette option est activée, Boomerang écoute le réseau local (port "
+"53317). Boomerang vous demande d'accepter chaque envoi vers ce PC, sauf "
+"depuis un appareil que vous avez choisi de toujours accepter."
 msgstr ""
 "While this is on, Boomerang listens on the local network (port 53317). You "
 "are asked about every transfer to this PC, except from a device you chose to "
@@ -4968,9 +4987,9 @@ msgstr "Receive the iPhone's screen"
 
 #: src/MirrorView.vala:89
 msgid ""
-"Boomerang utilise UxPlay, un récepteur AirPlay libre. Il n'écoute le réseau "
-"que pendant la recopie. Fermez la fenêtre de recopie ou touchez « Arrêter » "
-"pour finir."
+"Boomerang utilise UxPlay, un récepteur AirPlay libre. UxPlay écoute le "
+"réseau seulement pendant la recopie. Pour terminer, fermez la fenêtre de "
+"recopie ou cliquez sur « Arrêter »."
 msgstr ""
 "Boomerang uses UxPlay, a free AirPlay receiver. It only listens on the "
 "network while mirroring. Close the mirroring window or press “Stop” to end."
@@ -4989,8 +5008,8 @@ msgstr "Profile"
 
 #: src/MirrorView.vala:138
 msgid ""
-"Fluide : le moins de retard, pour piloter l'iPhone. Qualité : le son reste "
-"calé sur l'image, pour une vidéo."
+"Fluide : le moins de retard possible, pour piloter l'iPhone. Qualité : le "
+"son reste synchronisé avec l'image, pour une vidéo."
 msgstr ""
 "Smooth: least delay, to control the iPhone. Quality: sound stays in sync "
 "with the picture, for a video."
@@ -5016,7 +5035,9 @@ msgid "Plein écran"
 msgstr "Full screen"
 
 #: src/MirrorView.vala:156
-msgid "Échap ou F11 dans la fenêtre de recopie pour en sortir"
+msgid ""
+"Appuyez sur Échap ou F11 dans la fenêtre de recopie pour quitter le plein "
+"écran"
 msgstr "Escape or F11 in the mirroring window to leave it"
 
 #
@@ -5033,7 +5054,9 @@ msgid "Décodage vidéo"
 msgstr "Video decoding"
 
 #: src/MirrorView.vala:172
-msgid "Choisi selon la carte graphique ; repli en logiciel en cas d'échec"
+msgid ""
+"Boomerang choisit le décodage selon la carte graphique et passe au décodage "
+"logiciel en cas d'échec"
 msgstr "Chosen from the graphics card; falls back to software on failure"
 
 #: src/MirrorView.vala:174
@@ -5078,14 +5101,14 @@ msgstr "⌘Tab: previous app"
 
 #: src/MirrorView.vala:252
 msgid ""
-"Maintenir ⌘ enfoncé pour la prochaine touche (la touche Super du PC est "
-"souvent prise par le bureau)"
+"Maintient ⌘ enfoncé pour la touche suivante (le bureau intercepte souvent la "
+"touche Super du PC)"
 msgstr ""
 "Hold ⌘ down for the next key (the PC's Super key is often taken by the "
 "desktop)"
 
 #: src/MirrorView.vala:259
-msgid "Recaler le pointeur"
+msgid "Recentrer le pointeur"
 msgstr "Re-centre the pointer"
 
 #: src/MirrorView.vala:260
@@ -5105,7 +5128,9 @@ msgid "Largeur de l'écran pour le pointeur"
 msgstr "Screen width for the pointer"
 
 #: src/MirrorView.vala:285
-msgid "Si « Recaler » ne tombe pas au centre, ajustez ces deux valeurs"
+msgid ""
+"Si « Recentrer le pointeur » ne place pas le pointeur au centre, ajustez ces "
+"deux valeurs"
 msgstr "If “Re-centre” misses the middle, adjust these two values"
 
 #: src/MirrorView.vala:287
@@ -5205,8 +5230,8 @@ msgstr "The iPhone is using Boomerang's mouse and keyboard."
 
 #: src/MirrorView.vala:481
 msgid ""
-"Publiés. Sur l'iPhone : Réglages › Bluetooth, touchez « Boomerang » sous "
-"Autres appareils (ou reconnectez-le)."
+"Souris et clavier publiés. Sur l'iPhone : Réglages › Bluetooth, touchez « "
+"Boomerang » sous Autres appareils (ou reconnectez-le)."
 msgstr ""
 "Published. On the iPhone: Settings › Bluetooth, tap “Boomerang” under Other "
 "Devices (or connect it again)."
@@ -5229,8 +5254,8 @@ msgstr "Connect the iPhone to this PC with a USB cable, then unlock it."
 
 #: src/PhotosView.vala:55
 msgid ""
-"Cet iPhone ne fait pas encore confiance à ce PC. Touchez « Faire "
-"confiance », puis « Se fier » sur l'iPhone et saisissez son code."
+"Cet iPhone ne fait pas encore confiance à ce PC. Cliquez sur « Faire "
+"confiance », puis touchez « Se fier » sur l'iPhone et saisissez son code."
 msgstr ""
 "This iPhone does not trust this PC yet. Press “Trust”, then tap “Trust” on "
 "the iPhone and enter its passcode."
@@ -5257,13 +5282,13 @@ msgstr "Importing over USB"
 
 #: src/PhotosView.vala:163
 msgid ""
-"Plus compatible, un peu moins léger. Sinon les HEIC sont gardées telles "
-"quelles."
+"Le JPEG est plus compatible mais un peu plus lourd. Sans conversion, les "
+"photos HEIC sont conservées telles quelles."
 msgstr ""
 "More compatible, slightly larger. Otherwise HEIC photos are kept as they are."
 
 #: src/PhotosView.vala:164
-msgid "Demande l'outil heif-convert (paquet libheif-examples)."
+msgid "Nécessite l'outil heif-convert (paquet libheif-examples)."
 msgstr "Needs the heif-convert tool (libheif-examples package)."
 
 #: src/PhotosView.vala:169
@@ -5525,7 +5550,10 @@ msgstr "Ctrl+F searches the open conversation, Ctrl+Shift+F all of them. Alt+↑
 msgid "Liens et réponses rapides"
 msgstr "Links and quick replies"
 
-msgid "Aperçu des liens au choix, réponses rapides à votre façon, aussi dans les notifications : Réglages › Messages. Clic droit › Exporter, en PDF ou en texte."
+msgid ""
+"Aperçu des liens au choix, réponses rapides personnalisables, aussi dans les "
+"notifications : Réglages › Messages. Clic droit › Exporter, en PDF ou en "
+"texte."
 msgstr "Optional link previews, quick replies your way, also in notifications: Settings › Messages. Right click › Export, to PDF or text."
 
 msgid "L'app Messages séparée a des barres d'en-tête elementary, et Boomerang une nouvelle icône."
@@ -5589,9 +5617,9 @@ msgid "Plus léger, nouvelle icône"
 msgstr "Lighter, with a new icon"
 
 msgid ""
-"Boomerang et son démon travaillent moins en arrière-plan : moins de commandes, "
-"moins de rafraîchissements, conversations plus rapides. Nouvelle icône dessinée "
-"comme celles d'elementary."
+"Boomerang et son démon consomment moins de ressources en arrière-plan : "
+"moins de commandes, moins de rafraîchissements, conversations plus rapides. "
+"Nouvelle icône dessinée comme celles d'elementary."
 msgstr ""
 "Boomerang and its daemon do less in the background: fewer commands, fewer "
 "refreshes, faster conversations. A new icon drawn like elementary's own."
@@ -5602,7 +5630,7 @@ msgstr "The standalone Messages app has elementary header bars."
 msgid "Messages au bon endroit"
 msgstr "Messages in the right place"
 
-msgid "Conversations à votre goût"
+msgid "Conversations personnalisées"
 msgstr "Conversations your way"
 
 msgid "Notifications par conversation"
@@ -5611,7 +5639,7 @@ msgstr "Notifications per conversation"
 msgid "Chercher dans une conversation"
 msgstr "Search a conversation"
 
-msgid "Messages façon elementary"
+msgid "Messages dans le style d'elementary"
 msgstr "Messages, elementary style"
 
 msgid "Exporter la conversation"
@@ -5688,7 +5716,9 @@ msgstr "Notifications sound (Settings)"
 msgid "Masquer le contenu"
 msgstr "Hide the content"
 
-msgid "La bannière dit seulement quelle application. Le texte reste lisible ici."
+msgid ""
+"La bannière indique seulement le nom de l'application. Le texte reste "
+"lisible dans Boomerang."
 msgstr "The banner only says which app. The text stays readable here."
 
 msgid "Nouvelle notification"

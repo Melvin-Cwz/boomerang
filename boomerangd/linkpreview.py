@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Link previews in conversations: title, description and image of a web page.
 
 Off by default ([messages] link_previews): fetching a preview tells the site that

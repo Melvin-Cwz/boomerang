@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Message cache stability: group threads, own sends, copies from notifications,
 one cache per iPhone, reused handles, cleanups (offline)."""
 

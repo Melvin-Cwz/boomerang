@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Build the Boomerang browser extension for each browser family from one source.
 
 extension/ itself is the Chromium build (Chrome, Chromium, Edge load it unpacked).

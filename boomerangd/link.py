@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Bluetooth link with the iPhone: advertisement, pairing agent, device tracking.
 
 The PC advertises itself as a Bluetooth LE accessory soliciting ANCS, so that

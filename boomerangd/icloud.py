@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 melvincouwez-alt
+# SPDX-FileCopyrightText: 2026 MelvinCwz
 """Keeps Boomerang's iCloud accounts in Evolution Data Server authenticated.
 
 EDS asks a UI client for credentials (credentials-required) and does not read

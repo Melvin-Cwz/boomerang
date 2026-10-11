@@ -35,7 +35,7 @@ L'iPhone affiche un pointeur de souris uniquement quand AssistiveTouch est activ
 - Cliquez dans le **pavé** de Recopie : le pavé devient bleu, et la souris et le clavier pilotent alors l'iPhone.
 - Déplacez la souris sur le pavé : le pointeur de l'iPhone suit. Le clic gauche équivaut à toucher l'écran, le clic droit ouvre le menu AssistiveTouch, la molette fait défiler.
 - Les touches saisies au clavier sont transmises à l'iPhone. Pour un texte plus long, utilisez le champ **Texte à taper sur l'iPhone**.
-- Le bouton **Recaler le pointeur** ramène le pointeur au centre de l'écran. Si le pointeur ne revient pas au centre, ajustez la largeur et la hauteur dans **Réglage du pointeur**.
+- Le bouton **Recentrer le pointeur** ramène le pointeur au centre de l'écran. Si le pointeur ne revient pas au centre, ajustez la largeur et la hauteur dans **Réglage du pointeur**.
 
 !tip Choisissez la même disposition de clavier sur l'iPhone que sur le PC : **Réglages › Général › Clavier › Claviers matériels › Français**.
 

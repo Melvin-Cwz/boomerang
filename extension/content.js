@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 melvincouwez-alt
+// SPDX-FileCopyrightText: 2026 MelvinCwz
 // Boomerang (alpha): below a one-time code field, offer the code the iPhone just received.
 // HTTPS top-level pages only. A code bound to a site by its SMS ("@example.com #482913")
 // is filled in by itself on that site and never offered anywhere else. Any other code
