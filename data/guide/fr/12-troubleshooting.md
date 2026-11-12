@@ -13,7 +13,14 @@ Le service d'arrière-plan est arrêté. Ouvrez le Terminal et exécutez `system
 5. En dernier recours, cliquez sur **Oublier** dans l'Aperçu, oubliez aussi l'ordinateur sur l'iPhone, puis recommencez l'[appairage](guide:link).
 
 ### Pas de notifications
-La liaison basse consommation n'est pas ouverte. Vérifiez **Partager les notifications système** (Réglages › Bluetooth › ⓘ), puis désactivez et réactivez le Bluetooth de l'iPhone. En dernier recours, l'app gratuite nRF Connect permet d'ouvrir cette liaison depuis l'iPhone : touchez **Connect** à côté de « Boomerang ».
+Boomerang reçoit les notifications par la liaison basse consommation ou, à défaut, par la liaison classique. S'il indique **Notifications interrompues** :
+
+1. Vérifiez **Partager les notifications système** (Réglages › Bluetooth › ⓘ à côté de l'ordinateur).
+2. Désactivez puis réactivez le Bluetooth de l'iPhone dans Réglages.
+3. Si rien ne change, cliquez sur **Appairer à nouveau** dans l'Aperçu. Boomerang efface ses anciennes clés et vous guide : oubliez l'ordinateur sur l'iPhone (ⓘ › **Oublier cet appareil**), puis appairez-le de nouveau.
+
+### Une notification reste ou revient
+Une notification effacée sur l'iPhone disparaît du bureau, y compris quand elle a été effacée pendant une coupure : Boomerang fait le tri une vingtaine de secondes après la reconnexion. Une notification fermée sur l'ordinateur ne revient pas, même si l'iPhone la met à jour. Si l'une d'elles reste malgré tout, signalez-le sur la page du projet.
 
 ### Messages refusés par l'iPhone
 Activez **Afficher les notifications** (Réglages › Bluetooth › ⓘ), puis cliquez sur **Vérifier** dans l'assistant.

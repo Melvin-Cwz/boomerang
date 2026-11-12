@@ -128,6 +128,15 @@ public class Boomerang.Avatar : Gtk.Widget {
         initials.label = group ? group_initials (name) : person_initials (name);
     }
 
+    /* A picture that is not a file yet (the photo just cropped in the contact editor). */
+    public void show_paintable (string name, Gdk.Paintable paintable) {
+        update_property (Gtk.AccessibleProperty.LABEL, name, -1);
+        picture.paintable = paintable;
+        picture.visible = true;
+        initials.visible = false;
+        add_css_class ("image");
+    }
+
     private static string first_letter (string word) {
         var w = word.strip ();
         if (w == "") {

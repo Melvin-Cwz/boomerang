@@ -27,6 +27,8 @@ CONNECTION_NAME = "Boomerang · iPhone"
 
 # NMActiveConnectionState
 ACTIVATING, ACTIVATED, DEACTIVATING = 1, 2, 3
+# NMConnectivityState: the network is lost when it is none or limited (a portal is not a loss).
+CONNECTIVITY_NONE, CONNECTIVITY_LIMITED, CONNECTIVITY_FULL = 1, 3, 4
 
 
 def mac_bytes(address):
@@ -64,6 +66,16 @@ class NetworkManagerClient:
                                       Gio.DBusSignalFlags.NONE, changed(True))
         Gio.bus_watch_name_on_connection(self.bus, NM, Gio.BusNameWatcherFlags.NONE,
                                          changed(True), changed(True))
+
+    def watch_connectivity(self, on_connectivity):
+        """on_connectivity(NMConnectivityState) whenever NetworkManager's Connectivity changes."""
+        def properties(_conn, _sender, _path, _iface, _signal, params):
+            changed = params.unpack()[1]
+            if "Connectivity" in changed:
+                on_connectivity(changed["Connectivity"])
+
+        self.bus.signal_subscribe(NM, "org.freedesktop.DBus.Properties", "PropertiesChanged",
+                                  NM_PATH, NM, Gio.DBusSignalFlags.NONE, properties)
 
     def _get(self, path, iface, prop):
         return self._call(path, "org.freedesktop.DBus.Properties", "Get",
@@ -141,6 +153,10 @@ class Hotspot:
             self.client.watch(self._nm_changed)
         self.device_info = device_info
         self.on_changed = on_changed
+        self.on_offer = None  # callable(): the network is lost and the iPhone could share its own
+        self.offered = False  # one offer per loss: reset when the network is back
+        if hasattr(self.client, "watch_connectivity"):
+            self.client.watch_connectivity(self.connectivity)
         self.error = ""
         self.pending = False
         self.timer = 0
@@ -151,6 +167,14 @@ class Hotspot:
             self.cached = (None, None)
         self.known = None
         self.on_changed()
+
+    def connectivity(self, value):
+        if value == CONNECTIVITY_FULL:
+            self.offered = False
+        elif value in (CONNECTIVITY_NONE, CONNECTIVITY_LIMITED) and not self.offered:
+            self.offered = True
+            if self.on_offer and self.state()["state"] == "off":
+                self.on_offer()
 
     def _find(self, address):
         # Watching NetworkManager, "no connection" is kept too (NewConnection resets it).

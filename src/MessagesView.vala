@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
- * Messages: conversations on the left, the selected thread as bubbles on the
- * right (sent on the right in the accent colour, received on the left), the
- * sender's name above received bubbles in group threads, and a reply field
- * when the iPhone lets the PC send, otherwise a line explaining why not.
+ * Personnes: one line per person on the left (the conversation, the latest call and the
+ * contact card together), the person's thread in the middle: bubbles, and the calls as
+ * pills at their place in time; the person's card on the right (ConversationDetails).
+ * Sent bubbles on the right, received on the left, the sender's name above received
+ * bubbles in group threads, and a reply field when the iPhone lets the PC send,
+ * otherwise a line explaining why not.
  */
 
 namespace Boomerang {
@@ -107,10 +109,10 @@ namespace Boomerang {
         public string number { get; private set; default = ""; }
         public bool pinned { get; private set; }
         public bool marked_unread { get; private set; }
+        public bool known { get; private set; default = true; }  // a participant is in the contacts
 
         private Gtk.Label name_label;
         private Gtk.Image pin;
-        private Gtk.Label time_label;
         private Gtk.Label snippet_label;
         private Gtk.Box dot;
         private Avatar avatar;
@@ -122,19 +124,8 @@ namespace Boomerang {
                 hexpand = true,
                 ellipsize = Pango.EllipsizeMode.END
             };
-            time_label = new Gtk.Label ("");
-            time_label.add_css_class (Granite.CssClass.DIM);
-            time_label.add_css_class (Granite.CssClass.SMALL);
-            snippet_label = new Gtk.Label ("") {
-                xalign = 0,
-                yalign = 0,
-                wrap = true,
-                wrap_mode = Pango.WrapMode.WORD_CHAR,
-                lines = 2,
-                ellipsize = Pango.EllipsizeMode.END,
-                width_chars = 20,
-                max_width_chars = 30
-            };
+            name_label.add_css_class ("person-name");
+            snippet_label = new Gtk.Label ("") { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
             snippet_label.add_css_class (Granite.CssClass.DIM);
 
             dot = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) {
@@ -145,27 +136,26 @@ namespace Boomerang {
             var dot_slot = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { width_request = 12 };
             dot_slot.append (dot);
 
-            avatar = new Avatar (40) { valign = Gtk.Align.START };
+            avatar = new Avatar (44);
 
-            pin = new Gtk.Image.from_icon_name ("view-pin-symbolic") {
+            pin = new Gtk.Image.from_icon_name ("starred-symbolic") {
                 pixel_size = 12,
                 visible = false,
-                tooltip_text = _("Épinglée")
+                tooltip_text = _("Favori")
             };
             pin.add_css_class (Granite.CssClass.DIM);
             var top = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             top.append (name_label);
             top.append (pin);
-            top.append (time_label);
-            var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { hexpand = true };
+            var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { hexpand = true, valign = Gtk.Align.CENTER };
             text.append (top);
             text.append (snippet_label);
 
-            var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
-                margin_top = 8,
-                margin_bottom = 8,
-                margin_start = 6,
-                margin_end = 12
+            var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) {
+                margin_top = 6,
+                margin_bottom = 6,
+                margin_start = 0,
+                margin_end = 10
             };
             box.append (dot_slot);
             box.append (avatar);
@@ -181,18 +171,26 @@ namespace Boomerang {
             unread = dict_uint (d, "unread");
             pinned = dict_bool (d, "pinned");
             marked_unread = dict_bool (d, "marked_unread");
+            var is_known = d.lookup_value ("known", VariantType.BOOLEAN);
+            known = is_known == null || is_known.get_boolean ();  // (older daemon: not told)
             pin.visible = pinned;
             refresh_name ();
             avatar_path = dict_string (d, "avatar");
-            avatar.show_person (title, avatar_path, is_group);
-            time_label.label = short_time (dict_int64 (d, "time"));
+            refresh_avatar ();
             var snippet = dict_string (d, "snippet").replace ("\n", " ");
             draft = dict_string (d, "draft");
-            var people = d.lookup_value ("participants", new VariantType ("as"));
-            var list = people != null ? people.dup_strv () : new string[0];
-            number = list.length == 1 && !list[0].contains ("@") && !list[0].has_prefix ("name:")
-                     ? list[0] : "";
-            if (draft != "") {
+            number = number_of (d);
+            var call = dict_string (d, "call_kind");  // the person's latest call, newer than the messages
+            snippet_label.remove_css_class ("event-missed");
+            if (call != "" && draft == "") {
+                var length = d.lookup_value ("call_duration", VariantType.INT32);
+                snippet_label.use_markup = false;
+                snippet_label.label = call_summary (call, length != null ? length.get_int32 () : -1,
+                                                    dict_int64 (d, "time"), false);
+                if (call == "missed") {
+                    snippet_label.add_css_class ("event-missed");
+                }
+            } else if (draft != "") {
                 snippet_label.use_markup = true;
                 snippet_label.label = _("<i>Brouillon :</i> ") + Markup.escape_text (draft.replace ("\n", " "));
             } else {
@@ -206,12 +204,24 @@ namespace Boomerang {
                 name_label.remove_css_class ("unread");
             }
             var a11y = unread > 0 ? ngettext ("%s, %u non lu", "%s, %u non lus", unread).printf (title, unread) : title;
-            update_property (Gtk.AccessibleProperty.LABEL, a11y, -1);
+            update_property (Gtk.AccessibleProperty.LABEL, "%s, %s".printf (a11y, snippet_label.get_text ()), -1);
+        }
+
+        /* The one phone number of a conversation with one person, else "". */
+        public static string number_of (VariantDict d) {
+            var people = d.lookup_value ("participants", new VariantType ("as"));
+            var list = people != null ? people.dup_strv () : new string[0];
+            return list.length == 1 && !list[0].contains ("@") && !list[0].has_prefix ("name:") ? list[0] : "";
         }
 
         /* The nickname and emoji chosen in Personnaliser, else the contact's name. */
         public void refresh_name () {
             name_label.label = ThreadStyle.load (thread_id).shown_name (title);
+            refresh_avatar ();
+        }
+
+        private void refresh_avatar () {
+            avatar.show_person (title, ThreadStyle.load (thread_id).picture (avatar_path), is_group);
         }
     }
 
@@ -220,11 +230,13 @@ namespace Boomerang {
         public string thread_id { get; private set; }
         public string message { get; private set; }
         public string title { get; private set; }
+        public string address { get; private set; }  // a contact with no conversation yet
         private string avatar_path;
         private bool is_group;
 
         public SearchRow (VariantDict d) {
             thread_id = dict_string (d, "thread");
+            address = dict_string (d, "address");
             message = dict_string (d, "message");
             title = dict_string (d, "name");
             avatar_path = dict_string (d, "avatar");
@@ -250,7 +262,8 @@ namespace Boomerang {
                     ellipsize = Pango.EllipsizeMode.END
                 };
                 box.append (name);
-                update_property (Gtk.AccessibleProperty.LABEL, _("Conversation avec %s").printf (title), -1);
+                update_property (Gtk.AccessibleProperty.LABEL,
+                                 thread_id == "" ? title : _("Conversation avec %s").printf (title), -1);
             } else {
                 var text = dict_bool (d, "outgoing") ? _("Vous : %s").printf (marked) : marked;
                 var excerpt = new Gtk.Label (text) {
@@ -295,10 +308,66 @@ namespace Boomerang {
 
     public delegate void VoidFunc ();
 
+    /* The « Ne plus m'avertir » choices of Messages, read once from apps.conf and read again
+       only when the file changes (they used to be parsed at every delete or reaction). */
+    private class MessagesPrefs {
+        private static HashTable<string, bool>? cache = null;
+        private static FileMonitor? monitor = null;
+
+        public static bool warns (string key) {
+            if (cache == null) {
+                cache = new HashTable<string, bool> (str_hash, str_equal);
+                follow_file ();
+            }
+            if (!cache.contains (key)) {
+                var prefs = new KeyFile ();
+                bool value = true;
+                try {
+                    prefs.load_from_file (Setup.prefs_path (), KeyFileFlags.NONE);
+                    value = prefs.get_boolean ("messages", key);
+                } catch (Error e) {
+                    // never chosen: warn
+                }
+                cache[key] = value;
+            }
+            return cache[key];
+        }
+
+        /* Written at once; other parts of Boomerang share the file, so it is read fresh first. */
+        public static void stop_warning (string key) {
+            var prefs = new KeyFile ();
+            try {
+                prefs.load_from_file (Setup.prefs_path (), KeyFileFlags.KEEP_COMMENTS);
+            } catch (Error e) {
+                // first choice
+            }
+            prefs.set_boolean ("messages", key, false);
+            try {
+                DirUtils.create_with_parents (Path.get_dirname (Setup.prefs_path ()), 0700);
+                prefs.save_to_file (Setup.prefs_path ());
+            } catch (Error e) {
+                warning ("cannot save the choice %s: %s", key, e.message);
+            }
+            warns (key);
+            cache[key] = false;
+        }
+
+        private static void follow_file () {
+            try {
+                monitor = File.new_for_path (Setup.prefs_path ()).monitor_file (FileMonitorFlags.NONE);
+                monitor.changed.connect (() => cache.remove_all ());
+            } catch (Error e) {
+                // no monitor: the choices are read once per run
+            }
+        }
+    }
+
     public class MessagesView : Gtk.Box {
         public Daemon daemon { get; construct; }
 
         private Gtk.ListBox thread_list;
+        private int list_filter = 0;           // 0 all, 1 unread, 2 senders outside the contacts
+        private Gtk.Label filter_empty;
         private Gtk.Stack list_stack;
         private Gtk.Box banner;
         private Gtk.Label banner_label;
@@ -318,15 +387,17 @@ namespace Boomerang {
         private double seen_upper = 0;     // layout size the last scroll position was judged against
         private double seen_page = 0;
         private uint stick_source = 0;
-        private Gtk.MenuButton style_button;
+        private Gtk.ToggleButton details_button;
+        private Gtk.Revealer details_panel;
+        private Gtk.ScrolledWindow details_scroll;
         private Gtk.CssProvider style_css = new Gtk.CssProvider ();
         private string? applied_css = null;
-        // The standalone Messages app: the panes carry elementary header bars with the window buttons.
-        public bool standalone { get; construct; default = false; }
         private Gtk.HeaderBar thread_bar;
+        private Gtk.Box sidebar;
+        private Variant[] calls = {};          // ListCalls, newest first
+        private Gtk.Box call_tail;             // calls newer than the last message
+        private bool details_wide = true;      // the window has room for the card on the right
         private Gtk.Box thread_title_box;
-        private Gtk.Box header_end;
-        private Gtk.ToggleButton find_button;
         private Gtk.SearchBar find_bar;
         private Gtk.SearchEntry find_entry;
         private Gtk.Label find_count;
@@ -337,7 +408,17 @@ namespace Boomerang {
         private Gtk.Button down_button;
         private Gtk.Label down_count;
         private uint unseen = 0;               // arrived while the user reads older messages
-        private int last_count = 0;
+        private string last_id = "";           // newest message shown, for the ↓ count
+        private const uint PAGE = 120;         // messages read at a time (GetMessagesPage)
+        private Variant[] shown_items = {};    // the messages on screen, oldest first
+        private bool more_older = false;       // the daemon has older ones than those shown
+        private bool loading_older = false;
+        private uint load_serial = 0;
+        private string older_for = "";         // message searched for in older pages
+        private uint older_tries = 0;
+        private double keep_from_bottom = -1;  // older bubbles added above: hold the view
+        private Gtk.Button older_button;
+        private Gtk.Box bubble_column;
         private uint unread_mark = 0;          // unread when the thread was opened: "Non lus" line
         private string unread_id = "";         // the message the line goes above, once found
         private uint next_unread = 0;
@@ -355,8 +436,10 @@ namespace Boomerang {
         private bool current_group = false;
         private bool current_can_send = false;
         private bool current_new = false;
+        private string current_avatar = "";
         private string current_number = "";  // opened from "new message", no message yet
         private Gtk.MenuButton new_button;
+        private Gtk.MenuButton filter_menu;
         private Gtk.SearchEntry search;
         private Gtk.ListBox search_list;
         private Gtk.Label search_empty;
@@ -373,13 +456,8 @@ namespace Boomerang {
         private bool threads_loaded = false;  // the list came from the daemon at least once
         private bool reload_again = false;
 
-        public MessagesView (Daemon daemon, bool standalone = false) {
-            Object (daemon: daemon, standalone: standalone, orientation: Gtk.Orientation.HORIZONTAL, spacing: 0);
-        }
-
-        /* A button at the end of the conversation header (the standalone app's Guide). */
-        public void add_header_end (Gtk.Widget widget) {
-            header_end.append (widget);
+        public MessagesView (Daemon daemon) {
+            Object (daemon: daemon, orientation: Gtk.Orientation.VERTICAL, spacing: 0);
         }
 
         construct {
@@ -390,7 +468,7 @@ namespace Boomerang {
                 var here = row as ThreadRow;
                 var above = before as ThreadRow;
                 if (here != null && here.pinned && above == null) {
-                    var label = new Gtk.Label (_("Épinglées")) {
+                    var label = new Gtk.Label (_("Favoris")) {
                         xalign = 0,
                         margin_start = 12,
                         margin_top = 6,
@@ -408,8 +486,30 @@ namespace Boomerang {
                     row.set_header (null);
                 }
             });
+            // One right-click gesture and one Menu key handler for every row (a gesture per row
+            // held its row in a closure: a cycle never freed).
+            var thread_click = new Gtk.GestureClick () { button = Gdk.BUTTON_SECONDARY };
+            thread_click.pressed.connect (on_thread_list_pressed);
+            thread_list.add_controller (thread_click);
+            var thread_keys = new Gtk.EventControllerKey ();
+            thread_keys.key_pressed.connect (on_thread_list_key);
+            thread_list.add_controller (thread_keys);
+            thread_list.set_filter_func (keep_row);
+            filter_empty = new Gtk.Label ("") {
+                wrap = true,
+                justify = Gtk.Justification.CENTER,
+                margin_top = 24,
+                margin_start = 12,
+                margin_end = 12
+            };
+            filter_empty.add_css_class (Granite.CssClass.DIM);
+            thread_list.set_placeholder (filter_empty);
             thread_list.row_selected.connect ((row) => {
                 var thread = row as ThreadRow;
+                if (thread != null && thread.thread_id == "" && current_new
+                    && number_tail (thread.number) == number_tail (current_number)) {
+                    return;  // the person with calls only, already open
+                }
                 if (thread != null && (thread.thread_id != current || current_new)) {
                     show_thread (thread);
                 }
@@ -419,8 +519,8 @@ namespace Boomerang {
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
                 vexpand = true
             };
-            var list_empty = new Granite.Placeholder (_("Aucune conversation")) {
-                description = _("Les messages de l'iPhone apparaîtront ici."),
+            var list_empty = new Granite.Placeholder (_("Personne pour l'instant")) {
+                description = _("Les messages et les appels de l'iPhone apparaîtront ici."),
                 icon = new ThemedIcon (Config.APP_ID + ".Messages")
             };
             list_stack = new Gtk.Stack ();
@@ -482,44 +582,11 @@ namespace Boomerang {
                 halign = Gtk.Align.END
             };
             new_button.add_css_class ("flat");
-            var sidebar_title = new Gtk.Label (_("Conversations")) { xalign = 0, hexpand = true };
-            sidebar_title.add_css_class (Granite.HeaderLabel.Size.H4.to_string ());
-            Gtk.Widget sidebar_header;
-            if (standalone) {
-                // As in elementary's Mail: the sidebar's header holds the left window buttons.
-                var bar = new Gtk.HeaderBar () {
-                    show_title_buttons = true,
-                    decoration_layout = MainWindow.split_layout (true),
-                    title_widget = new Gtk.Label ("") { visible = false }
-                };
-                bar.add_css_class ("flat");
-                bar.add_css_class ("brand");
-                bar.pack_start (sidebar_title);
-                bar.pack_end (new_button);
-                bar.pack_end (build_sync_button ());
-                Gtk.Settings.get_default ().notify["gtk-decoration-layout"].connect (() => {
-                    bar.decoration_layout = MainWindow.split_layout (true);
-                });
-                sidebar_header = bar;
-            } else {
-                var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
-                    margin_top = 6,
-                    margin_start = 12,
-                    margin_end = 6
-                };
-                box.append (sidebar_title);
-                box.append (build_sync_button ());
-                box.append (new_button);
-                sidebar_header = box;
-            }
-
             search = new Gtk.SearchEntry () {
-                placeholder_text = _("Rechercher"),
-                margin_top = 6,
-                margin_start = 12,
-                margin_end = 12,
-                margin_bottom = 6
+                placeholder_text = _("Nom, numéro ou mot"),
+                hexpand = true
             };
+            search.update_property (Gtk.AccessibleProperty.LABEL, _("Rechercher une personne"), -1);
             search.search_changed.connect (() => run_search.begin ());
             search.stop_search.connect (() => {
                 search.text = "";
@@ -592,6 +659,15 @@ namespace Boomerang {
                     return true;
                 })));
             shortcuts.add_shortcut (new Gtk.Shortcut (
+                Gtk.ShortcutTrigger.parse_string ("<Control>r"),
+                new Gtk.CallbackAction (() => {
+                    if (!get_mapped ()) {
+                        return false;
+                    }
+                    run_sync.begin ();
+                    return true;
+                })));
+            shortcuts.add_shortcut (new Gtk.Shortcut (
                 Gtk.ShortcutTrigger.parse_string ("<Alt>Up"),
                 new Gtk.CallbackAction (() => get_mapped () && step_thread (-1))));
             shortcuts.add_shortcut (new Gtk.Shortcut (
@@ -606,11 +682,39 @@ namespace Boomerang {
                     new_button.popup ();
                     return true;
                 })));
+            // As in Messages on the Mac: Ctrl+Tab and Ctrl+↓/↑ through the conversations, Ctrl+I
+            // details, Ctrl+Suppr delete (always confirmed), Échap closes, Ctrl+? lists them all.
+            foreach (var trigger in new string[] { "<Control>Tab", "<Control>Down", "<Control>Page_Down" }) {
+                shortcuts.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string (trigger),
+                                                          new Gtk.CallbackAction (next_thread_shortcut)));
+            }
+            foreach (var trigger in new string[] { "<Control><Shift>Tab", "<Control><Shift>ISO_Left_Tab",
+                                                   "<Control>Up", "<Control>Page_Up" }) {
+                shortcuts.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string (trigger),
+                                                          new Gtk.CallbackAction (previous_thread_shortcut)));
+            }
+            shortcuts.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string ("<Control>i"),
+                                                      new Gtk.CallbackAction (details_shortcut)));
+            shortcuts.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string ("<Control>Delete"),
+                                                      new Gtk.CallbackAction (delete_shortcut)));
+            shortcuts.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string ("Escape"),
+                                                      new Gtk.CallbackAction (escape_shortcut)));
+            shortcuts.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string ("<Control>question"),
+                                                      new Gtk.CallbackAction (help_shortcut)));
             add_controller (shortcuts);
 
-            var sidebar = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { width_request = 280 };
-            sidebar.append (sidebar_header);
-            sidebar.append (search);
+            var search_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) {
+                margin_top = 6,
+                margin_start = 12,
+                margin_end = 6,
+                margin_bottom = 6
+            };
+            search_row.append (search);
+            search_row.append (filter_button ());
+            search_row.append (new_button);
+            sidebar = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { width_request = 280 };
+            sidebar.add_css_class ("people-sidebar");
+            sidebar.append (search_row);
             sidebar.add_css_class ("messages-sidebar");
             sidebar.append (banner);
             sidebar.append (list_stack);
@@ -621,34 +725,34 @@ namespace Boomerang {
             thread_subtitle = new Gtk.Label ("") { ellipsize = Pango.EllipsizeMode.END };
             thread_subtitle.add_css_class (Granite.CssClass.DIM);
             thread_subtitle.add_css_class (Granite.CssClass.SMALL);
-            // Conversation header: an elementary header bar, small picture and name in the middle.
-            // In the Messages app this bar is the window's title bar: as low as the others.
-            thread_avatar = new Avatar (standalone ? 24 : 32);
-            // The app's bar is low: name and subtitle side by side there.
-            var titles = new Gtk.Box (standalone ? Gtk.Orientation.HORIZONTAL : Gtk.Orientation.VERTICAL,
-                                      standalone ? 8 : 0) { valign = Gtk.Align.CENTER };
+            // The person's header: the name over a discreet line, Appeler at the end.
+            thread_avatar = new Avatar (24) { visible = false };  // the card on the right shows it big
+            var titles = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
             thread_title.xalign = 0;
             thread_subtitle.xalign = 0;
             titles.append (thread_title);
             titles.append (thread_subtitle);
-            thread_title_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { visible = false };
+            thread_title_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             thread_title_box.append (thread_avatar);
             thread_title_box.append (titles);
+            // As on the iPhone: the name opens the conversation's details.
+            var title_button = new Gtk.Button () {
+                child = thread_title_box,
+                tooltip_text = _("Fiche de la personne"),
+                visible = false
+            };
+            title_button.add_css_class ("flat");
+            title_button.add_css_class ("thread-title");
+            title_button.clicked.connect (() => details_button.active = !details_button.active);
             thread_call = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { valign = Gtk.Align.CENTER };
             thread_bar = new Gtk.HeaderBar () {
-                visible = standalone,  // in the main window, only once a conversation is open
-                show_title_buttons = standalone,
-                title_widget = thread_title_box
+                visible = false,  // once a person is open
+                show_title_buttons = false,
+                title_widget = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0)
             };
+            thread_bar.pack_start (title_button);
             thread_bar.add_css_class ("flat");
             thread_bar.add_css_class ("thread-bar");
-            if (standalone) {
-                thread_bar.add_css_class ("brand");
-                thread_bar.decoration_layout = MainWindow.split_layout (false);
-                Gtk.Settings.get_default ().notify["gtk-decoration-layout"].connect (() => {
-                    thread_bar.decoration_layout = MainWindow.split_layout (false);
-                });
-            }
 
             bubbles = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) {
                 margin_top = 12,
@@ -657,12 +761,27 @@ namespace Boomerang {
                 margin_end = 12,
                 valign = Gtk.Align.END
             };
+            // Above the bubbles while older messages remain (also read on scrolling up).
+            older_button = new Gtk.Button.with_label (_("Afficher les messages plus anciens")) {
+                halign = Gtk.Align.CENTER,
+                margin_top = 12,
+                visible = false
+            };
+            older_button.add_css_class ("flat");
+            older_button.add_css_class (Granite.CssClass.SMALL);
+            older_button.clicked.connect (on_older_clicked);
+            bubble_column = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.END };
+            bubble_column.append (older_button);
+            bubble_column.append (bubbles);
+            call_tail = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { margin_start = 12, margin_end = 12, margin_bottom = 12 };
+            bubble_column.append (call_tail);
             bubble_scroll = new Gtk.ScrolledWindow () {
-                child = bubbles,
+                child = bubble_column,
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
                 vexpand = true
             };
             bubble_scroll.add_css_class ("thread-scroll");
+            install_bubble_menu ();
 
             // Back to the newest message, with how many arrived meanwhile.
             down_count = new Gtk.Label ("") { visible = false };
@@ -728,14 +847,6 @@ namespace Boomerang {
                     find_clear ();
                 }
             });
-            find_button = new Gtk.ToggleButton () {
-                icon_name = "edit-find-symbolic",
-                tooltip_text = _("Rechercher dans la conversation (Ctrl+F)"),
-                valign = Gtk.Align.CENTER
-            };
-            find_button.add_css_class ("flat");
-            find_button.bind_property ("active", find_bar, "search-mode-enabled",
-                                       BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE);
 
             entry = new ComposeField ();
             entry.submitted.connect (send);
@@ -779,57 +890,78 @@ namespace Boomerang {
 
             var thread_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
             thread_box.add_css_class ("thread-styled");
-            style_button = new Gtk.MenuButton () {
-                icon_name = "boomerang-palette-symbolic",
-                tooltip_text = _("Personnaliser la conversation"),
+            // Dropped on the conversation: text goes into the reply field, a file to LocalSend.
+            var drop = new Gtk.DropTarget (GLib.Type.INVALID, Gdk.DragAction.COPY);
+            drop.set_gtypes ({ typeof (Gdk.FileList), typeof (string) });
+            drop.drop.connect (on_drop);
+            thread_box.add_controller (drop);
+            details_button = new Gtk.ToggleButton () {
+                icon_name = "dialog-information-symbolic",
+                tooltip_text = _("Fiche de la personne (Ctrl+I)"),
                 valign = Gtk.Align.CENTER,
-                visible = false
+                visible = false,
+                active = true
             };
-            style_button.add_css_class ("flat");
-            style_button.set_create_popup_func ((button) => {
-                if (current == null) {
-                    return;
+            details_button.add_css_class ("flat");
+            details_scroll = new Gtk.ScrolledWindow () {
+                hscrollbar_policy = Gtk.PolicyType.NEVER,
+                width_request = 280,
+                vexpand = true
+            };
+            var details_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+            details_box.append (new Gtk.Separator (Gtk.Orientation.VERTICAL));
+            details_box.append (details_scroll);
+            details_panel = new Gtk.Revealer () {
+                child = details_box,
+                transition_type = Gtk.RevealerTransitionType.SLIDE_LEFT,
+                reveal_child = true
+            };
+            details_button.toggled.connect (() => {
+                if (details_button.active) {
+                    fill_details ();
                 }
-                var editor = new ThreadStyleEditor (current, ThreadStyle.load_raw (current),
-                                                    get_root () as Gtk.Window, daemon);
-                editor.changed.connect (apply_style);
-                button.popover = new Gtk.Popover () { child = editor };
+                details_panel.reveal_child = details_button.active;
             });
             Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), style_css,
                                                       Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
-            // pack_end goes right to left: the app's Guide stays at the far end.
-            header_end = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { valign = Gtk.Align.CENTER };
-            thread_bar.pack_start (style_button);
-            thread_bar.pack_end (header_end);
+            // pack_end goes right to left: details at the far end, as Apple's ⓘ.
+            thread_bar.pack_end (details_button);
             thread_bar.pack_end (thread_call);
-            thread_bar.pack_end (find_button);
-            find_button.visible = false;
             // Thin sending bar under the header, as in Apple's Messages.
             send_bar = new Gtk.ProgressBar () { visible = false };
             send_bar.add_css_class ("send-bar");
             send_bar.update_property (Gtk.AccessibleProperty.LABEL, _("Envoi du message"), -1);
             thread_box.append (find_bar);
             thread_box.append (scroll_overlay);
-            thread_box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
             thread_box.append (compose_stack);
 
-            var no_thread = new Granite.Placeholder (_("Messages")) {
-                description = _("Choisissez une conversation."),
+            var no_thread = new Granite.Placeholder (_("Personnes")) {
+                description = _("Choisissez une personne : ses messages et ses appels s'affichent ici, dans l'ordre."),
                 icon = new ThemedIcon (Config.APP_ID + ".Messages")
             };
-            content_stack = new Gtk.Stack () { hexpand = true };
-            content_stack.add_named (no_thread, "none");
+            content_stack = new Gtk.Stack () { hexpand = true, vhomogeneous = false };
+            // Scrolled: its wrapping text would otherwise make the row's minimum height exceed the natural one.
+            content_stack.add_named (new Gtk.ScrolledWindow () {
+                child = no_thread, hscrollbar_policy = Gtk.PolicyType.NEVER
+            }, "none");
             content_stack.add_named (thread_box, "thread");
+            details_panel.visible = false;  // no card while nobody is open
+            content_stack.notify["visible-child-name"].connect (() => {
+                details_panel.visible = content_stack.visible_child_name == "thread";
+            });
 
             toast = new Granite.Toast ("");
             var overlay = new Gtk.Overlay () { child = content_stack, hexpand = true, vexpand = true };
             overlay.add_overlay (toast);
+            var thread_and_details = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { vexpand = true };
+            thread_and_details.append (overlay);
+            thread_and_details.append (details_panel);
             var right = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
             right.add_css_class ("view");
             right.append (thread_bar);
             right.append (send_bar);
             right.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-            right.append (overlay);
+            right.append (thread_and_details);
 
             var paned = new Gtk.Paned (Gtk.Orientation.HORIZONTAL) {
                 start_child = sidebar,
@@ -847,7 +979,9 @@ namespace Boomerang {
             // changes: only a move at an unchanged size is the user's.
             var vadj = bubble_scroll.vadjustment;
             vadj.changed.connect (() => {
-                if (stick_bottom) {
+                if (keep_from_bottom >= 0) {
+                    queue_stick ();  // older bubbles laid out above: the same messages stay in view
+                } else if (stick_bottom) {
                     queue_stick ();
                 }
             });
@@ -860,14 +994,19 @@ namespace Boomerang {
                     }
                     return;
                 }
+                keep_from_bottom = -1;  // the user's own move
                 stick_bottom = vadj.value >= vadj.upper - vadj.page_size - 24;
                 if (stick_bottom) {
                     unseen = 0;
+                }
+                if (vadj.value < vadj.lower + 400 && more_older) {
+                    load_older.begin ();
                 }
                 update_down ();
             });
 
             daemon.threads_changed.connect (() => reload_threads.begin ());
+            daemon.calls_changed.connect (() => reload_threads.begin ());
             daemon.send_progress.connect ((thread, id, fraction) => {
                 if (thread == current) {
                     show_send_progress (fraction);
@@ -893,15 +1032,21 @@ namespace Boomerang {
             });
         }
 
-        /* Down to the newest message once the layout of this frame is done:
-           a value set in the middle of an allocation is lost. */
+        /* Down to the newest message (or, older bubbles just added above, back to the messages
+           being read) once the layout of this frame is done: a value set in the middle of an
+           allocation is lost. */
         private void queue_stick () {
             if (stick_source != 0) {
                 return;
             }
             stick_source = Idle.add (() => {
                 stick_source = 0;
-                if (stick_bottom) {
+                if (keep_from_bottom >= 0) {
+                    var adj = bubble_scroll.vadjustment;
+                    seen_upper = adj.upper;
+                    seen_page = adj.page_size;
+                    adj.value = (adj.upper - keep_from_bottom).clamp (adj.lower, adj.upper - adj.page_size);
+                } else if (stick_bottom) {
                     var adj = bubble_scroll.vadjustment;
                     seen_upper = adj.upper;
                     seen_page = adj.page_size;
@@ -927,18 +1072,14 @@ namespace Boomerang {
             var style = current != null ? ThreadStyle.load (current) : new ThreadStyle ();
             var css = style.css ();
             if (css != applied_css) {  // a display-wide provider: reloading restyles every window
-                style_css.load_from_string (css);
+                style_css.load_from_string (Style.colors (css));
                 applied_css = css;
             }
-            // A conversation with its own colour tints its header bar (white text, as the brand bar).
+            // A conversation with its own colour tints its header bar (white text).
             if (style.bubble != "") {
-                thread_bar.add_css_class ("brand");
                 thread_bar.add_css_class ("tinted");
             } else {
                 thread_bar.remove_css_class ("tinted");
-                if (!standalone) {
-                    thread_bar.remove_css_class ("brand");
-                }
             }
             for (int i = 0; ; i++) {
                 var row = thread_list.get_row_at_index (i) as ThreadRow;
@@ -949,15 +1090,43 @@ namespace Boomerang {
             }
             if (current != null) {
                 show_names (style);
+                thread_avatar.show_person (current_title, style.picture (current_avatar), current_group);
+            }
+        }
+
+        /* The details panel, rebuilt for the conversation on screen. */
+        private void fill_details () {
+            if (current == null) {
+                return;
+            }
+            var row = find_row (current);
+            var details = new ConversationDetails (daemon, current, current_title, current_avatar,
+                                                   current_group, current_group ? "" : current_number, toast,
+                                                   current_new ? (bool?) null : row != null && row.pinned);
+            details.changed.connect (apply_style);
+            details_scroll.child = details;
+        }
+
+        /* The card on the right folds away when the window gets narrow, and comes back. */
+        public override void size_allocate (int width, int height, int baseline) {
+            base.size_allocate (width, height, baseline);
+            var wide = width >= 900;
+            if (wide != details_wide) {
+                details_wide = wide;
+                Idle.add (() => {  // not while allocating
+                    details_button.active = details_wide;
+                    return Source.REMOVE;
+                });
             }
         }
 
         /* Title and subtitle of the open conversation, the nickname first when there is one. */
         private void show_names (ThreadStyle style) {
             thread_title.label = style.shown_name (current_title);
+            var number = format_address (current_number);
             thread_subtitle.label = current_group ? _("Conversation de groupe")
-                                  : current_new ? _("Nouveau message")
-                                  : style.nickname != "" ? current_title : "";
+                                  : style.nickname != "" && number != "" ? "%s · %s".printf (current_title, number)
+                                  : style.nickname != "" ? current_title : number;
             thread_subtitle.visible = thread_subtitle.label != "";
         }
 
@@ -966,12 +1135,224 @@ namespace Boomerang {
             var selected = thread_list.get_selected_row ();
             var index = selected != null ? selected.get_index () + delta : 0;
             var row = thread_list.get_row_at_index (index) as ThreadRow;
+            while (row != null && !row.get_child_visible ()) {  // left out by the list's filter
+                index += delta != 0 ? delta : 1;
+                row = thread_list.get_row_at_index (index) as ThreadRow;
+            }
             if (row == null) {
                 return false;
             }
             thread_list.select_row (row);
             row.grab_focus ();
             return true;
+        }
+
+        // --- drag and drop ---
+
+        private bool on_drop (Gtk.DropTarget target, Value value, double x, double y) {
+            if (current == null) {
+                return false;
+            }
+            if (value.holds (typeof (string))) {
+                var text = (string) value;
+                if (text == null || text.strip () == "" || compose_stack.visible_child_name != "compose") {
+                    return false;
+                }
+                entry.buffer.insert_at_cursor (text, -1);
+                entry.grab_focus ();
+                return true;
+            }
+            if (!value.holds (typeof (Gdk.FileList))) {
+                return false;
+            }
+            string[] paths = {};
+            foreach (var file in ((Gdk.FileList) value.get_boxed ()).get_files ()) {
+                if (file.get_path () != null) {
+                    paths += file.get_path ();
+                }
+            }
+            if (paths.length == 0) {
+                return false;
+            }
+            offer_localsend (paths);
+            return true;
+        }
+
+        /* The iPhone accepts no attachment in a message over Bluetooth: say so, and offer
+           LocalSend (module « Envoi de fichiers ») when it is added. */
+        private void offer_localsend (string[] paths) {
+            var added = Catalog.added (daemon, "files");
+            var name = paths.length == 1 ? Path.get_basename (paths[0]) : "";
+            var title = !added ? _("Fichier non envoyé")
+                      : paths.length == 1 ? _("Envoyer « %s » avec LocalSend ?").printf (name)
+                      : ngettext ("Envoyer %d fichier avec LocalSend ?", "Envoyer %d fichiers avec LocalSend ?",
+                                  paths.length).printf (paths.length);
+            var detail = added
+                ? _("Par Bluetooth, l'iPhone n'accepte pas de pièce jointe dans un message : le fichier "
+                  + "ne part pas dans la conversation. LocalSend l'envoie à l'app LocalSend de l'iPhone, "
+                  + "sur le même Wi-Fi ; choisissez ensuite l'iPhone dans Envoi de fichiers.")
+                : _("Par Bluetooth, l'iPhone n'accepte pas de pièce jointe dans un message. Pour envoyer "
+                  + "des fichiers à l'iPhone, ajoutez le module « Envoi de fichiers » (LocalSend) dans "
+                  + "Modules ; le fichier ne part pas dans la conversation.");
+            var dialog = new Granite.MessageDialog.with_image_from_icon_name (
+                title, detail, added ? "document-send" : "dialog-information",
+                added ? Gtk.ButtonsType.CANCEL : Gtk.ButtonsType.CLOSE) {
+                transient_for = get_root () as Gtk.Window,
+                modal = true
+            };
+            if (added) {
+                var send = dialog.add_button (_("Envoyer avec LocalSend"), Gtk.ResponseType.ACCEPT);
+                send.add_css_class (Granite.CssClass.SUGGESTED);
+            }
+            dialog.response.connect ((response) => {
+                dialog.destroy ();
+                if (response == Gtk.ResponseType.ACCEPT) {
+                    GLib.Application.get_default ().activate_action ("send-files", new Variant.strv (paths));
+                }
+            });
+            dialog.present ();
+        }
+
+        // --- list filters: all, unread, unknown senders ---
+
+        /* A small menu by the search, as in Apple's Messages: the list itself stays bare. */
+        private Gtk.Widget filter_button () {
+            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
+                margin_top = 6, margin_bottom = 6, margin_start = 6, margin_end = 6
+            };
+            filter_menu = new Gtk.MenuButton () {
+                icon_name = "view-sort-descending-symbolic",
+                tooltip_text = _("Filtrer la liste"),
+                popover = new Gtk.Popover () { child = box }
+            };
+            filter_menu.add_css_class ("flat");
+            Gtk.CheckButton? first = null;
+            string[] names = { _("Toutes les personnes"), _("Messages non lus"), _("Expéditeurs inconnus") };
+            for (int i = 0; i < names.length; i++) {
+                var button = new Gtk.CheckButton.with_label (names[i]) { group = first, active = i == 0 };
+                button.set_data<int> ("filter", i);
+                button.toggled.connect (on_filter_toggled);
+                first = first ?? button;
+                box.append (button);
+            }
+            return filter_menu;
+        }
+
+        private void on_filter_toggled (Gtk.CheckButton button) {
+            if (!button.active) {
+                return;
+            }
+            list_filter = button.get_data<int> ("filter");
+            // Not by colour alone: a filter on shows its name by the icon.
+            filter_menu.label = list_filter == 0 ? null : list_filter == 1 ? _("Non lus") : _("Inconnus");
+            if (list_filter == 0) {
+                filter_menu.icon_name = "view-sort-descending-symbolic";
+            }
+            filter_menu.popdown ();
+            filter_empty.label = list_filter == 1 ? _("Aucune conversation non lue")
+                               : list_filter == 2 ? _("Aucun expéditeur inconnu") : "";
+            thread_list.invalidate_filter ();
+            thread_list.invalidate_headers ();
+        }
+
+        /* The open conversation stays listed: reading it must not make it vanish under the pointer. */
+        private bool keep_row (Gtk.ListBoxRow row) {
+            var thread = row as ThreadRow;
+            if (thread == null || list_filter == 0 || thread.thread_id == current) {
+                return true;
+            }
+            return list_filter == 1 ? thread.unread > 0 : !thread.known;
+        }
+
+        // --- keyboard shortcuts ---
+
+        private bool next_thread_shortcut (Gtk.Widget widget, Variant? args) {
+            return get_mapped () && step_thread (1);
+        }
+
+        private bool previous_thread_shortcut (Gtk.Widget widget, Variant? args) {
+            return get_mapped () && step_thread (-1);
+        }
+
+        private bool details_shortcut (Gtk.Widget widget, Variant? args) {
+            if (!get_mapped () || current == null || !details_button.visible) {
+                return false;
+            }
+            details_button.active = !details_button.active;
+            return true;
+        }
+
+        /* In a text field Ctrl+Suppr deletes the next word, as everywhere. */
+        private bool delete_shortcut (Gtk.Widget widget, Variant? args) {
+            var focus = (get_root () as Gtk.Window)?.get_focus ();
+            if (!get_mapped () || current == null || current_new || focus is Gtk.Text || focus is Gtk.TextView) {
+                return false;
+            }
+            confirm_delete_thread (current, ThreadStyle.load (current).shown_name (current_title), true);
+            return true;
+        }
+
+        /* Échap: the search of the list (the person's card stays: Ctrl+I folds it). */
+        private bool escape_shortcut (Gtk.Widget widget, Variant? args) {
+            if (!get_mapped ()) {
+                return false;
+            }
+            if (search.text != "") {
+                search.text = "";
+                return true;
+            }
+            return false;
+        }
+
+        private bool help_shortcut (Gtk.Widget widget, Variant? args) {
+            if (!get_mapped ()) {
+                return false;
+            }
+            show_shortcuts ();
+            return true;
+        }
+
+        /* Ctrl+?: the shortcuts of Messages. */
+        private void show_shortcuts () {
+            // (Built from properties: the bindings keep these constructors private.)
+            var section = (Gtk.ShortcutsSection) Object.@new (typeof (Gtk.ShortcutsSection),
+                                                              "section-name", "messages", "title", _("Messages"));
+            add_shortcut_group (section, _("Conversations"), {
+                "<Control>n", _("Nouveau message"),
+                "<Control>Tab", _("Conversation suivante"),
+                "<Control><Shift>Tab", _("Conversation précédente"),
+                "<Control>Down", _("Conversation suivante"),
+                "<Control>Up", _("Conversation précédente"),
+                "<Control>i", _("Afficher ou masquer la fiche de la personne"),
+                "<Control>Delete", _("Supprimer la conversation de Boomerang"),
+                "Menu", _("Menu du message ou de la conversation sélectionnés"),
+                "Escape", _("Effacer la recherche")
+            });
+            add_shortcut_group (section, _("Recherche et synchronisation"), {
+                "<Control>f", _("Rechercher dans la conversation"),
+                "<Control><Shift>f", _("Rechercher dans toutes les conversations"),
+                "<Control>r", _("Synchroniser avec l'iPhone")
+            });
+            add_shortcut_group (section, _("Saisie"), {
+                "Return", _("Envoyer le message"),
+                "<Shift>Return", _("Aller à la ligne"),
+                "<Control>question", _("Afficher les raccourcis")
+            });
+            var window = (Gtk.ShortcutsWindow) Object.@new (typeof (Gtk.ShortcutsWindow),
+                                                            "transient-for", get_root () as Gtk.Window,
+                                                            "modal", true);
+            window.add_section (section);
+            window.present ();
+        }
+
+        private static void add_shortcut_group (Gtk.ShortcutsSection section, string title, string[] pairs) {
+            var group = (Gtk.ShortcutsGroup) Object.@new (typeof (Gtk.ShortcutsGroup), "title", title);
+            for (int i = 0; i + 1 < pairs.length; i += 2) {
+                group.add_shortcut ((Gtk.ShortcutsShortcut) Object.@new (typeof (Gtk.ShortcutsShortcut),
+                                                                         "accelerator", pairs[i],
+                                                                         "title", pairs[i + 1]));
+            }
+            section.add_group (group);
         }
 
         // --- search in the open conversation ---
@@ -1120,24 +1501,29 @@ namespace Boomerang {
                 return;
             }
             threads_loaded = true;
+            bool calls_ok;
+            var loaded_calls = yield daemon.try_list ("ListCalls", null, out calls_ok);
+            if (calls_ok) {
+                calls = loaded_calls;  // (failed call: the calls known stay)
+            }
             ThreadRow? to_select = null;
             var want = pending_open ?? current;
+            var people = people_of (items);
 
             // Reuse rows in order: keeps the selection and scrolling steady.
             int index = 0;
-            foreach (var item in items) {
+            foreach (var person in people) {
                 var row = thread_list.get_row_at_index (index) as ThreadRow;
                 if (row == null) {
                     row = new ThreadRow ();
-                    var menu_row = row;
-                    var click = new Gtk.GestureClick () { button = Gdk.BUTTON_SECONDARY };
-                    click.pressed.connect ((n, x, y) => show_thread_menu (menu_row, x, y));
-                    row.add_controller (click);
                     thread_list.append (row);
                 }
-                row.set_from (new VariantDict (item));
-                if (row.thread_id == want) {
+                row.set_from (person);
+                if (row.thread_id == want && want != null) {
                     to_select = row;
+                } else if (row.thread_id == "" && current_new && pending_open == null
+                           && number_tail (row.number) == number_tail (current_number)) {
+                    thread_list.select_row (row);  // the person with calls only, open (row_selected skips it)
                 }
                 index++;
             }
@@ -1145,9 +1531,13 @@ namespace Boomerang {
             while ((extra = thread_list.get_row_at_index (index)) != null) {
                 thread_list.remove (extra);
             }
+            thread_list.invalidate_filter ();
             thread_list.invalidate_headers ();
+            if (current != null) {
+                load_messages.begin (current, current_group, false);  // calls may have changed
+            }
             if (search.text.strip () == "") {
-                list_stack.visible_child_name = items.length > 0 ? "list" : "empty";
+                list_stack.visible_child_name = people.length > 0 ? "list" : "empty";
             }
 
             if (to_select != null) {
@@ -1174,6 +1564,76 @@ namespace Boomerang {
             }
         }
 
+        /* One entry per person: the conversations, each with the person's latest call when it is
+           newer than the messages, then the people known only from the call history; favourites
+           (pinned) first, then the latest event first. */
+        private VariantDict[] people_of (Variant[] threads) {
+            var latest = new HashTable<string, Variant> (str_hash, str_equal);  // number tail -> newest call
+            foreach (var call in calls) {
+                var tail = number_tail (Props.str (call, "address"));
+                var known = latest[tail];
+                if (tail != "" && (known == null || call_time (call) > call_time (known))) {
+                    latest[tail] = call;
+                }
+            }
+            var people = new GenericArray<VariantDict> ();
+            foreach (var item in threads) {
+                var d = new VariantDict (item);
+                var tail = number_tail (ThreadRow.number_of (d));
+                var call = tail != "" && !dict_bool (d, "group") ? latest[tail] : null;
+                if (call != null) {
+                    latest.remove (tail);
+                    if (call_time (call) > dict_int64 (d, "time")) {
+                        add_call (d, call);
+                    }
+                }
+                people.add (d);
+            }
+            foreach (var call in latest.get_values ()) {
+                var address = Props.str (call, "address");
+                var name = Props.str (call, "name");
+                var d = new VariantDict ();
+                d.insert_value ("id", new Variant.string (""));
+                d.insert_value ("name", new Variant.string (name != "" ? name : format_address (address)));
+                d.insert_value ("participants", new Variant.strv ({ address }));
+                d.insert_value ("avatar", new Variant.string (Props.str (call, "avatar")));
+                d.insert_value ("known", new Variant.boolean (name != ""));
+                d.insert_value ("can_send", new Variant.boolean (true));
+                add_call (d, call);
+                people.add (d);
+            }
+            people.sort_with_data ((a, b) => {
+                var pinned = (int) dict_bool (b, "pinned") - (int) dict_bool (a, "pinned");
+                return pinned != 0 ? pinned : (int) (dict_int64 (b, "time") - dict_int64 (a, "time")).clamp (-1, 1);
+            });
+            return people.data;
+        }
+
+        private static int64 call_time (Variant call) {
+            var time = call.lookup_value ("time", VariantType.INT64);
+            return time != null ? time.get_int64 () : 0;
+        }
+
+        private static void add_call (VariantDict d, Variant call) {
+            d.insert_value ("call_kind", new Variant.string (Props.str (call, "kind")));
+            var length = call.lookup_value ("duration", VariantType.INT32);
+            d.insert_value ("call_duration", new Variant.int32 (length != null ? length.get_int32 () : -1));
+            d.insert_value ("time", new Variant.int64 (call_time (call)));
+        }
+
+        /* The calls with the open person, oldest first (none in a group conversation). */
+        private Variant[] person_calls () {
+            var found = new GenericArray<Variant> ();
+            var tail = number_tail (current_number);
+            foreach (var call in calls) {
+                if (!current_group && tail != "" && number_tail (Props.str (call, "address")) == tail) {
+                    found.add (call);
+                }
+            }
+            found.sort_with_data ((a, b) => (int) (call_time (a) - call_time (b)).clamp (-1, 1));
+            return found.data;
+        }
+
         // --- search ------------------------------------------------------------------
 
         private async void run_search () {
@@ -1184,6 +1644,7 @@ namespace Boomerang {
                 return;
             }
             var items = yield daemon.call_list ("SearchMessages", new Variant ("(s)", query));
+            var cards = yield daemon.call_list ("ListContacts");
             if (serial != search_serial) {
                 return;  // typed further in the meantime
             }
@@ -1191,10 +1652,44 @@ namespace Boomerang {
             while ((old = search_list.get_first_child ()) != null) {
                 search_list.remove (old);
             }
+            // People whose name matches, then the contacts with no exchange yet, then the messages.
+            int shown = 0;
             foreach (var item in items) {
-                search_list.append (new SearchRow (new VariantDict (item)));
+                if (Props.str (item, "message") == "") {
+                    search_list.append (new SearchRow (new VariantDict (item)));
+                    shown++;
+                }
             }
-            if (items.length == 0) {
+            var listed = new GenericSet<string> (str_hash, str_equal);
+            for (int i = 0; thread_list.get_row_at_index (i) != null; i++) {
+                listed.add (number_tail (((ThreadRow) thread_list.get_row_at_index (i)).number));
+            }
+            foreach (var card in cards) {
+                var contact = Contact.from_variant (card);
+                string? phone = null;
+                foreach (var a in contact.addresses) {
+                    if (contact.is_phone (a) && phone == null) {
+                        phone = a;
+                    }
+                }
+                if (phone == null || listed.contains (number_tail (phone)) || !contact.matches (query)) {
+                    continue;
+                }
+                var d = new VariantDict ();
+                d.insert_value ("name", new Variant.string (contact.name));
+                d.insert_value ("before", new Variant.string (contact.name));
+                d.insert_value ("avatar", new Variant.string (contact.photo));
+                d.insert_value ("address", new Variant.string (phone));
+                search_list.append (new SearchRow (d));
+                shown++;
+            }
+            foreach (var item in items) {
+                if (Props.str (item, "message") != "") {
+                    search_list.append (new SearchRow (new VariantDict (item)));
+                    shown++;
+                }
+            }
+            if (shown == 0) {
                 search_empty.label = _("Aucun résultat pour « %s »").printf (query);
                 list_stack.visible_child_name = "search-empty";
             } else {
@@ -1204,6 +1699,10 @@ namespace Boomerang {
 
         /* Open the conversation of a result and bring the message into view. */
         private void open_search_hit (SearchRow hit) {
+            if (hit.thread_id == "") {
+                start_conversation (hit.address);
+                return;
+            }
             for (int i = 0; ; i++) {
                 var row = thread_list.get_row_at_index (i) as ThreadRow;
                 if (row == null) {
@@ -1233,12 +1732,22 @@ namespace Boomerang {
             Timeout.add (tries == 0 ? 60 : 120, () => {
                 var target = pending_scroll != null ? bubble_index[pending_scroll] : null;
                 if (target == null) {
-                    pending_scroll = null;
+                    // Older than the pages read: read further back (up to 5 000 messages).
+                    if (pending_scroll != null && pending_scroll != older_for) {
+                        older_for = pending_scroll;
+                        older_tries = 0;
+                    }
+                    if (pending_scroll != null && more_older && older_tries < 25) {
+                        older_tries++;
+                        load_older.begin ();  // shows them, then comes back here
+                    } else if (!loading_older) {
+                        pending_scroll = null;
+                    }
                     return Source.REMOVE;
                 }
                 Graphene.Point where = Graphene.Point () { x = 0, y = 0 };
                 var placed = target.get_height () > 0
-                             && target.compute_point (bubbles, Graphene.Point () { x = 0, y = 0 }, out where);
+                             && target.compute_point (bubble_column, Graphene.Point () { x = 0, y = 0 }, out where);
                 if (!placed) {
                     if (tries < 10) {
                         scroll_to_pending (tries + 1);
@@ -1250,7 +1759,8 @@ namespace Boomerang {
                 pending_scroll = null;
                 var adj = bubble_scroll.vadjustment;
                 stick_bottom = false;
-                adj.value = (where.y + bubbles.margin_top - adj.page_size / 3)
+                keep_from_bottom = -1;
+                adj.value = (where.y - adj.page_size / 3)
                             .clamp (adj.lower, adj.upper - adj.page_size);
                 if (pending_flash) {
                     target.add_css_class ("search-flash");
@@ -1265,6 +1775,40 @@ namespace Boomerang {
             });
         }
 
+        private void on_thread_list_pressed (Gtk.GestureClick click, int n, double x, double y) {
+            var row = thread_list.get_row_at_y ((int) y) as ThreadRow;
+            if (row == null) {
+                return;
+            }
+            click.set_state (Gtk.EventSequenceState.CLAIMED);
+            Graphene.Point at;
+            if (!thread_list.compute_point (row, Graphene.Point () { x = (float) x, y = (float) y }, out at)) {
+                at = Graphene.Point () { x = 0, y = 0 };
+            }
+            show_thread_menu (row, at.x, at.y);
+        }
+
+        /* Menu key or Maj+F10 on a conversation: the same menu as the right click. */
+        private bool on_thread_list_key (Gtk.EventControllerKey keys, uint keyval, uint code,
+                                         Gdk.ModifierType state) {
+            if (!is_menu_key (keyval, state)) {
+                return false;
+            }
+            var focus = (get_root () as Gtk.Window)?.get_focus ();
+            var row = focus as ThreadRow ?? (focus != null ? focus.get_ancestor (typeof (ThreadRow)) as ThreadRow : null)
+                      ?? thread_list.get_selected_row () as ThreadRow;
+            if (row == null) {
+                return false;
+            }
+            show_thread_menu (row, row.get_width () / 2, row.get_height () / 2);
+            return true;
+        }
+
+        private static bool is_menu_key (uint keyval, Gdk.ModifierType state) {
+            return keyval == Gdk.Key.Menu
+                   || (keyval == Gdk.Key.F10 && (state & Gdk.ModifierType.SHIFT_MASK) != 0);
+        }
+
         /* Right click on a conversation: pin, read state (Boomerang only), delete. */
         private void show_thread_menu (ThreadRow row, double x, double y) {
             var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) {
@@ -1277,14 +1821,16 @@ namespace Boomerang {
                 pointing_to = { (int) x, (int) y, 1, 1 }
             };
             popover.add_css_class ("menu");
+            // The buttons live inside the popover: held strongly, it would never be freed.
+            unowned Gtk.Popover menu = popover;
             var id = row.thread_id;
             var title = row.title;
             var pinned = row.pinned;
             var unread = row.unread > 0;
 
-            var pin = menu_item (pinned ? _("Désépingler") : _("Épingler"));
+            var pin = menu_item (pinned ? _("Retirer des favoris") : _("Ajouter aux favoris"));
             pin.clicked.connect (() => {
-                popover.popdown ();
+                menu.popdown ();
                 daemon.call.begin ("PinThread", new Variant ("(sb)", id, !pinned));
             });
             box.append (pin);
@@ -1292,7 +1838,7 @@ namespace Boomerang {
             var read = menu_item (unread ? _("Marquer comme lu") : _("Marquer comme non lu"));
             read.tooltip_text = _("Dans Boomerang seulement : l'iPhone n'est pas modifié");
             read.clicked.connect (() => {
-                popover.popdown ();
+                menu.popdown ();
                 if (unread) {
                     daemon.call.begin ("MarkThreadSeen", new Variant ("(s)", id));
                     return;
@@ -1309,20 +1855,23 @@ namespace Boomerang {
             });
             box.append (read);
 
-            var look = menu_item (_("Personnaliser…"));
+            var look = menu_item (_("Fiche de la personne"));
             look.clicked.connect (() => {
-                popover.popdown ();
+                menu.popdown ();
                 if (id != current) {
-                    thread_list.select_row (row);
-                    show_thread (row);
+                    var target = find_row (id);
+                    if (target != null) {
+                        thread_list.select_row (target);
+                        show_thread (target);
+                    }
                 }
-                style_button.popup ();
+                details_button.active = true;
             });
             box.append (look);
 
             var export = menu_item (_("Exporter…"));
             export.clicked.connect (() => {
-                popover.popdown ();
+                menu.popdown ();
                 ConversationExport.run.begin (get_root () as Gtk.Window, daemon, id,
                                               ThreadStyle.load (id).shown_name (title));
             });
@@ -1331,17 +1880,26 @@ namespace Boomerang {
             box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
             var remove = menu_item (_("Supprimer la conversation…"));
             remove.clicked.connect (() => {
-                popover.popdown ();
+                menu.popdown ();
                 confirm_delete_thread (id, title);
             });
             box.append (remove);
 
             popover.set_parent (row);
             popover.closed.connect (() => Idle.add (() => {
-                popover.unparent ();
+                menu.unparent ();
                 return Source.REMOVE;
             }));
             popover.popup ();
+        }
+
+        private ThreadRow? find_row (string id) {
+            for (int i = 0; ; i++) {
+                var row = thread_list.get_row_at_index (i) as ThreadRow;
+                if (row == null || row.thread_id == id) {
+                    return row;
+                }
+            }
         }
 
         private static Gtk.Button menu_item (string text) {
@@ -1355,6 +1913,10 @@ namespace Boomerang {
         // --- thread ------------------------------------------------------------------
 
         private void show_thread (ThreadRow row) {
+            if (row.thread_id == "") {
+                start_conversation (row.number);  // calls only so far: the person's thread, empty
+                return;
+            }
             current_number = row.number;
             next_unread = row.thread_id != current ? row.unread : 0;
             show_info (row.thread_id, row.title, row.avatar_path, row.is_group, row.can_send, false);
@@ -1410,23 +1972,35 @@ namespace Boomerang {
                 unread_mark = next_unread;
                 unread_id = "";
                 unseen = 0;
-                last_count = 0;
+                last_id = "";
+                shown_items = {};
+                more_older = false;
+                keep_from_bottom = -1;
+                older_button.visible = false;
                 find_bar.search_mode_enabled = false;
             }
             next_unread = 0;
-            thread_title_box.visible = true;
+            if (changed && list_filter != 0) {
+                thread_list.invalidate_filter ();  // the conversation left goes if it no longer matches
+            }
+            thread_title_box.get_parent ().visible = true;
             thread_bar.visible = true;
-            style_button.visible = true;
-            find_button.visible = !is_new;
-            thread_avatar.show_person (title, avatar, group);
+            details_button.visible = true;
+            current_avatar = avatar;
+            thread_avatar.show_person (title, ThreadStyle.load (id).picture (avatar), group);
             Gtk.Widget? old_call;
             while ((old_call = thread_call.get_first_child ()) != null) {
                 thread_call.remove (old_call);
             }
-            if (!group && can_send && current_number != "") {
-                thread_call.append (new CallButton (daemon, current_number, toast));
+            if (!group && current_number != "") {
+                var call = new CallButton (daemon, current_number, toast);  // flat phone; the card has Appeler
+                call.update_property (Gtk.AccessibleProperty.LABEL, _("Appeler %s").printf (title), -1);
+                thread_call.append (call);
             }
             content_stack.visible_child_name = "thread";
+            if (changed && details_button.active) {
+                fill_details ();
+            }
             apply_style ();
             update_compose ();
             load_messages.begin (id, group, changed);
@@ -1456,7 +2030,10 @@ namespace Boomerang {
                         return;
                     }
                 }
-                thread_list.unselect_all ();
+                var chosen = thread_list.get_selected_row () as ThreadRow;
+                if (chosen == null || chosen.thread_id != "") {  // a person with calls only stays chosen
+                    thread_list.unselect_all ();
+                }
                 var people = d.lookup_value ("participants", new VariantType ("as"));
                 current_number = people != null && people.n_children () == 1
                                  ? people.get_child_value (0).get_string () : "";
@@ -1466,12 +2043,76 @@ namespace Boomerang {
             });
         }
 
+        /* The conversation's latest messages, again after each change. The history is read in
+           pages of PAGE: the first page on opening, older ones on scrolling up; a reload keeps
+           the oldest message on screen, so the pages already read stay. */
         private async void load_messages (string thread, bool group, bool changed) {
-            bool ok;
-            var items = yield daemon.try_list ("GetMessages", new Variant ("(s)", thread), out ok);
-            if (thread != current || !ok) {
+            var serial = ++load_serial;
+            var anchor = changed || shown_items.length == 0 ? ""
+                         : dict_string (new VariantDict (shown_items[0]), "id");
+            // Room for the messages arrived since: the oldest one shown stays first.
+            uint count = changed ? PAGE : uint.max (PAGE, (uint) shown_items.length + 50);
+            bool ok, more;
+            var items = yield daemon.get_messages_page (thread, 0, "", count, out ok, out more);
+            if (thread != current || !ok || serial != load_serial) {
                 return;  // (failed call: the bubbles on screen stay)
             }
+            if (!changed && shown_items.length > 0) {
+                var oldest = dict_string (new VariantDict (shown_items[0]), "id");
+                if (oldest != anchor) {
+                    load_messages.begin (thread, group, false);  // older page added meanwhile
+                    return;
+                }
+                for (int i = 1; i < items.length; i++) {
+                    if (dict_string (new VariantDict (items[i]), "id") == anchor) {
+                        items = items[i:items.length];
+                        more = true;
+                        break;
+                    }
+                }
+            }
+            more_older = more;
+            show_messages (thread, group, changed, items);
+        }
+
+        /* Scrolled near the top (or « Messages plus anciens »): the page before the oldest shown. */
+        private async void load_older () {
+            if (loading_older || !more_older || current == null || shown_items.length == 0) {
+                return;
+            }
+            loading_older = true;
+            update_older_button ();
+            var thread = current;
+            var oldest = new VariantDict (shown_items[0]);
+            var cursor = dict_string (oldest, "id");
+            bool ok, more;
+            var older = yield daemon.get_messages_page (thread, dict_int64 (oldest, "time"), cursor, PAGE,
+                                                        out ok, out more);
+            loading_older = false;
+            if (thread != current || !ok || shown_items.length == 0
+                || dict_string (new VariantDict (shown_items[0]), "id") != cursor) {
+                update_older_button ();
+                return;
+            }
+            more_older = more;
+            Variant[] items = older;
+            foreach (var item in shown_items) {
+                items += item;
+            }
+            // Bubbles added above: the messages being read stay where they are.
+            var adj = bubble_scroll.vadjustment;
+            keep_from_bottom = adj.upper - adj.value;
+            show_messages (thread, current_group, false, items);
+        }
+
+        private void update_older_button () {
+            older_button.visible = current != null && more_older;
+            older_button.sensitive = !loading_older;
+            older_button.label = loading_older ? _("Chargement des messages plus anciens…")
+                                               : _("Afficher les messages plus anciens");
+        }
+
+        private void show_messages (string thread, bool group, bool changed, Variant[] items) {
             // "Non lus": the line goes above the first of the messages unread at opening.
             // Found once, then kept on that message: a message arriving later does not move it.
             int unread_from = -1;
@@ -1506,93 +2147,162 @@ namespace Boomerang {
                 stick_bottom = pending_scroll == null;
             }
             // New messages while the user reads older ones: counted on the ↓ button.
-            if (!changed && !stick_bottom && items.length > last_count) {
-                for (int i = int.max (last_count, 0); i < items.length; i++) {
-                    if (!dict_bool (new VariantDict (items[i]), "outgoing")) {
+            if (!changed && !stick_bottom && last_id != "") {
+                bool after = false;
+                foreach (var item in items) {
+                    var d = new VariantDict (item);
+                    if (after && !dict_bool (d, "outgoing")) {
                         unseen++;
                     }
+                    after = after || dict_string (d, "id") == last_id;
                 }
             }
-            last_count = items.length;
+            last_id = items.length > 0 ? dict_string (new VariantDict (items[items.length - 1]), "id") : "";
 
-            // Redraw only what changed: a new message adds its bubble at the end, a change
-            // further up redraws from there on. A redraw would also destroy an open context
-            // menu (focus changes when it opens re-run this on Wayland).
+            // Redraw only what changed: a new message adds its bubble at the end, older messages
+            // add theirs at the start, a change in the middle redraws that part. A redraw would
+            // also destroy an open context menu (focus changes when it opens re-run this on Wayland).
             var head = "%s|%s|%s".printf (thread, group ? "g" : "1", unread_id);
+            // The person's calls go just before the first message that follows them; those older
+            // than the pages read wait for these pages, the newest ones follow the last message.
+            var person = person_calls ();
+            var call_start = new int[items.length + 1];
+            int next_call = 0;
+            if (more_older && items.length > 0) {
+                var oldest = dict_int64 (new VariantDict (items[0]), "time");
+                while (next_call < person.length && call_time (person[next_call]) < oldest) {
+                    next_call++;
+                }
+            }
+            for (int i = 0; i < items.length; i++) {
+                call_start[i] = next_call;
+                var time = dict_int64 (new VariantDict (items[i]), "time");
+                while (next_call < person.length && call_time (person[next_call]) <= time) {
+                    next_call++;
+                }
+            }
+            call_start[items.length] = next_call;
+            Gtk.Widget? old_call;
+            while ((old_call = call_tail.get_first_child ()) != null) {
+                call_tail.remove (old_call);
+            }
+            var tail_after = items.length > 0 ? dict_int64 (new VariantDict (items[items.length - 1]), "time") : 0;
+            for (int k = next_call; k < person.length; k++) {
+                call_tail.append (call_pill (person[k], tail_after));
+                tail_after = call_time (person[k]);
+            }
             string[] sigs = {};
-            foreach (var item in items) {
-                var d = new VariantDict (item);
+            var last_sent = -1;
+            for (int i = 0; i < items.length; i++) {
+                if (dict_bool (new VariantDict (items[i]), "outgoing")) {
+                    last_sent = i;
+                }
+            }
+            for (int i = 0; i < items.length; i++) {
+                var d = new VariantDict (items[i]);
                 // Everything a bubble shows: a reaction received, a note or a sender name
                 // arriving later must redraw it.
                 var reactions = d.lookup_value ("reactions", null);
-                sigs += "%s:%s:%s:%s:%s:%s:%s:%s:%s".printf (dict_string (d, "id"),
-                                   dict_string (d, "status"),
-                                   dict_bool (d, "complete") ? "1" : "0",
-                                   dict_string (d, "body").length.to_string (),
-                                   dict_string (d, "avatar"), dict_string (d, "sender"),
-                                   dict_int64 (d, "time").to_string (), dict_string (d, "note"),
-                                   reactions != null ? reactions.print (false) : "");
+                sigs += "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s".printf (
+                    run_end (items, i) ? (i == last_sent ? "E" : "e") : "-",
+                    dict_string (d, "id"),
+                    dict_string (d, "status"),
+                    dict_bool (d, "complete") ? "1" : "0",
+                    dict_string (d, "body").length.to_string (),
+                    dict_string (d, "avatar"), dict_string (d, "sender"),
+                    dict_int64 (d, "time").to_string (), dict_string (d, "note"),
+                    reactions != null ? reactions.print (false) : "",
+                    dict_bool (d, "attachment") ? "a" : "");
+                for (int k = call_start[i]; k < call_start[i + 1]; k++) {
+                    sigs[i] += ":c" + call_time (person[k]).to_string ();
+                }
             }
-            var from = head == rendered ? first_change (rendered_items, sigs) : 0;
-            if (from == sigs.length && from == rendered_items.length) {
-                scroll_to_pending ();
-                return;
+            int start, shown_end, now_end;
+            if (head == rendered) {
+                if (!redraw_range (rendered_items, sigs, out start, out shown_end, out now_end)) {
+                    shown_items = items;
+                    update_older_button ();
+                    scroll_to_pending ();
+                    return;
+                }
+            } else {
+                // Another conversation (or its unread line moved): everything.
+                Gtk.Widget? old;
+                while ((old = bubbles.get_first_child ()) != null) {
+                    bubbles.remove (old);
+                }
+                bubble_index.remove_all ();
+                thread_ids = {};
+                thread_bodies = {};
+                item_starts = {};
+                start = shown_end = 0;
+                now_end = sigs.length;
             }
             rendered = head;
-            rendered_items = sigs;
-            debug ("bubbles redrawn from %d of %d", from, sigs.length);  // G_MESSAGES_DEBUG=all
+            debug ("bubbles redrawn: %d to %d of %d (were %d to %d)",  // G_MESSAGES_DEBUG=all
+                   start, now_end, sigs.length, start, shown_end);
 
-            // Remove the bubbles from the first change on (all of them for another thread).
-            Gtk.Widget? child = from == 0 ? bubbles.get_first_child ()
-                              : from < item_starts.length ? item_starts[from] : null;
-            while (child != null) {
+            // The widgets of messages [start, shown_end) go; the new ones take their place.
+            Gtk.Widget? anchor = start == 0 ? null
+                               : start < item_starts.length ? item_starts[start].get_prev_sibling ()
+                               : bubbles.get_last_child ();
+            Gtk.Widget? stop = shown_end < item_starts.length ? item_starts[shown_end] : null;
+            Gtk.Widget? child = start < item_starts.length ? item_starts[start] : null;
+            while (child != null && child != stop) {
                 var next = child.get_next_sibling ();
                 bubbles.remove (child);
                 child = next;
             }
-            if (from == 0) {
-                bubble_index.remove_all ();
-            } else {
-                for (int i = from; i < thread_ids.length; i++) {
-                    bubble_index.remove (thread_ids[i]);
-                }
+            for (int i = start; i < shown_end && i < thread_ids.length; i++) {
+                bubble_index.remove (thread_ids[i]);
             }
-            thread_ids = thread_ids[0:int.min (from, thread_ids.length)];
-            thread_bodies = thread_bodies[0:int.min (from, thread_bodies.length)];
-            item_starts = item_starts[0:int.min (from, item_starts.length)];
+            string[] ids = {};
+            string[] bodies = {};
+            Gtk.Widget[] starts = {};
+            for (int i = 0; i < start; i++) {
+                ids += thread_ids[i];
+                bodies += thread_bodies[i];
+                starts += item_starts[i];
+            }
             // What the first redrawn bubble follows: the message before it.
             int64 previous_time = 0;
             string previous_sender = "";
             bool previous_outgoing = false;
-            if (from > 0) {
-                var before = new VariantDict (items[from - 1]);
+            if (start > 0) {
+                var before = new VariantDict (items[start - 1]);
                 previous_time = dict_int64 (before, "time");
                 previous_sender = dict_string (before, "sender");
                 previous_outgoing = dict_bool (before, "outgoing");
             }
-            for (int index = from; index < items.length; index++) {
+            for (int index = start; index < now_end; index++) {
                 var d = new VariantDict (items[index]);
-                var last_before = bubbles.get_last_child ();
                 var time = dict_int64 (d, "time");
                 var outgoing = dict_bool (d, "outgoing");
                 var sender = dict_string (d, "sender");
-                thread_ids += dict_string (d, "id");
-                thread_bodies += dict_string (d, "body");
-                if (index == unread_from) {
-                    bubbles.append (unread_line ());
+                ids += dict_string (d, "id");
+                bodies += dict_string (d, "body");
+                Gtk.Widget? first = null;
+                for (int k = call_start[index]; k < call_start[index + 1]; k++) {
+                    var pill = call_pill (person[k], k > call_start[index] ? call_time (person[k - 1]) : previous_time);
+                    bubbles.insert_child_after (pill, anchor);
+                    anchor = pill;
+                    first = first ?? pill;
                 }
                 var new_block = time - previous_time > 3600;
                 if (new_block) {
                     var stamp = new Gtk.Label (long_time (time)) { margin_top = 12, margin_bottom = 4 };
                     stamp.add_css_class (Granite.CssClass.DIM);
                     stamp.add_css_class (Granite.CssClass.SMALL);
-                    bubbles.append (stamp);
+                    bubbles.insert_child_after (stamp, anchor);
+                    anchor = stamp;
+                    first = first ?? stamp;
                 }
                 var show_sender = group && !outgoing
                                   && (new_block || previous_outgoing || sender != previous_sender);
                 var item_widget = bubble (d, outgoing, show_sender ? sender : null,
                                           !new_block && outgoing == previous_outgoing
-                                          && sender == previous_sender);
+                                          && sender == previous_sender,
+                                          run_end (items, index), index == last_sent);
                 if (group && !outgoing) {
                     // Apple-style: the sender's picture next to the first bubble of a run.
                     var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
@@ -1606,13 +2316,24 @@ namespace Boomerang {
                     line.append (item_widget);
                     item_widget = line;
                 }
-                bubbles.append (item_widget);
+                bubbles.insert_child_after (item_widget, anchor);
+                anchor = item_widget;
                 bubble_index[dict_string (d, "id")] = item_widget;
-                item_starts += last_before != null ? last_before.get_next_sibling () : bubbles.get_first_child ();
+                starts += first ?? item_widget;
                 previous_time = time;
                 previous_sender = sender;
                 previous_outgoing = outgoing;
             }
+            for (int i = shown_end; i < thread_ids.length; i++) {
+                ids += thread_ids[i];
+                bodies += thread_bodies[i];
+                starts += item_starts[i];
+            }
+            thread_ids = ids;
+            thread_bodies = bodies;
+            item_starts = starts;
+            rendered_items = sigs;
+            shown_items = items;
             // The adjustment's handlers keep the view on the newest message.
             if (stick_bottom) {
                 queue_stick ();
@@ -1620,48 +2341,67 @@ namespace Boomerang {
             if (find_bar.search_mode_enabled && find_hits.length > 0) {
                 find_mark ();  // the bubbles were rebuilt
             }
+            update_older_button ();
             update_down ();
             scroll_to_pending ();
         }
 
-        private static Gtk.Widget unread_line () {
-            var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { margin_top = 10, margin_bottom = 6 };
-            line.add_css_class ("unread-marker");
-            line.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { hexpand = true, valign = Gtk.Align.CENTER });
-            line.append (new Gtk.Label (_("Non lus")));
-            line.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { hexpand = true, valign = Gtk.Align.CENTER });
-            return line;
+        private void on_older_clicked () {
+            load_older.begin ();
         }
 
-        private static bool warn_on_delete () {
-            var prefs = new KeyFile ();
-            try {
-                prefs.load_from_file (Setup.prefs_path (), KeyFileFlags.NONE);
-                return prefs.get_boolean ("messages", "warn-on-delete");
-            } catch (Error e) {
+        /* A call in the thread: a pill in the middle, green when it went through, red when missed,
+           with Rappeler. The icon and the words say which, not only the colour. The day goes
+           above it when it is not the day of what comes before (previous: that time). */
+        private Gtk.Widget call_pill (Variant call, int64 previous) {
+            var kind = Props.str (call, "kind");
+            var missed = kind == "missed";
+            var length = call.lookup_value ("duration", VariantType.INT32);
+            var entry = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) { margin_top = 8, margin_bottom = 4 };
+            var day = short_time (call_time (call));
+            var day_before = previous > 0 ? short_time (previous) : "";
+            if (day != day_before && !(day.contains (":") && day_before.contains (":"))) {
+                var label = new Gtk.Label (day.contains (":") ? _("Aujourd'hui") : day);
+                label.add_css_class (Granite.CssClass.DIM);
+                label.add_css_class (Granite.CssClass.SMALL);
+                entry.append (label);
+            }
+            var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10) { halign = Gtk.Align.CENTER };
+            entry.append (box);
+            box.add_css_class ("call-pill");
+            box.add_css_class (missed ? "missed" : "done");
+            box.append (new Gtk.Image.from_icon_name (missed ? "call-missed-symbolic"
+                                                     : kind == "dialed" ? "call-outgoing-symbolic"
+                                                     : "call-incoming-symbolic"));
+            box.append (new Gtk.Label (call_summary (kind, length != null ? length.get_int32 () : -1,
+                                                     call_time (call), true)));
+            var address = Props.str (call, "address");
+            if (missed && address != "") {
+                var again = new CallButton (daemon, address, toast) { label = _("Rappeler") };
+                again.remove_css_class ("flat");
+                again.update_property (Gtk.AccessibleProperty.LABEL, _("Rappeler %s").printf (current_title), -1);
+                box.append (again);
+                box.add_css_class ("with-button");
+            }
+            return entry;
+        }
+
+        /* Last bubble of a run (same side and sender, within the hour): it gets the tail. */
+        private static bool run_end (Variant[] items, int i) {
+            if (i + 1 >= items.length) {
                 return true;
             }
-        }
-
-        private static void stop_warning_on_delete () {
-            var prefs = new KeyFile ();
-            try {
-                prefs.load_from_file (Setup.prefs_path (), KeyFileFlags.NONE);
-            } catch (Error e) {
-                // first choice
-            }
-            prefs.set_boolean ("messages", "warn-on-delete", false);
-            try {
-                DirUtils.create_with_parents (Path.get_dirname (Setup.prefs_path ()), 0700);
-                prefs.save_to_file (Setup.prefs_path ());
-            } catch (Error e) {
-                warning ("cannot save the delete warning choice: %s", e.message);
-            }
+            var d = new VariantDict (items[i]);
+            var next = new VariantDict (items[i + 1]);
+            return dict_bool (d, "outgoing") != dict_bool (next, "outgoing")
+                || dict_string (d, "sender") != dict_string (next, "sender")
+                || dict_int64 (next, "time") - dict_int64 (d, "time") > 3600
+                || dict_string (next, "note") != "";
         }
 
         /* Deletion only happens in Boomerang: say so, until the user no longer wants to be told. */
-        private void confirm (string title, string detail, owned VoidFunc on_accept) {
-            if (!warn_on_delete ()) {
+        private void confirm (string title, string detail, owned VoidFunc on_accept, bool always = false) {
+            if (!always && !MessagesPrefs.warns ("warn-on-delete")) {
                 on_accept ();
                 toast.title = _("Supprimé de Boomerang, toujours sur l'iPhone");
                 toast.send_notification ();
@@ -1679,7 +2419,7 @@ namespace Boomerang {
             dialog.response.connect ((response) => {
                 var accepted = response == Gtk.ResponseType.ACCEPT;
                 if (accepted && quiet.active) {
-                    stop_warning_on_delete ();
+                    MessagesPrefs.stop_warning ("warn-on-delete");
                 }
                 dialog.destroy ();
                 if (accepted) {
@@ -1696,11 +2436,11 @@ namespace Boomerang {
                      () => daemon.call.begin ("DeleteMessage", new Variant ("(s)", id)));
         }
 
-        private void confirm_delete_thread (string id, string title) {
+        private void confirm_delete_thread (string id, string title, bool always = false) {
             confirm (_("Supprimer la conversation avec %s ?").printf (title),
                      _("Les messages restent sur l'iPhone et ne réapparaîtront pas dans Boomerang. "
                      + "Les prochains messages s'afficheront normalement."),
-                     () => daemon.call.begin ("DeleteConversation", new Variant ("(s)", id)));
+                     () => daemon.call.begin ("DeleteConversation", new Variant ("(s)", id)), always);
         }
 
         private const string[] QUICK_REACTIONS = { "❤️", "👍", "👎", "😂", "‼️", "❓" };
@@ -1755,62 +2495,10 @@ namespace Boomerang {
             return pill;
         }
 
-        private static bool warn_on_reaction () {
-            var prefs = new KeyFile ();
-            try {
-                prefs.load_from_file (Setup.prefs_path (), KeyFileFlags.NONE);
-                return prefs.get_boolean ("messages", "warn-on-reaction");
-            } catch (Error e) {
-                return true;
-            }
-        }
-
-        private static void stop_warning_on_reaction () {
-            var prefs = new KeyFile ();
-            try {
-                prefs.load_from_file (Setup.prefs_path (), KeyFileFlags.NONE);
-            } catch (Error e) {
-                // first choice
-            }
-            prefs.set_boolean ("messages", "warn-on-reaction", false);
-            try {
-                DirUtils.create_with_parents (Path.get_dirname (Setup.prefs_path ()), 0700);
-                prefs.save_to_file (Setup.prefs_path ());
-            } catch (Error e) {
-                warning ("cannot save the reaction warning choice: %s", e.message);
-            }
-        }
-
-        private static bool warn_on_read_full () {
-            var prefs = new KeyFile ();
-            try {
-                prefs.load_from_file (Setup.prefs_path (), KeyFileFlags.NONE);
-                return prefs.get_boolean ("messages", "warn-on-read-full");
-            } catch (Error e) {
-                return true;
-            }
-        }
-
-        private static void stop_warning_on_read_full () {
-            var prefs = new KeyFile ();
-            try {
-                prefs.load_from_file (Setup.prefs_path (), KeyFileFlags.NONE);
-            } catch (Error e) {
-                // first choice
-            }
-            prefs.set_boolean ("messages", "warn-on-read-full", false);
-            try {
-                DirUtils.create_with_parents (Path.get_dirname (Setup.prefs_path ()), 0700);
-                prefs.save_to_file (Setup.prefs_path ());
-            } catch (Error e) {
-                warning ("cannot save the read warning choice: %s", e.message);
-            }
-        }
-
         /* The iPhone lists only the first 120 characters of an unread message; the whole text
            comes by downloading it, which marks it read on the iPhone. */
         private void confirm_read_full (string id, Gtk.Button button) {
-            if (!warn_on_read_full ()) {
+            if (!MessagesPrefs.warns ("warn-on-read-full")) {
                 read_full.begin (id, button);
                 return;
             }
@@ -1830,7 +2518,7 @@ namespace Boomerang {
             dialog.response.connect ((response) => {
                 var accepted = response == Gtk.ResponseType.ACCEPT;
                 if (accepted && quiet.active) {
-                    stop_warning_on_read_full ();
+                    MessagesPrefs.stop_warning ("warn-on-read-full");
                 }
                 dialog.destroy ();
                 if (accepted) {
@@ -1854,7 +2542,7 @@ namespace Boomerang {
 
         /* A reaction leaves as an SMS in the iPhone's words: say so until told not to. */
         private void react_to (string id, string emoji) {
-            if (!warn_on_reaction ()) {
+            if (!MessagesPrefs.warns ("warn-on-reaction")) {
                 send_reaction.begin (id, emoji);
                 return;
             }
@@ -1874,7 +2562,7 @@ namespace Boomerang {
             dialog.response.connect ((response) => {
                 var accepted = response == Gtk.ResponseType.ACCEPT;
                 if (accepted && quiet.active) {
-                    stop_warning_on_reaction ();
+                    MessagesPrefs.stop_warning ("warn-on-reaction");
                 }
                 dialog.destroy ();
                 if (accepted) {
@@ -1907,31 +2595,8 @@ namespace Boomerang {
             return note;
         }
 
-        /* Sync: list the iPhone's messages again, full texts, contacts and calls. */
-        private Gtk.Widget build_sync_button () {
-            var button = new Gtk.Button.from_icon_name ("view-refresh-symbolic") {
-                tooltip_text = _("Synchroniser avec l'iPhone")
-            };
-            button.add_css_class ("flat");
-            var spinner = new Gtk.Spinner () {
-                spinning = false,
-                tooltip_text = _("Synchronisation…"),
-                width_request = 16,
-                height_request = 16
-            };
-            var stack = new Gtk.Stack () {
-                transition_type = Gtk.StackTransitionType.CROSSFADE,
-                valign = Gtk.Align.CENTER
-            };
-            stack.add_named (button, "button");
-            stack.add_named (spinner, "spinner");
-            button.clicked.connect (() => run_sync.begin (stack, spinner));
-            return stack;
-        }
-
-        private async void run_sync (Gtk.Stack stack, Gtk.Spinner spinner) {
-            stack.visible_child_name = "spinner";
-            spinner.spinning = true;
+        /* Sync (Ctrl+R): list the iPhone's messages again, full texts, contacts and calls. */
+        private async void run_sync () {
             try {
                 var count = yield daemon.sync_all ();
                 toast.title = count == 0 ? _("Synchronisé : aucun nouveau message")
@@ -1942,83 +2607,213 @@ namespace Boomerang {
                 toast.title = _("Synchronisation impossible : %s").printf (e.message);
             }
             toast.send_notification ();
-            spinner.spinning = false;
-            stack.visible_child_name = "button";
             yield reload_threads ();
         }
 
-        private Gtk.Widget bubble (VariantDict d, bool outgoing, string? sender, bool follows) {
+        private static string attachment_text () {
+            return "📎 " + _("Pièce jointe, visible sur l'iPhone");
+        }
+
+        private static string attachment_hint () {
+            return _("Par Bluetooth, l'iPhone transmet le texte des messages, pas les photos ni les fichiers.");
+        }
+
+        private const string MESSAGE_KEY = "boomerang-message";
+        private const string STATUS_KEY = "boomerang-status";
+
+        /* One action group, one right-click gesture and one key handler on the conversation for
+           all its bubbles, the message id as the actions' parameter. Handlers are methods (no
+           closure holds the view or a bubble), so a bubble removed from the view is freed. */
+        private void install_bubble_menu () {
+            var actions = new SimpleActionGroup ();
+            var react = new SimpleAction ("react", new VariantType ("(ss)"));
+            react.activate.connect (on_react_action);
+            actions.add_action (react);
+            var react_other = new SimpleAction ("react-other", VariantType.STRING);
+            react_other.activate.connect (on_react_other_action);
+            actions.add_action (react_other);
+            var copy = new SimpleAction ("copy", VariantType.STRING);
+            copy.activate.connect (on_copy_action);
+            actions.add_action (copy);
+            var remove = new SimpleAction ("delete", VariantType.STRING);
+            remove.activate.connect (on_delete_action);
+            actions.add_action (remove);
+            bubbles.insert_action_group ("bubble", actions);
+
+            // Caught before the label's own menu (Cut/Paste/Delete make no sense here).
+            var click = new Gtk.GestureClick () { button = Gdk.BUTTON_SECONDARY };
+            click.set_propagation_phase (Gtk.PropagationPhase.CAPTURE);
+            click.pressed.connect (on_bubbles_pressed);
+            bubbles.add_controller (click);
+            var keys = new Gtk.EventControllerKey ();
+            keys.set_propagation_phase (Gtk.PropagationPhase.CAPTURE);
+            keys.key_pressed.connect (on_bubbles_key);
+            bubbles.add_controller (keys);
+        }
+
+        /* The bubble label a widget belongs to (itself, or a parent up to the conversation). */
+        private Gtk.Widget? bubble_of (Gtk.Widget? widget) {
+            for (var w = widget; w != null && w != bubbles; w = w.get_parent ()) {
+                if (w.get_data<string> (MESSAGE_KEY) != null) {
+                    return w;
+                }
+            }
+            return null;
+        }
+
+        private void on_bubbles_pressed (Gtk.GestureClick click, int n, double x, double y) {
+            var label = bubble_of (bubbles.pick (x, y, Gtk.PickFlags.DEFAULT));
+            if (label == null) {
+                return;
+            }
+            click.set_state (Gtk.EventSequenceState.CLAIMED);
+            Graphene.Point at;
+            if (!bubbles.compute_point (label, Graphene.Point () { x = (float) x, y = (float) y }, out at)) {
+                at = Graphene.Point () { x = 0, y = 0 };
+            }
+            open_bubble_menu (label, (int) at.x, (int) at.y);
+        }
+
+        private bool on_bubbles_key (Gtk.EventControllerKey keys, uint keyval, uint code,
+                                     Gdk.ModifierType state) {
+            if (!is_menu_key (keyval, state)) {
+                return false;
+            }
+            var label = bubble_of ((get_root () as Gtk.Window)?.get_focus ());
+            if (label == null) {
+                return false;
+            }
+            open_bubble_menu (label, label.get_width () / 2, label.get_height () / 2);
+            return true;
+        }
+
+        private void open_bubble_menu (Gtk.Widget label, int x, int y) {
+            var id = label.get_data<string> (MESSAGE_KEY);
+            var status = label.get_data<string> (STATUS_KEY) ?? "";
+            if (status == "sending") {
+                return;
+            }
+            var target = new Variant.string (id);
+            var menu = new GLib.Menu ();
+            if (current_can_send && !current_group && status != "failed"
+                && daemon.get_bool ("ReactionsSend")) {
+                var react_menu = new GLib.Menu ();
+                foreach (var emoji in QUICK_REACTIONS) {
+                    var item = new GLib.MenuItem (emoji, null);
+                    item.set_action_and_target_value ("bubble.react", new Variant ("(ss)", id, emoji));
+                    react_menu.append_item (item);
+                }
+                var other = new GLib.MenuItem (_("Autre emoji…"), null);
+                other.set_action_and_target_value ("bubble.react-other", target);
+                react_menu.append_item (other);
+                menu.append_submenu (_("Réagir"), react_menu);
+            }
+            var copy = new GLib.MenuItem (_("Copier"), null);
+            copy.set_action_and_target_value ("bubble.copy", target);
+            menu.append_item (copy);
+            var remove = new GLib.MenuItem (_("Supprimer de Boomerang…"), null);
+            remove.set_action_and_target_value ("bubble.delete", target);
+            menu.append_item (remove);
+            var popover = new Gtk.PopoverMenu.from_model (menu) {
+                has_arrow = false,
+                pointing_to = { x, y, 1, 1 }
+            };
+            popover.set_parent (label);
+            popover.closed.connect (unparent_later);
+            popover.popup ();
+        }
+
+        /* A popover closed: off its parent once its closing is over. */
+        private static void unparent_later (Gtk.Popover popover) {
+            Idle.add (() => {
+                popover.unparent ();
+                return Source.REMOVE;
+            });
+        }
+
+        private void on_react_action (SimpleAction action, Variant? param) {
+            string id, emoji;
+            param.get ("(ss)", out id, out emoji);
+            react_to (id, emoji);
+        }
+
+        private void on_react_other_action (SimpleAction action, Variant? param) {
+            var id = param.get_string ();
+            var shown = bubble_index[id];
+            var anchor = shown != null ? find_label (shown, id) : null;
+            if (anchor == null) {
+                return;
+            }
+            var chooser = new Gtk.EmojiChooser ();
+            chooser.set_data<string> (MESSAGE_KEY, id);
+            chooser.set_parent (anchor);
+            chooser.emoji_picked.connect (on_emoji_picked);
+            chooser.closed.connect (unparent_later);
+            chooser.popup ();
+        }
+
+        private void on_emoji_picked (Gtk.EmojiChooser chooser, string emoji) {
+            react_to (chooser.get_data<string> (MESSAGE_KEY), emoji);
+        }
+
+        /* The label of message id inside the widget shown for it. */
+        private static Gtk.Widget? find_label (Gtk.Widget widget, string id) {
+            if (widget.get_data<string> (MESSAGE_KEY) == id) {
+                return widget;
+            }
+            for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
+                var found = find_label (child, id);
+                if (found != null) {
+                    return found;
+                }
+            }
+            return null;
+        }
+
+        private void on_copy_action (SimpleAction action, Variant? param) {
+            var id = param.get_string ();
+            for (int i = 0; i < thread_ids.length; i++) {
+                if (thread_ids[i] == id) {
+                    get_clipboard ().set_text (thread_bodies[i]);
+                    return;
+                }
+            }
+        }
+
+        private void on_delete_action (SimpleAction action, Variant? param) {
+            confirm_delete_message (param.get_string ());
+        }
+
+        private Gtk.Widget bubble (VariantDict d, bool outgoing, string? sender, bool follows,
+                                   bool ends_run, bool last_sent) {
             if (dict_string (d, "note") != "") {
                 return reaction_note (d);
             }
             var body = dict_string (d, "body");
             var complete = dict_bool (d, "complete");
-            var label = new Gtk.Label (linkify (complete ? body : body + "…")) {
+            // A photo, a video or a file: Bluetooth (MAP) carries the text only.
+            var attachment = dict_bool (d, "attachment");
+            var only_file = attachment && body.strip () == "";
+            if (only_file) {
+                complete = true;
+            }
+            var label = new Gtk.Label (only_file ? "<i>%s</i>".printf (Markup.escape_text (attachment_text ()))
+                                                 : linkify (complete ? body : body + "…")) {
                 use_markup = true,
                 wrap = true,
                 wrap_mode = Pango.WrapMode.WORD_CHAR,
                 selectable = true,
-                xalign = 0,
-                max_width_chars = 46
+                xalign = 0
             };
             label.add_css_class ("bubble");
             label.add_css_class (outgoing ? "outgoing" : "incoming");
-            var bubble_id = dict_string (d, "id");
-            if (dict_string (d, "status") != "sending") {
-                // Own menu, caught before the label's (Cut/Paste/Delete make no sense here).
-                var menu = new GLib.Menu ();
-                var status = dict_string (d, "status");
-                if (current_can_send && !current_group && status != "failed"
-                    && daemon.get_bool ("ReactionsSend")) {
-                    var react_menu = new GLib.Menu ();
-                    foreach (var emoji in QUICK_REACTIONS) {
-                        react_menu.append (emoji, "bubble.react('%s')".printf (emoji));
-                    }
-                    react_menu.append (_("Autre emoji…"), "bubble.react-other");
-                    menu.append_submenu (_("Réagir"), react_menu);
-                }
-                menu.append (_("Copier"), "bubble.copy");
-                menu.append (_("Supprimer de Boomerang…"), "bubble.delete");
-                var actions = new SimpleActionGroup ();
-                var react = new SimpleAction ("react", VariantType.STRING);
-                react.activate.connect ((param) => react_to (bubble_id, param.get_string ()));
-                actions.add_action (react);
-                var react_other = new SimpleAction ("react-other", null);
-                react_other.activate.connect (() => {
-                    var chooser = new Gtk.EmojiChooser ();
-                    chooser.set_parent (label);
-                    chooser.emoji_picked.connect ((emoji) => react_to (bubble_id, emoji));
-                    chooser.closed.connect (() => Idle.add (() => {
-                        chooser.unparent ();
-                        return Source.REMOVE;
-                    }));
-                    chooser.popup ();
-                });
-                actions.add_action (react_other);
-                var copy = new SimpleAction ("copy", null);
-                copy.activate.connect (() => label.get_clipboard ().set_text (body));
-                actions.add_action (copy);
-                var remove = new SimpleAction ("delete", null);
-                remove.activate.connect (() => confirm_delete_message (bubble_id));
-                actions.add_action (remove);
-                label.insert_action_group ("bubble", actions);
-                var click = new Gtk.GestureClick () { button = Gdk.BUTTON_SECONDARY };
-                click.set_propagation_phase (Gtk.PropagationPhase.CAPTURE);
-                click.pressed.connect ((n, x, y) => {
-                    click.set_state (Gtk.EventSequenceState.CLAIMED);
-                    var popover = new Gtk.PopoverMenu.from_model (menu) {
-                        has_arrow = false,
-                        pointing_to = { (int) x, (int) y, 1, 1 }
-                    };
-                    popover.set_parent (label);
-                    popover.closed.connect (() => Idle.add (() => {
-                        popover.unparent ();
-                        return Source.REMOVE;
-                    }));
-                    popover.popup ();
-                });
-                label.add_controller (click);
+            if (ends_run) {
+                label.add_css_class ("run-end");
             }
+            // The menu (right click, Menu key, Maj+F10) is handled once for every bubble by the
+            // conversation itself (install_bubble_menu): the label only says which message it shows.
+            label.set_data<string> (MESSAGE_KEY, dict_string (d, "id"));
+            label.set_data<string> (STATUS_KEY, dict_string (d, "status"));
             label.activate_link.connect ((uri) => {
                 if (uri.has_prefix ("tel:")) {
                     start_conversation (uri.substring (4));
@@ -2035,7 +2830,14 @@ namespace Boomerang {
             if (dict_string (d, "source") == "ancs") {
                 tip += _("\nReçu par notification");
             }
+            if (only_file) {
+                tip += "\n" + attachment_hint ();
+            }
             label.tooltip_text = tip;
+            // Orca reads the text, then who wrote it and when.
+            var who = outgoing ? _("Vous") : dict_string (d, "sender");
+            label.update_property (Gtk.AccessibleProperty.DESCRIPTION,
+                                   who != "" ? _("%s, %s").printf (who, long_time (time)) : long_time (time), -1);
 
             Gtk.Widget shown = label;
             var badge = reaction_badge (d, outgoing);
@@ -2049,7 +2851,10 @@ namespace Boomerang {
 
             var column = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) {
                 halign = outgoing ? Gtk.Align.END : Gtk.Align.START,
-                margin_top = follows ? 0 : 6
+                margin_top = follows ? 0 : 6,
+                // Long messages wrap at the width of the thread, short of the other side.
+                margin_start = outgoing ? 80 : 0,
+                margin_end = outgoing ? 0 : 80
             };
             if (sender != null && sender != "") {
                 var name = new Gtk.Label (sender) { xalign = 0, margin_start = 12 };
@@ -2058,6 +2863,19 @@ namespace Boomerang {
                 column.append (name);
             }
             column.append (shown);
+            if (only_file) {
+                label.add_css_class ("attachment");
+            } else if (attachment) {
+                var file = new Gtk.Label (attachment_text ()) {
+                    halign = outgoing ? Gtk.Align.END : Gtk.Align.START,
+                    margin_start = 6,
+                    margin_end = 6,
+                    tooltip_text = attachment_hint ()
+                };
+                file.add_css_class (Granite.CssClass.DIM);
+                file.add_css_class (Granite.CssClass.SMALL);
+                column.append (file);
+            }
             var url = first_url (body);
             if (url != null && daemon.get_bool ("LinkPreviews")) {
                 var slot = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) {
@@ -2093,16 +2911,15 @@ namespace Boomerang {
                 line.append (drop);
                 column.append (line);
             }
-            if (outgoing && dict_string (d, "source") == "map") {
+            if (last_sent && status != "failed" && dict_string (d, "source") == "map") {
                 // The iPhone lists it among its sent messages: Boomerang has checked it left.
-                var sent = new Gtk.Image.from_icon_name ("object-select-symbolic") {
-                    pixel_size = 12,
+                var sent = new Gtk.Label (_("Envoyé")) {
                     halign = Gtk.Align.END,
                     margin_end = 6,
-                    tooltip_text = _("Envoyé : l'iPhone confirme l'envoi")
+                    tooltip_text = _("L'iPhone confirme l'envoi")
                 };
-                sent.add_css_class ("sent-check");
-                sent.update_property (Gtk.AccessibleProperty.LABEL, _("Envoyé"), -1);
+                sent.add_css_class (Granite.CssClass.DIM);
+                sent.add_css_class (Granite.CssClass.SMALL);
                 column.append (sent);
             }
             if (!outgoing && !complete && dict_string (d, "source") == "map") {
@@ -2112,39 +2929,10 @@ namespace Boomerang {
                 };
                 more.add_css_class ("flat");
                 more.add_css_class (Granite.CssClass.SMALL);
-                more.clicked.connect (() => confirm_read_full (id, more));
+                more.clicked.connect ((button) => confirm_read_full (id, button));
                 column.append (more);
             }
-            if (status == "sending") {
-                return column;
-            }
-            // Hover: reactions (received messages) with Copy and Delete below, beside the bubble.
-            var can_react = !outgoing && current_can_send && !current_group && status != "failed"
-                && daemon.get_bool ("ReactionsSend");
-            var tools = hover_tools (id, body, label, can_react);
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
-                halign = column.halign,
-                margin_top = column.margin_top
-            };
-            column.margin_top = 0;
-            if (outgoing) {
-                row.append (tools);
-                row.append (column);
-            } else {
-                row.append (column);
-                row.append (tools);
-            }
-            var motion = new Gtk.EventControllerMotion ();
-            motion.enter.connect (() => {
-                tools.opacity = 1;
-                tools.can_target = true;
-            });
-            motion.leave.connect (() => {
-                tools.opacity = 0;
-                tools.can_target = false;
-            });
-            row.add_controller (motion);
-            return row;
+            return column;
         }
 
         private static string? first_url (string text) {
@@ -2181,13 +2969,19 @@ namespace Boomerang {
             var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { width_request = 260 };
             var image = dict_string (d, "image");
             if (image != "" && FileUtils.test (image, FileTest.EXISTS)) {
-                var picture = new Gtk.Picture.for_filename (image) {
+                var picture = new Gtk.Picture () {
                     content_fit = Gtk.ContentFit.COVER,
                     height_request = 130,
                     can_shrink = true
                 };
                 picture.add_css_class ("link-picture");
                 card.append (picture);
+                var texture = preview_textures[image];
+                if (texture != null) {
+                    picture.paintable = texture;
+                } else {
+                    load_preview_picture.begin (image, picture);
+                }
             }
             var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) {
                 margin_top = 6, margin_bottom = 8, margin_start = 10, margin_end = 10
@@ -2208,64 +3002,44 @@ namespace Boomerang {
             slot.append (button);
         }
 
-        private Gtk.Widget hover_tools (string id, string body, Gtk.Widget bubble, bool can_react) {
-            var tools = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) {
-                valign = Gtk.Align.CENTER,
-                opacity = 0,
-                can_target = false
-            };
-            tools.add_css_class ("hover-tools");
-            if (can_react) {
-                var reactions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-                reactions.add_css_class ("reaction-strip");
-                foreach (var emoji in QUICK_REACTIONS) {
-                    var button = new Gtk.Button.with_label (emoji) {
-                        tooltip_text = _("Réagir %s").printf (emoji)
-                    };
-                    button.add_css_class ("flat");
-                    button.add_css_class ("reaction-choice");
-                    button.clicked.connect (() => react_to (id, button.label));
-                    reactions.append (button);
+        // Link pictures decoded once, reduced to the card's width (twice, for HiDPI screens),
+        // away from the main thread: a page's picture can be several megapixels.
+        private const int PREVIEW_WIDTH = 520;
+        private const uint PREVIEW_CACHE = 64;
+        private static HashTable<string, Gdk.Texture> preview_textures =
+            new HashTable<string, Gdk.Texture> (str_hash, str_equal);
+
+        private static async void load_preview_picture (string path, Gtk.Picture picture) {
+            SourceFunc done = load_preview_picture.callback;
+            Gdk.Texture? texture = null;
+            new Thread<void*> ("link-picture", () => {
+                try {
+                    int width, height;
+                    Gdk.Pixbuf.get_file_info (path, out width, out height);
+                    // Decoded straight at the reduced size; a smaller picture is never enlarged.
+                    var pixbuf = width > PREVIEW_WIDTH
+                                 ? new Gdk.Pixbuf.from_file_at_scale (path, PREVIEW_WIDTH, -1, true)
+                                 : new Gdk.Pixbuf.from_file (path);
+                    texture = new Gdk.MemoryTexture (
+                        pixbuf.width, pixbuf.height,
+                        pixbuf.has_alpha ? Gdk.MemoryFormat.R8G8B8A8 : Gdk.MemoryFormat.R8G8B8,
+                        pixbuf.read_pixel_bytes (), pixbuf.rowstride);
+                } catch (Error e) {
+                    // unreadable picture: the card shows its text only
                 }
-                var more = new Gtk.Button.from_icon_name ("list-add-symbolic") {
-                    tooltip_text = _("Autre emoji…")
-                };
-                more.add_css_class ("flat");
-                more.add_css_class ("reaction-choice");
-                more.clicked.connect (() => {
-                    var chooser = new Gtk.EmojiChooser ();
-                    chooser.set_parent (bubble);
-                    chooser.emoji_picked.connect ((emoji) => react_to (id, emoji));
-                    chooser.closed.connect (() => Idle.add (() => {
-                        chooser.unparent ();
-                        return Source.REMOVE;
-                    }));
-                    chooser.popup ();
-                });
-                reactions.append (more);
-                tools.append (reactions);
-            }
-            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) {
-                halign = can_react ? Gtk.Align.START : Gtk.Align.CENTER
-            };
-            var copy = new Gtk.Button.from_icon_name ("edit-copy-symbolic") { tooltip_text = _("Copier") };
-            copy.add_css_class ("flat");
-            copy.add_css_class (Granite.CssClass.SMALL);
-            copy.clicked.connect (() => {
-                bubble.get_clipboard ().set_text (body);
-                toast.title = _("Copié");
-                toast.send_notification ();
+                Idle.add ((owned) done);
+                return null;
             });
-            var remove = new Gtk.Button.from_icon_name ("user-trash-symbolic") {
-                tooltip_text = _("Supprimer de Boomerang…")
-            };
-            remove.add_css_class ("flat");
-            remove.add_css_class (Granite.CssClass.SMALL);
-            remove.clicked.connect (() => confirm_delete_message (id));
-            actions.append (copy);
-            actions.append (remove);
-            tools.append (actions);
-            return tools;
+            yield;
+            if (texture == null) {
+                picture.visible = false;
+                return;
+            }
+            if (preview_textures.size () >= PREVIEW_CACHE) {
+                preview_textures.remove_all ();  // a long scroll through many links: start again
+            }
+            preview_textures[path] = texture;
+            picture.paintable = texture;
         }
 
         // --- compose -----------------------------------------------------------------

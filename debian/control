@@ -7,7 +7,7 @@ Build-Depends: debhelper-compat (= 13),
                valac,
                libglib2.0-dev,
                libgtk-4-dev,
-               libgranite-7-dev (>= 7.7),
+               libgranite-9-dev | libgranite-7-dev (>= 7.7),
                libwingpanel-9-dev,
                python3,
                gettext,
@@ -31,17 +31,11 @@ Depends: ${shlibs:Depends},
          gir1.2-glib-2.0,
          gir1.2-gtk-4.0,
          gir1.2-granite-7.0,
-         gir1.2-edataserver-1.2,
-         gir1.2-ebook-1.2,
-         gir1.2-ebookcontacts-1.2,
-         gir1.2-secret-1,
-         libsecret-tools,
-         evolution-data-server,
-         fuse3,
          pipewire,
          wireplumber,
          libspa-0.2-bluetooth
-Recommends: heif-gdk-pixbuf, openssl, pkexec, gnupg, gstreamer1.0-gtk4, gir1.2-gstreamer-1.0
+Recommends: evolution-data-server, gir1.2-edataserver-1.2, gir1.2-ebook-1.2, gir1.2-ebookcontacts-1.2,
+ gir1.2-secret-1, libsecret-tools, fuse3, heif-gdk-pixbuf, openssl, pkexec, gnupg, gstreamer1.0-gtk4, gir1.2-gstreamer-1.0
 Suggests: rclone (>= 1.69), uxplay, gstreamer1.0-plugins-bad, avahi-daemon, libimobiledevice-utils, ifuse,
  libheif-examples
 Description: iPhone et iCloud sur elementary OS

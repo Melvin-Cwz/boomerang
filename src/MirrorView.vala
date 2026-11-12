@@ -9,6 +9,11 @@
  * drawn in this GTK window without passing frames between processes). This page
  * is the control panel: start and stop, profile, rotation, full screen, and the
  * iPhone control pad (boomerangd/hid.py: the PC as a Bluetooth mouse and keyboard).
+ *
+ * Also here: a screenshot of the mirrored picture (taken by the mirroring window,
+ * boomerangd/mirror_viewer.py), a drop area that sends files to the iPhone's LocalSend
+ * app (« files » module), the iPhone's media keys and two pointer gestures (Control
+ * Centre, app switcher), and a pointer size that follows the mirrored picture.
  */
 
 public class Boomerang.MirrorView : Gtk.Box {
@@ -34,13 +39,55 @@ public class Boomerang.MirrorView : Gtk.Box {
     private Gtk.Switch record;
     private Gtk.Label decoder_label;
     private bool updating = false;
+    private Gtk.Button capture_button;
+    private Gtk.Box capture_done;
+    private Gtk.Label capture_label;
+    private string capture_path = "";
+
+    private Gtk.Box drop_zone;
+    private Gtk.Label drop_title;
+    private Gtk.Label drop_detail;
+    private Gtk.Button drop_action;
+    private string drop_action_kind = "";
+    private bool sending = false;
 
     private Gtk.Switch control_switch;
     private Gtk.Box control_box;
     private Gtk.Label control_state;
     private Gtk.ToggleButton command_held;
+    private Gtk.Switch auto_size;
+    private Gtk.Label video_label;
+    private Gtk.Widget height_row;
     private Gtk.SpinButton width_spin;
     private Gtk.SpinButton height_spin;
+
+    private static bool css_added = false;
+    // Same C call as Gtk.StyleContext.add_provider_for_display, without the class deprecated in 4.10.
+    [CCode (cname = "gtk_style_context_add_provider_for_display")]
+    private static extern void add_provider_for_display (Gdk.Display display, Gtk.StyleProvider provider,
+                                                         uint priority);
+    // The drop area draws its own frame (Granite 9 draws none around plain boxes).
+    private const string CSS = """
+        .mirror-drop {
+            border: 2px dashed alpha(@fg_color, 0.25);
+            border-radius: 12px;
+            padding: 18px;
+        }
+        .mirror-drop.drop-hover {
+            border-color: @accent_color;
+            background-color: alpha(@accent_color, 0.08);
+        }
+        .mirror-key {
+            min-width: 36px;
+            min-height: 28px;
+            padding: 0 6px;
+            border: 1px solid alpha(@fg_color, 0.18);
+            border-radius: 6px;
+            background-color: alpha(@fg_color, 0.04);
+        }
+        .mirror-key:hover { background-color: alpha(@fg_color, 0.1); }
+        .mirror-key:active { background-color: alpha(@fg_color, 0.16); }
+    """;
     private double last_x = -1;
     private double last_y = -1;
     private double pending_x = 0;
@@ -76,11 +123,31 @@ public class Boomerang.MirrorView : Gtk.Box {
         };
         start_button.add_css_class (Granite.CssClass.SUGGESTED);
         start_button.clicked.connect (toggle);
+        capture_button = new Gtk.Button.with_label (_("Capture d'écran")) { visible = false };
+        capture_button.clicked.connect (() => daemon.call.begin ("MirrorScreenshot"));
+        var buttons = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+        buttons.append (start_button);
+        buttons.append (capture_button);
         state_label = new Gtk.Label ("") { xalign = 0, wrap = true };
         state_label.add_css_class (Granite.CssClass.DIM);
+        capture_label = new Gtk.Label ("") { xalign = 0, ellipsize = Pango.EllipsizeMode.MIDDLE, hexpand = true };
+        capture_label.add_css_class (Granite.CssClass.DIM);
+        capture_label.add_css_class (Granite.CssClass.SMALL);
+        var show_capture = new Gtk.Button.with_label (_("Afficher dans Fichiers"));
+        show_capture.add_css_class (Granite.CssClass.SMALL);
+        show_capture.clicked.connect (() => {
+            if (capture_path != "") {
+                new Gtk.FileLauncher (File.new_for_path (capture_path)).open_containing_folder.begin (
+                    get_root () as Gtk.Window, null);
+            }
+        });
+        capture_done = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { visible = false };
+        capture_done.append (capture_label);
+        capture_done.append (show_capture);
         steps = new Gtk.Label ("") { xalign = 0, wrap = true, use_markup = true };
-        ready_box.append (start_button);
+        ready_box.append (buttons);
         ready_box.append (state_label);
+        ready_box.append (capture_done);
         ready_box.append (new Granite.HeaderLabel (_("Affichage")));
         ready_box.append (build_options ());
         ready_box.append (new Granite.HeaderLabel (_("Sur l'iPhone")));
@@ -95,16 +162,158 @@ public class Boomerang.MirrorView : Gtk.Box {
         ready_box.append (note);
         content.append (ready_box);
 
+        content.append (new Granite.HeaderLabel (_("Envoyer des fichiers à l'iPhone")));
+        content.append (build_drop_zone ());
+
         content.append (new Granite.HeaderLabel (_("Contrôler l'iPhone depuis le PC")));
         content.append (build_control ());
         append (scroll);
+        Snapshots.scroll_to_end (scroll);
+
+        if (!css_added) {
+            css_added = true;
+            var provider = new Gtk.CssProvider ();
+            provider.load_from_string (Style.colors (CSS));
+            add_provider_for_display (Gdk.Display.get_default (), provider,
+                                      Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        }
 
         daemon.changed.connect (() => {
             if (daemon.touched ({ "Mirror", "Control" })) {
                 update ();
             }
+            if (daemon.touched ({ "Files", "Catalog" })) {
+                update_drop_zone ();
+            }
         });
         update ();
+        update_drop_zone ();
+    }
+
+    // --- files to LocalSend -----------------------------------------------------------------
+
+    private Gtk.Widget build_drop_zone () {
+        drop_zone = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        drop_zone.add_css_class ("mirror-drop");
+        var icon = new Gtk.Image.from_icon_name ("document-send") { pixel_size = 32, valign = Gtk.Align.CENTER };
+        drop_title = new Gtk.Label ("") { xalign = 0, wrap = true };
+        drop_detail = new Gtk.Label ("") { xalign = 0, wrap = true };
+        drop_detail.add_css_class (Granite.CssClass.DIM);
+        drop_detail.add_css_class (Granite.CssClass.SMALL);
+        var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { hexpand = true, valign = Gtk.Align.CENTER };
+        text.append (drop_title);
+        text.append (drop_detail);
+        drop_action = new Gtk.Button () { valign = Gtk.Align.CENTER, visible = false };
+        drop_action.clicked.connect (on_drop_action);
+        drop_zone.append (icon);
+        drop_zone.append (text);
+        drop_zone.append (drop_action);
+
+        var drop = new Gtk.DropTarget (typeof (Gdk.FileList), Gdk.DragAction.COPY);
+        drop.enter.connect (() => {
+            if (files_ready ()) {
+                drop_zone.add_css_class ("drop-hover");
+                return Gdk.DragAction.COPY;
+            }
+            return 0;
+        });
+        drop.leave.connect (() => drop_zone.remove_css_class ("drop-hover"));
+        drop.drop.connect ((value) => {
+            drop_zone.remove_css_class ("drop-hover");
+            if (!files_ready ()) {
+                return false;
+            }
+            string[] paths = {};
+            foreach (var file in ((Gdk.FileList) value).get_files ()) {
+                if (file.get_path () != null) {
+                    paths += file.get_path ();
+                }
+            }
+            if (paths.length == 0) {
+                return false;
+            }
+            send_to_iphone.begin (paths);
+            return true;
+        });
+        drop_zone.add_controller (drop);
+        return drop_zone;
+    }
+
+    /* « files » module added and LocalSend listening. */
+    private bool files_ready () {
+        return Catalog.added (daemon, "files") && Props.flag (daemon.get_value ("Files"), "enabled");
+    }
+
+    private void update_drop_zone () {
+        if (sending) {
+            return;
+        }
+        drop_action.visible = true;
+        if (!Catalog.added (daemon, "files")) {
+            drop_title.label = _("Le module « Envoi de fichiers » n'est pas ajouté");
+            drop_detail.label = _("Ajoutez-le pour déposer ici des fichiers à envoyer à l'app LocalSend de l'iPhone.");
+            drop_action.label = _("Ajouter le module");
+            drop_action_kind = "add";
+        } else if (!Props.flag (daemon.get_value ("Files"), "enabled")) {
+            drop_title.label = _("LocalSend est désactivé");
+            drop_detail.label = _("Activez la réception et l'envoi dans la page Fichiers pour déposer des fichiers ici.");
+            drop_action.label = _("Activer");
+            drop_action_kind = "enable";
+        } else {
+            drop_title.label = _("Déposez des fichiers ici");
+            drop_detail.label = _("Ils partent vers l'app LocalSend de l'iPhone, ouverte sur le même Wi-Fi.");
+            drop_action.visible = false;
+            drop_action_kind = "";
+        }
+    }
+
+    private void on_drop_action () {
+        if (drop_action_kind == "add") {
+            daemon.call.begin ("SetModuleAdded", new Variant ("(sb)", "files", true));
+        } else if (drop_action_kind == "enable") {
+            daemon.call.begin ("SetLocalSend", new Variant ("(b)", true));
+        }
+    }
+
+    /* To the iPhone among the LocalSend devices seen: a phone, the one named like the
+       linked iPhone if there are several. */
+    private async void send_to_iphone (string[] paths) {
+        sending = true;
+        drop_action.visible = false;
+        drop_title.label = ngettext ("Envoi de %u fichier…", "Envoi de %u fichiers…",
+                                     (ulong) paths.length).printf ((uint) paths.length);
+        drop_detail.label = "";
+        var peers = yield daemon.call_list ("ListFilePeers");
+        var device = daemon.get_string ("DeviceName");
+        string chosen = "", chosen_name = "";
+        foreach (var peer in peers) {
+            if (Props.str (peer, "type") != "mobile") {
+                continue;
+            }
+            if (chosen == "" || Props.str (peer, "alias") == device) {
+                chosen = Props.str (peer, "id");
+                chosen_name = Props.str (peer, "alias");
+            }
+        }
+        if (chosen == "") {
+            sending = false;
+            update_drop_zone ();
+            drop_title.label = _("L'iPhone n'est pas visible dans LocalSend");
+            drop_detail.label = _("Ouvrez l'app LocalSend sur l'iPhone, sur le même Wi-Fi que ce PC, puis "
+                                  + "déposez à nouveau les fichiers.");
+            return;
+        }
+        try {
+            yield daemon.call_checked ("SendFiles", new Variant ("(s^as)", chosen, paths));
+            sending = false;
+            update_drop_zone ();
+            drop_detail.label = _("Envoyés à %s : acceptez-les dans LocalSend sur l'iPhone.").printf (chosen_name);
+        } catch (Error e) {
+            sending = false;
+            update_drop_zone ();
+            DBusError.strip_remote_error (e);
+            drop_detail.label = _("L'envoi a échoué : %s").printf (e.message);
+        }
     }
 
     // --- display options -------------------------------------------------------------------
@@ -253,6 +462,12 @@ public class Boomerang.MirrorView : Gtk.Box {
         shortcuts.append (shortcut_button (_("Accueil"), _("⌘H : retour à l'écran d'accueil"), KEY_H));
         shortcuts.append (shortcut_button (_("Recherche"), _("⌘Espace : recherche de l'iPhone"), KEY_SPACE));
         shortcuts.append (shortcut_button (_("Changer d'app"), _("⌘Tab : app précédente"), KEY_TAB));
+        shortcuts.append (gesture_button (_("Centre de contrôle"),
+                                          _("Glissement du pointeur vers le bas depuis le coin supérieur droit"),
+                                          "control_centre"));
+        shortcuts.append (gesture_button (_("Sélecteur d'apps"),
+                                          _("Glissement du pointeur vers le haut depuis le bas de l'écran, avec une pause"),
+                                          "app_switcher"));
         command_held = new Gtk.ToggleButton.with_label ("⌘") {
             tooltip_text = _("Maintient ⌘ enfoncé pour la touche suivante (le bureau intercepte "
                              + "souvent la touche Super du PC)")
@@ -266,6 +481,14 @@ public class Boomerang.MirrorView : Gtk.Box {
         };
         center.clicked.connect (() => daemon.call.begin ("ControlGoto", new Variant ("(dd)", 0.5, 0.5)));
         shortcuts.append (center);
+
+        // The iPhone's own keys, as on a keyboard with media keys (Consumer Control).
+        var keys_line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+        keys_line.append (media_button ("audio-volume-low-symbolic", _("Baisser le volume"), "volume_down"));
+        keys_line.append (media_button ("audio-volume-high-symbolic", _("Monter le volume"), "volume_up"));
+        keys_line.append (media_button ("media-playback-start-symbolic", _("Lecture ou pause"), "play_pause"));
+        keys_line.append (media_button ("system-lock-screen-symbolic", _("Verrouiller l'iPhone"), "lock"));
+        control_box.append (keys_line);
         control_box.append (shortcuts);
 
         var entry = new Gtk.Entry () {
@@ -286,14 +509,50 @@ public class Boomerang.MirrorView : Gtk.Box {
         height_spin = new Gtk.SpinButton.with_range (50, 8000, 10);
         width_spin.value_changed.connect (send_size);
         height_spin.value_changed.connect (send_size);
+        auto_size = new Gtk.Switch ();
+        auto_size.notify["active"].connect (() => {
+            if (!updating) {
+                daemon.call.begin ("SetControlAutoSize", new Variant ("(b)", auto_size.active));
+            }
+        });
+        video_label = new Gtk.Label ("") { xalign = 0, wrap = true };
+        video_label.add_css_class (Granite.CssClass.DIM);
+        video_label.add_css_class (Granite.CssClass.SMALL);
+        var auto_row = option_row (_("Suivre l'image de la recopie"),
+                                   _("Pendant la recopie, la hauteur suit les proportions et l'orientation "
+                                     + "de l'image reçue : seul le côté court est à régler"), auto_size);
+        size_list.append (auto_row);
         size_list.append (option_row (_("Largeur de l'écran pour le pointeur"),
-                                      _("Si « Recentrer le pointeur » ne place pas le pointeur au centre, ajustez ces deux valeurs"),
+                                      _("Si « Recentrer le pointeur » ne place pas le pointeur au centre, "
+                                        + "ajustez cette valeur (iPhone tenu verticalement)"),
                                       width_spin));
-        size_list.append (option_row (_("Hauteur de l'écran pour le pointeur"), "", height_spin));
-        var expander = new Gtk.Expander (_("Réglage du pointeur")) { child = size_list };
+        height_row = option_row (_("Hauteur de l'écran pour le pointeur"), "", height_spin);
+        size_list.append (height_row);
+        var size_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) { margin_top = 6 };
+        size_box.append (size_list);
+        size_box.append (video_label);
+        var expander = new Gtk.Expander (_("Réglage du pointeur")) { child = size_box };
         control_box.append (expander);
         box.append (control_box);
         return box;
+    }
+
+    private Gtk.Widget gesture_button (string label, string tooltip, string gesture) {
+        var button = new Gtk.Button.with_label (label) { tooltip_text = tooltip };
+        button.clicked.connect (() => {
+            daemon.call.begin ("ControlGesture", new Variant ("(s)", gesture));
+        });
+        return button;
+    }
+
+    private Gtk.Widget media_button (string icon, string tooltip, string key) {
+        var button = new Gtk.Button.from_icon_name (icon) { tooltip_text = tooltip };
+        button.add_css_class ("mirror-key");  // a key: its own frame, whatever the theme
+        button.update_property (Gtk.AccessibleProperty.LABEL, tooltip, -1);
+        button.clicked.connect (() => {
+            daemon.call.begin ("ControlMedia", new Variant ("(s)", key));
+        });
+        return button;
     }
 
     private Gtk.Widget shortcut_button (string label, string tooltip, uint usage) {
@@ -456,6 +715,17 @@ public class Boomerang.MirrorView : Gtk.Box {
         if (running && Props.str (mirror, "recording") != "") {
             state_label.label += " · " + _("Enregistrement dans Vidéos");
         }
+        // Screenshots come from Boomerang's mirroring window, once it shows a picture.
+        var can_capture = Props.flag (mirror, "can_capture");
+        capture_button.visible = running;
+        capture_button.sensitive = can_capture;
+        capture_button.tooltip_text = can_capture
+            ? _("Enregistre l'image de l'iPhone dans le dossier Images")
+            : _("Disponible quand l'image de l'iPhone s'affiche dans la fenêtre de recopie de Boomerang "
+                + "(paquet gstreamer1.0-gtk4)");
+        capture_path = Props.str (mirror, "screenshot");
+        capture_done.visible = capture_path != "";
+        capture_label.label = _("Dernière capture : %s").printf (Path.get_basename (capture_path));
         steps.label = _("1. Ouvrez le Centre de contrôle.\n2. Touchez « Recopie de l'écran ».\n"
                         + "3. Choisissez <b>%s</b>.\n4. Saisissez le code affiché ici.").printf (
                         Markup.escape_text (name));
@@ -488,6 +758,29 @@ public class Boomerang.MirrorView : Gtk.Box {
         }
         var width = Props.integer (control, "width");
         var height = Props.integer (control, "height");
+        var automatic = Props.flag (control, "auto_size", true);
+        auto_size.active = automatic;
+        height_row.visible = !automatic;
+        var video_width = Props.integer (control, "video_width");
+        var video_height = Props.integer (control, "video_height");
+        if (automatic) {
+            // Shown upright: the short side is the one to tune, whatever the rotation.
+            var short_side = int.min (width, height);
+            var long_side = int.max (width, height);
+            width = short_side;
+            height = long_side;
+        }
+        if (video_width > 0 && video_height > 0) {
+            video_label.label = automatic
+                ? _("Image reçue : %d × %d. Course du pointeur : %d × %d.").printf (
+                    video_width, video_height, Props.integer (control, "width"), Props.integer (control, "height"))
+                : _("Image reçue : %d × %d.").printf (video_width, video_height);
+        } else {
+            video_label.label = automatic
+                ? _("La hauteur se recale dès que la recopie affiche l'image de l'iPhone.")
+                : "";
+        }
+        video_label.visible = video_label.label != "";
         if (width > 0 && (int) width_spin.value != width) {
             width_spin.value = width;
         }

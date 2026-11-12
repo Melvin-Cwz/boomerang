@@ -12,6 +12,9 @@ public class Boomerang.PairingDialog : Gtk.Window {
     private Gtk.Label code_label;
     private Gtk.Label code_hint;
     private Gtk.Box confirm_box;
+    // A field, not a local: the daemon's handlers then only hold the dialog weakly
+    // (g_signal_connect_object), and a closed dialog is freed.
+    private Gtk.Button close_button;
     private bool code_seen = false;
     private bool finished = false;
     private bool started = false;
@@ -21,7 +24,7 @@ public class Boomerang.PairingDialog : Gtk.Window {
             daemon: daemon,
             transient_for: parent,
             modal: true,
-            title: _("Appairer un iPhone"),
+            title: _("Appairage"),
             default_width: 440,
             resizable: false
         );
@@ -34,20 +37,33 @@ public class Boomerang.PairingDialog : Gtk.Window {
 
         // Step list
         var steps = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
-        var title = new Gtk.Label (_("Appairer un iPhone")) { xalign = 0 };
+        // A broken pairing (lost on the iPhone, or notifications that no longer come): the
+        // daemon drops its stale keys, the iPhone must forget the PC too, or touching the PC
+        // only reconnects with the old keys and nothing is repaired.
+        var problem = daemon.get_string ("LinkProblem");
+        var repair = problem == "bond-lost" || problem == "le-missing";
+        var title = new Gtk.Label (repair ? _("Réparer la liaison") : _("Appairer un iPhone")) { xalign = 0 };
         title.add_css_class (Granite.HeaderLabel.Size.H2.to_string ());
         steps.append (title);
-        steps.append (step (1, _("Gardez l'iPhone déverrouillé, à côté de ce PC.")));
         var pc_name = daemon.get_string ("AdapterName");
         if (pc_name == "") {
             pc_name = Environment.get_host_name ();
         }
-        steps.append (step (2, _("Sur l'iPhone, ouvrez Réglages › Bluetooth et touchez « %s » "
-                            + "sous Autres appareils.").printf (pc_name)));
-        steps.append (step (3, _("Comparez le code ci-dessous avec celui de l'iPhone. S'ils sont "
+        var n = 1;
+        steps.append (step (n++, _("Gardez l'iPhone déverrouillé, à côté de ce PC.")));
+        if (repair) {
+            steps.append (step (n++, _("Sur l'iPhone, ouvrez Réglages › Bluetooth. Si « %s » figure "
+                                + "sous Mes appareils, touchez ⓘ puis « Oublier cet appareil ».")
+                                .printf (pc_name)));
+            steps.append (step (n++, _("Touchez ensuite « %s » sous Autres appareils.").printf (pc_name)));
+        } else {
+            steps.append (step (n++, _("Sur l'iPhone, ouvrez Réglages › Bluetooth et touchez « %s » "
+                                + "sous Autres appareils.").printf (pc_name)));
+        }
+        steps.append (step (n++, _("Comparez le code ci-dessous avec celui de l'iPhone. S'ils sont "
                             + "identiques, touchez « Jumeler » sur l'iPhone, puis cliquez sur « Le "
                             + "code correspond » dans cette fenêtre.")));
-        steps.append (step (4, _("Acceptez le partage des notifications et des contacts si l'iPhone "
+        steps.append (step (n++, _("Acceptez le partage des notifications et des contacts si l'iPhone "
                             + "le demande.")));
 
         code_label = new Gtk.Label ("······") {
@@ -99,7 +115,7 @@ public class Boomerang.PairingDialog : Gtk.Window {
         stack.add_named (done_page, "done");
         stack.add_named (failed_page, "failed");
 
-        var close_button = new Gtk.Button.with_label (_("Annuler"));
+        close_button = new Gtk.Button.with_label (_("Annuler"));
         close_button.clicked.connect (() => close ());
         var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
             halign = Gtk.Align.END,

@@ -67,9 +67,9 @@ public class Boomerang.NotificationsView : Gtk.Box {
             show_separators = true,
             valign = Gtk.Align.START,
             margin_top = 12,
-            margin_bottom = 12,
-            margin_start = 18,
-            margin_end = 18
+            margin_bottom = 24,
+            margin_start = 24,
+            margin_end = 24
         };
         items.add_css_class (Granite.CssClass.CARD);
         items.set_filter_func ((row) => filter == null || row.get_data<string> ("app") == filter);
@@ -86,17 +86,23 @@ public class Boomerang.NotificationsView : Gtk.Box {
             hscrollbar_policy = Gtk.PolicyType.NEVER,
             vexpand = true
         }, "list");
-        items_stack.add_named (empty, "empty");
+        // Scrolled: its wrapping text would otherwise make the minimum height exceed the natural one.
+        items_stack.add_named (new Gtk.ScrolledWindow () {
+            child = empty, hscrollbar_policy = Gtk.PolicyType.NEVER
+        }, "empty");
 
         clear = new Gtk.Button.with_label (_("Effacer la liste")) { halign = Gtk.Align.END };
         clear.add_css_class ("flat");
         clear.tooltip_text = _("Vide la liste de Boomerang ; rien ne change sur l'iPhone");
         clear.clicked.connect (() => daemon.call.begin ("ClearNotifications"));
+        var page_title = new Gtk.Label (_("Notifications")) { xalign = 0, hexpand = true };
+        page_title.add_css_class ("title-1");
         var right_bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
-            margin_top = 6,
-            margin_end = 12,
-            halign = Gtk.Align.END
+            margin_top = 24,
+            margin_start = 24,
+            margin_end = 24
         };
+        right_bar.append (page_title);
         right_bar.append (clear);
         var right = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
         right.append (right_bar);

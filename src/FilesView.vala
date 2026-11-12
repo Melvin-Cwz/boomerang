@@ -21,6 +21,9 @@ public class Boomerang.FilesView : Gtk.Box {
     private bool updating = false;
     private uint peer_count = uint.MAX;
     private uint timer = 0;
+    // Files handed over by « Envoyer à l'iPhone » in Fichiers, sent to the device chosen next.
+    private string[] pending = {};
+    private Gtk.Label pending_label;
 
     public FilesView (Daemon daemon) {
         Object (daemon: daemon, orientation: Gtk.Orientation.VERTICAL, spacing: 0);
@@ -97,6 +100,8 @@ public class Boomerang.FilesView : Gtk.Box {
         peers_header.append (new Granite.HeaderLabel (_("Appareils LocalSend")) { hexpand = true });
         peers_header.append (refresh);
         on_box.append (peers_header);
+        pending_label = new Gtk.Label ("") { xalign = 0, wrap = true, visible = false };
+        on_box.append (pending_label);
 
         peers = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE, show_separators = true };
         peers.add_css_class (Granite.CssClass.CARD);
@@ -197,8 +202,21 @@ public class Boomerang.FilesView : Gtk.Box {
         var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { hexpand = true, valign = Gtk.Align.CENTER };
         text.append (name);
         text.append (detail);
-        var send = new Gtk.Button.with_label (_("Envoyer des fichiers…")) { valign = Gtk.Align.CENTER };
-        send.clicked.connect (() => choose_files.begin (id));
+        var send = new Gtk.Button.with_label (pending.length > 0 ? _("Envoyer") : _("Envoyer des fichiers…")) {
+            valign = Gtk.Align.CENTER
+        };
+        if (pending.length > 0) {
+            send.add_css_class (Granite.CssClass.SUGGESTED);
+        }
+        send.clicked.connect (() => {
+            if (pending.length > 0) {
+                var paths = pending;
+                queue ({});
+                send_paths.begin (id, paths);
+            } else {
+                choose_files.begin (id);
+            }
+        });
         var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) {
             margin_top = 9,
             margin_bottom = 9,
@@ -222,6 +240,16 @@ public class Boomerang.FilesView : Gtk.Box {
         });
         row.add_controller (drop);
         return row;
+    }
+
+    /* Files to send to the next device chosen in the list (empty: back to the file chooser). */
+    public void queue (string[] paths) {
+        pending = paths;
+        pending_label.visible = paths.length > 0;
+        pending_label.label = ngettext ("%u fichier prêt à envoyer : choisissez l'appareil.",
+                                        "%u fichiers prêts à envoyer : choisissez l'appareil.",
+                                        (ulong) paths.length).printf ((uint) paths.length);
+        load_peers.begin ();
     }
 
     private async void choose_files (string peer) {

@@ -49,6 +49,7 @@ class ProximityTest(unittest.TestCase):
         self.locks += 1
 
     def enable(self, distance="medium", delay=30):
+        self.config.set_boolean("catalog", "proximity", True)  # a module since 2.0
         self.p.configure(True, distance, delay)
 
     def test_off_by_default(self):

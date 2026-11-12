@@ -14,6 +14,7 @@ import time
 from gi.repository import GLib
 
 from .gatt import GattClient
+from .mailcodes import IPHONE_MAIL
 from .i18n import _
 from . import appicons
 from .util import log
@@ -72,8 +73,28 @@ CATEGORY_HINTS = {1: "call.incoming", 2: "call.unanswered", 6: "email.arrived",
                   4: "im.received"}
 
 
+class AncsMemory:
+    """What outlives one ANCS client: the link drops and comes back, the desktop
+    notifications stay. Without it a reconnection forgets which desktop notification
+    shows which iPhone one, and cannot close it when the iPhone clears it."""
+
+    def __init__(self):
+        self.desktop_ids = {}  # ANCS uid -> desktop notification id
+        self.dismissed = set()  # closed on the PC (or expired): an update must not reopen it
+
+    def closed(self, uid):
+        if self.desktop_ids.pop(uid, None) is not None:
+            self.dismissed.add(uid)
+            while len(self.dismissed) > MAX_DESKTOP_IDS:
+                self.dismissed.pop()
+
+    def forget(self, uid):
+        self.dismissed.discard(uid)
+        return self.desktop_ids.pop(uid, 0)
+
+
 class AncsClient(GattClient):
-    def __init__(self, bus, chars, device_name, notifier, hooks):
+    def __init__(self, bus, chars, device_name, notifier, hooks, memory=None):
         super().__init__(bus, chars, "ANCS")
         self.device_name = device_name
         self.notifier = notifier
@@ -83,14 +104,42 @@ class AncsClient(GattClient):
         self.pending = {}  # uid -> (category, flags, modified)
         self.app_names = {}
         self.pending_apps = set()
-        self.desktop_ids = {}  # ANCS uid -> desktop notification id
+        self.memory = memory or AncsMemory()
+        self.desktop_ids = self.memory.desktop_ids
         self.started = 0.0
+        self.present = set()  # uids the iPhone reported since this client subscribed
+        self.reconcile_timer = 0
 
     def start(self):
         self.started = time.monotonic()
-        self.subscribe((DATA_SOURCE, NOTIFICATION_SOURCE))
+        self.present.clear()
+        self.subscribe((DATA_SOURCE, NOTIFICATION_SOURCE), then=self._subscribed)
+
+    def _subscribed(self):
+        if NOTIFICATION_SOURCE in self.notifying and not self.reconcile_timer:
+            # iOS replays what its notification centre holds right after the subscription.
+            self.reconcile_timer = GLib.timeout_add_seconds(REPLAY_WINDOW, self._reconcile)
+
+    def _reconcile(self):
+        """After the replay: whatever the PC still shows that the iPhone no longer has was
+        cleared on the iPhone while the link was down. Close it (desktop and list)."""
+        self.reconcile_timer = 0
+        if NOTIFICATION_SOURCE not in self.notifying:
+            return False  # no replay received: nothing can be concluded
+        gone = [uid for uid in self.desktop_ids if uid not in self.present]
+        for uid in gone:
+            self.notifier.close(self.memory.forget(uid))
+        reconcile = getattr(self.hooks, "notifications_present", None)
+        if reconcile:
+            reconcile(set(self.present))
+        if gone:
+            log(f"ANCS : {len(gone)} notification(s) effacée(s) sur l'iPhone pendant la coupure")
+        return False
 
     def stop(self):
+        if self.reconcile_timer:
+            GLib.source_remove(self.reconcile_timer)
+            self.reconcile_timer = 0
         super().stop()
         self.buffer = b""
         self.pending.clear()  # requests of this link: their answers will never come
@@ -114,13 +163,20 @@ class AncsClient(GattClient):
         event, flags, category, _count, uid = struct.unpack("<BBBBI", value[:8])
         if event == EVENT_REMOVED:
             log(f"notification {uid} retirée")
+            self.present.discard(uid)
             gone = getattr(self.hooks, "notification_removed", None)
             if gone:
                 gone(uid)
-            self.notifier.close(self.desktop_ids.pop(uid, 0))
+            self.notifier.close(self.memory.forget(uid))
             return
+        self.present.add(uid)
         if flags & FLAG_PREEXISTING:
-            return  # already on the iPhone before we connected: not replayed
+            # Already on the iPhone before we connected: never announced again. Fetched only
+            # when this PC does not know it yet, for the Notifications list.
+            known = getattr(self.hooks, "notification_known", None)
+            if uid in self.desktop_ids or uid in self.memory.dismissed or \
+                    (known and known(uid)) or category == CATEGORY_INCOMING_CALL:
+                return
         label = CATEGORIES.get(category, str(category))
         log(f"notification {uid} {'ajoutée' if event == EVENT_ADDED else 'modifiée'} ({label})")
         modified = event == EVENT_MODIFIED
@@ -185,10 +241,13 @@ class AncsClient(GattClient):
     def _deliver(self, uid, attrs):
         category, flags, modified = self.pending.pop(uid, (0, 0, False))
         title = attrs.get(ATTR_TITLE, "")
+        replayed = bool(flags & FLAG_PREEXISTING)
         if category == CATEGORY_INCOMING_CALL and self.hooks.suppress_incoming_call(title):
             log(f"notification {uid} confiée au module Appels")
             return
         app_id = attrs.get(ATTR_APP_IDENTIFIER, "")
+        if replayed and app_id == MOBILE_SMS:
+            return  # messages come from MAP; the list of messages already has them
         take_message = getattr(self.hooks, "message_notification", None)
         if app_id == MOBILE_SMS and take_message and take_message(
                 title, attrs.get(ATTR_SUBTITLE, ""), attrs.get(ATTR_MESSAGE, ""),
@@ -205,6 +264,11 @@ class AncsClient(GattClient):
             self.write(CONTROL_POINT, bytes([CMD_GET_APP_ATTRIBUTES]) + app_id.encode() + b"\0"
                        + bytes([APP_ATTR_DISPLAY_NAME]), waits_for_response=True)
         app_name = self.app_names.get(app_id, app_id.rsplit(".", 1)[-1] if app_id else "")
+        mail_code = getattr(self.hooks, "mail_code", None)
+        if mail_code and app_id in IPHONE_MAIL and not replayed and \
+                time.monotonic() - self.started >= REPLAY_WINDOW:
+            mail_code("\n".join(filter(None, [title, attrs.get(ATTR_SUBTITLE),
+                                               attrs.get(ATTR_MESSAGE)])), title)
 
         summary = title or app_name or "iPhone"
         if app_name and title and app_name != title:
@@ -221,6 +285,12 @@ class AncsClient(GattClient):
         seen = getattr(self.hooks, "notification_seen", None)
         if seen and not seen(uid, app_id, app_name, title, body, category, dict(actions)):
             log(f"notification {uid} non affichée (app masquée)")
+            return
+        if replayed:
+            log(f"notification {uid} reprise dans la liste (déjà sur l'iPhone)")
+            return
+        if modified and uid in self.memory.dismissed:
+            log(f"notification {uid} mise à jour, déjà fermée sur ce PC : pas réaffichée")
             return
 
         settings = getattr(self.hooks, "notification_settings", None)
@@ -262,7 +332,10 @@ class AncsClient(GattClient):
             app_name or f"Boomerang ({self.device_name})", icon, summary, body, actions, hints,
             replaces=self.desktop_ids.get(uid, 0),
             on_action=(lambda key, u=uid: self.perform_action(u, key)) if actions else None,
+            on_closed=lambda u=uid: self.memory.closed(u),
         )
+        if not self.desktop_ids[uid]:
+            self.desktop_ids.pop(uid)
         log(f"notification {uid} affichée")
 
     def perform_action(self, uid, key):

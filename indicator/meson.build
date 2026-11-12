@@ -4,6 +4,7 @@
 # Wingpanel development files are present (option indicator=auto) or required (enabled).
 shared_library('boomerang-indicator',
   'Indicator.vala',
+  meson.project_source_root() / 'src' / 'LinkText.vala',
   dependencies: [
     wingpanel_dep,
     dependency('gtk4'),
@@ -13,5 +14,5 @@ shared_library('boomerang-indicator',
   ],
   c_args: ['-DLOCALEDIR="@0@"'.format(localedir)],
   install: true,
-  install_dir: wingpanel_dep.get_variable('indicatorsdir'),
+  install_dir: pkgdatadir / 'wingpanel',
 )

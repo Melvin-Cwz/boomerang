@@ -23,10 +23,12 @@ address) and a second one created when the iPhone opens LE with a private
 address, whose Address later turns into the same identity. Both are the same
 phone: the bonded one is `device`, the other is a « shadow » that may carry the
 GATT services (ANCS, AMS). Pairing is never requested again on a shadow (BlueZ
-answers AlreadyExists), and an unpaired shadow is dropped once disconnected.
+answers AlreadyExists), and a shadow is never removed: BlueZ would unpair the
+identity address over LE and drop the iPhone's LE keys.
 
 Reconnection backs off (10 s up to 5 min) and restarts at once after resume
-from suspend or when the adapter powers on. When the iPhone has forgotten the
+from suspend, when the adapter powers on, or when presence.py hears the iPhone
+advertising nearby. When the iPhone has forgotten the
 PC (« key missing »), every automatic attempt stops until the user pairs again:
 retrying only makes the link flap.
 """
@@ -34,16 +36,35 @@ retrying only makes the link flap.
 from gi.repository import Gio, GLib
 
 from . import ams, ancs
+from .att import AttLink
+from .presence import Presence
 from .gatt import find_service
 from .i18n import _
-from .util import BLUEZ, call_async, call_sync, get_all, log, set_prop
+from .util import BLUEZ, call_async, call_sync, get_all, launch, log, set_prop
 
 AGENT_PATH = "/io/github/melvincouwez/Boomerang/agent"
 ADV_PATH = "/io/github/melvincouwez/Boomerang/advertisement"
 APPLE_MODALIAS = "v004C"
+WATCHED_INTERFACES = ("org.bluez.GattCharacteristic1", "org.bluez.Adapter1", "org.bluez.Device1",
+                      "org.bluez.MediaPlayer1", "org.bluez.MediaControl1", "org.bluez.Battery1")
+ATTACH_SETTLE_MS = 500  # GATT objects come in bursts: look once they have settled
 RECONNECT_DELAYS = (10, 30, 60, 120, 300)  # seconds, one step per failed attempt
 PAIRING_SECONDS = 180
+# Classic link up this long without ANCS: the iPhone will not open LE by itself.
+LE_GRACE_SECONDS = 120
 CONFIRM_SECONDS = 60  # the user has this long to say the codes match
+NUDGE_SECONDS = 60  # at most one reconnection per minute on a mere Apple device nearby
+# A mere Apple device nearby only nudges once the back-off is past this: before, the
+# regular attempts come soon enough and each extra one takes the radio (~5 s).
+NUDGE_MIN_DELAY = 60
+CLASSIC_ATT_DELAY = 4  # seconds after the classic link comes up: profiles settle first
+CONNECT_TIMEOUT_MS = 60000  # BlueZ may take longer than 30 s, profile by profile
+# « InProgress »: BlueZ is still busy with an earlier connection or service lookup for
+# the iPhone. Retrying does not help; after this many in a row over BUSY_RESET_SECONDS,
+# Disconnect() cancels the stuck operation.
+BUSY_RETRY_SECONDS = 15
+BUSY_RESET_COUNT = 3
+BUSY_RESET_SECONDS = 120
 _BASE = "-0000-1000-8000-00805f9b34fb"
 # Profiles the iPhone may open during the pairing window (16-bit Bluetooth SIG ids):
 # HSP/HFP, A2DP, AVRCP, PBAP, MAP/MNS, PnP information, generic access/attribute.
@@ -62,6 +83,20 @@ NOT_A_PHONE_ICONS = ("input-", "audio-", "camera-", "printer")
 
 def bond_lost_error(error):
     return error is not None and any(k in error.message for k in BOND_LOST_ERRORS)
+
+
+def link_state(adapter, device, paired, bond_lost, connected, seen, notifications_ok):
+    """One word for where the link stands, in the order it is built:
+    off → unpaired → (bond-lost) → absent → seen → classic → complete."""
+    if not adapter:
+        return "off"
+    if not device or not paired:
+        return "unpaired"
+    if bond_lost:
+        return "bond-lost"
+    if not connected:
+        return "seen" if seen else "absent"
+    return "complete" if notifications_ok else "classic"
 
 AGENT_XML = """
 <node>
@@ -105,6 +140,9 @@ class Link:
         self.battery = -1
         self.ancs = None
         self.ams = None
+        self.att = None  # GATT over the classic link, when LE does not bring ANCS/AMS
+        self.att_failures = 0
+        self.att_timer = 0
         self.advertising = False
         self.adv_wanted = False
         self.pairing = False
@@ -119,10 +157,19 @@ class Link:
         self.reconnect_timer = 0
         self.reconnect_failures = 0
         self.connecting = False
+        self.busy_count, self.busy_since = 0, 0  # « InProgress » answers in a row
+        self.attach_timer = 0
+        self.shadow_seen = {}  # device path -> is a shadow of the iPhone (during a burst)
+        self.ancs_memory = ancs.AncsMemory()  # outlives each ANCS client (reconnections)
         self.le_connected = False  # a shadow object carries a live LE link
         self.pair_requested = set()
         self.bond_lost = False  # the iPhone removed the pairing: wait for a new one
+        self.connected_since = GLib.get_monotonic_time()
+        self.le_warned = False
         self.adapter_name = ""
+        self.seen = False  # presence heard the iPhone while it was not linked
+        self.nudged = None  # monotonic time of the last attempt on an Apple device nearby
+        self.presence = Presence(system, self._on_seen, self._on_unseen)
         self.watch_id = Gio.bus_watch_name_on_connection(
             system, BLUEZ, Gio.BusNameWatcherFlags.NONE, self._on_bluez, self._on_bluez_gone)
 
@@ -141,9 +188,12 @@ class Link:
             self.subscriptions.append(self.bus.signal_subscribe(
                 BLUEZ, "org.freedesktop.DBus.ObjectManager", member, None, None,
                 Gio.DBusSignalFlags.NONE, handler))
-        self.subscriptions.append(self.bus.signal_subscribe(
-            BLUEZ, "org.freedesktop.DBus.Properties", "PropertiesChanged", None, None,
-            Gio.DBusSignalFlags.NONE, self._on_properties_changed))
+        # One subscription per interface handled (arg0 filter): BlueZ changes on other
+        # interfaces (transports, services, inputs…) no longer wake the daemon.
+        for interface in WATCHED_INTERFACES:
+            self.subscriptions.append(self.bus.signal_subscribe(
+                BLUEZ, "org.freedesktop.DBus.Properties", "PropertiesChanged", None, interface,
+                Gio.DBusSignalFlags.NONE, self._on_properties_changed))
         self.subscriptions.append(self.bus.signal_subscribe(
             "org.freedesktop.login1", "org.freedesktop.login1.Manager", "PrepareForSleep",
             "/org/freedesktop/login1", None, Gio.DBusSignalFlags.NONE, self._on_sleep))
@@ -151,7 +201,7 @@ class Link:
         self._pick_device(objects)
         self.update_advertising()
         self._schedule_reconnect(3)
-        self.owner.link_changed()
+        self._changed()
 
     def _on_bluez_gone(self, _conn, _name):
         if self.adapter is None and not self.registrations:
@@ -166,10 +216,11 @@ class Link:
                 GLib.source_remove(timer)
         self.subscriptions, self.registrations = [], []
         self.reconnect_timer = self.pairing_timer = 0
-        self.connecting = self.pairing = False
+        self.connecting = self.pairing = self.seen = False
+        self.presence.forget_bus()
         self._detach()
         self.adapter, self.device, self.props, self.advertising = None, None, {}, False
-        self.owner.link_changed()
+        self._changed()
 
     def _objects(self):
         return call_sync(self.bus, BLUEZ, "/", "org.freedesktop.DBus.ObjectManager",
@@ -289,16 +340,71 @@ class Link:
         self.config.device_address = ""
         call_async(self.bus, BLUEZ, self.adapter, "org.bluez.Adapter1", "RemoveDevice",
                    GLib.Variant("(o)", (path,)), what="oubli de l'iPhone")
-        self.owner.link_changed()
+        self._changed()
         return True
 
     @property
     def problem(self):
-        return "bond-lost" if self.bond_lost and self.device else ""
+        if self.bond_lost and self.device:
+            return "bond-lost"
+        return "le-missing" if self.le_missing else ""
+
+    @property
+    def le_missing(self):
+        """Classic link up for a while, but the iPhone never opened LE (ANCS). Seen after
+        a reboot that lost the PC's LE keys: the iPhone then stays on classic Bluetooth
+        and only a new pairing brings notifications back. Turning off « Share System
+        Notifications » on the iPhone looks the same."""
+        return (self.props.get("Connected") and self.ancs is None
+                and self.config.module_enabled("notifications")
+                and GLib.get_monotonic_time() - self.connected_since > LE_GRACE_SECONDS * 1e6)
 
     @property
     def name(self):
         return self.props.get("Alias") or "iPhone"
+
+    @property
+    def state(self):
+        return link_state(self.adapter, self.device, self.props.get("Paired"), self.bond_lost,
+                          self.connected, self.seen,
+                          self.ancs is not None or not self.config.module_enabled("notifications"))
+
+    def _changed(self):
+        """Every state change goes through here: presence follows, then the clients."""
+        away = bool(self.adapter and self.device and self.props.get("Paired")
+                    and not self.connected and not self.bond_lost and not self.pairing)
+        if away:
+            self.presence.start(self.adapter)
+        else:
+            self.presence.stop()  # linked (or nothing to look for): no scanning
+            self.seen = False
+        self.owner.link_changed()
+
+    # --- presence ---------------------------------------------------------------------
+
+    def _is_ours(self, path):
+        return path == self.device or self._is_shadow(path)
+
+    def _on_seen(self, path):
+        """An Apple device advertises nearby: ours for sure (bonded path), or maybe."""
+        ours = self._is_ours(path)
+        if ours and not self.seen:
+            log("présence : iPhone à proximité, reconnexion")
+            self.seen = True
+            self._changed()
+        now = GLib.get_monotonic_time()
+        if not ours and self.nudged is not None and now - self.nudged < NUDGE_SECONDS * 1e6:
+            return
+        if not ours and self._next_delay() < NUDGE_MIN_DELAY:
+            return
+        if not self.connecting and self._should_reconnect():
+            self.nudged = now
+            self._schedule_reconnect(0)
+
+    def _on_unseen(self, path):
+        if self.seen and self._is_ours(path):
+            self.seen = False
+            self._changed()
 
     # --- advertisement ------------------------------------------------------------------------
 
@@ -325,7 +431,7 @@ class Link:
             log(f"Bluetooth : annonce refusée ({error.message})")
         else:
             log("Bluetooth : annonce « Boomerang » active")
-        self.owner.link_changed()
+        self._changed()
 
     def _adv_method(self, _conn, _sender, _path, _iface, method, _params, invocation):
         if method == "Release":
@@ -349,8 +455,9 @@ class Link:
     def start_pairing(self):
         if self.adapter is None:
             return False
-        if self.bond_lost and self.device:
-            # Our keys are stale: drop them so the iPhone's new pairing is a clean one.
+        if (self.bond_lost or self.le_missing) and self.device:
+            # Our keys are stale (pairing lost on the iPhone, or the iPhone no longer opens
+            # LE with them): drop them so the iPhone's new pairing is a clean one.
             self.forget()
         if not self.pairing:
             try:
@@ -380,7 +487,7 @@ class Link:
             GLib.source_remove(self.pairing_timer)
         self.pairing_timer = GLib.timeout_add_seconds(PAIRING_SECONDS, self.stop_pairing)
         self.update_advertising()
-        self.owner.link_changed()
+        self._changed()
         return True
 
     def stop_pairing(self):
@@ -408,7 +515,7 @@ class Link:
         self.pairing_note = 0
         log("appairage : fenêtre fermée")
         self.update_advertising()
-        self.owner.link_changed()
+        self._changed()
         return False
 
     def _agent_method(self, _conn, _sender, _path, _iface, method, params, invocation):
@@ -559,7 +666,7 @@ class Link:
         if interface == "org.bluez.Adapter1" and path == self.adapter:
             if "Alias" in changed:
                 self.adapter_name = changed["Alias"]
-                self.owner.link_changed()
+                self._changed()
             if changed.get("Powered") is True:
                 self.update_advertising()
                 self.reconnect_failures = 0
@@ -614,6 +721,10 @@ class Link:
         if changed.get("Connected") is False and was_connected:
             log("iPhone déconnecté")
             self._detach_under(path)
+            self._detach(tuple(a for a in ("ancs", "ams")
+                               if getattr(getattr(self, a), "transport", None)))
+            self._close_att()
+            self.att_failures = 0
             self.owner.device_disconnected()
             self.reconnect_failures = 0
             self._schedule_reconnect()
@@ -631,7 +742,7 @@ class Link:
         if "Address" in changed and self.props.get("AddressType") == "public" \
                 and self.props.get("Paired"):
             self.config.device_address = changed["Address"]
-        self.owner.link_changed()
+        self._changed()
 
     def _shadow_changed(self, path, changed):
         if changed.get("Connected") is True or changed.get("ServicesResolved") is True:
@@ -644,12 +755,15 @@ class Link:
                 dev = get_all(self.bus, BLUEZ, path, "org.bluez.Device1")
             except GLib.Error:
                 dev = {}
-            if not dev.get("Paired") and not self.pairing:
+            if not dev.get("Paired") and not self.pairing \
+                    and dev.get("Address", "").upper() != self.address:
                 # A leftover LE object: BlueZ makes a new one next time the iPhone comes.
+                # Never once resolved to the identity address: removing it then makes
+                # BlueZ unpair that address over LE, which drops the iPhone's LE keys.
                 call_async(self.bus, BLUEZ, self.adapter, "org.bluez.Adapter1", "RemoveDevice",
                            GLib.Variant("(o)", (path,)))
         self._update_le()
-        self.owner.link_changed()
+        self._changed()
 
     def _update_le(self, objects=None):
         try:
@@ -668,12 +782,10 @@ class Link:
 
     def _on_added(self, _conn, _sender, _path, _iface, _signal, params):
         path, interfaces = params.unpack()
-        if self.device and "org.bluez.GattCharacteristic1" in interfaces \
-                and not path.startswith(self.device + "/"):
-            GLib.timeout_add(500, lambda: self._attach() and False)
+        if self.device and "org.bluez.GattCharacteristic1" in interfaces and \
+                self._gatt_of_iphone(path):
+            self._attach_soon()
         if self.device and path.startswith(self.device + "/"):
-            if "org.bluez.GattCharacteristic1" in interfaces:
-                GLib.timeout_add(500, lambda: self._attach() and False)
             if "org.bluez.MediaPlayer1" in interfaces:
                 self.owner.media_changed()
         elif "org.bluez.Device1" in interfaces and self.device is None:
@@ -688,6 +800,8 @@ class Link:
 
     def _on_removed(self, _conn, _sender, path, _iface, _signal, params):
         path, interfaces = params.unpack()
+        if "org.bluez.Device1" in interfaces:
+            self.shadow_seen.pop(path, None)
         if path == self.device and "org.bluez.Device1" in interfaces:
             log("iPhone retiré de BlueZ")
             self._detach()
@@ -697,7 +811,7 @@ class Link:
                 self._pick_device(self._objects())
             except GLib.Error:
                 pass
-            self.owner.link_changed()
+            self._changed()
         elif self.device and path.startswith(self.device + "/"):
             if "org.bluez.MediaPlayer1" in interfaces:
                 self.owner.media_changed()
@@ -723,24 +837,55 @@ class Link:
     def _find(self, objects, hosts, uuid):
         return next((c for c in (find_service(objects, h, uuid) for h in hosts) if c), None)
 
+    def _gatt_of_iphone(self, path):
+        """A GATT object of the iPhone or of its LE (shadow) object. A headset or a mouse
+        adds dozens of them: asked once per device and burst, not once per object."""
+        if path.startswith(self.device + "/"):
+            return True
+        owner = path.rsplit("/service", 1)[0]
+        if owner not in self.shadow_seen:
+            if len(self.shadow_seen) > 64:
+                self.shadow_seen.clear()
+            self.shadow_seen[owner] = self._is_shadow(owner)
+        return self.shadow_seen[owner]
+
+    def _attach_soon(self):
+        """One _attach() for a burst of GATT objects (a connection adds dozens), not one each:
+        every _attach() asks BlueZ for all its objects."""
+        if self.attach_timer:
+            GLib.source_remove(self.attach_timer)
+
+        def run():
+            self.attach_timer = 0
+            self.shadow_seen.clear()
+            self._attach()
+            return False
+        self.attach_timer = GLib.timeout_add(ATTACH_SETTLE_MS, run)
+
     def _attach(self, objects=None):
         if not self.device:
             return
         objects = objects or self._objects()
         self._update_le(objects)
         hosts = self._gatt_hosts(objects)
-        if not hosts:
-            return
+        if hosts:
+            self._attach_le(objects, hosts)
+        # The classic ATT channel has its own socket: it does not need BlueZ to have
+        # resolved the LE services, which it often does not after a suspend or a reboot.
+        self._attach_classic()
+
+    def _attach_le(self, objects, hosts):
         if self.ancs is None and self.config.module_enabled("notifications"):
             chars = self._find(objects, hosts, ancs.SERVICE)
             if chars and all(u in chars for u in (ancs.NOTIFICATION_SOURCE, ancs.CONTROL_POINT,
                                                    ancs.DATA_SOURCE)):
                 log("ANCS : service trouvé, abonnement")
                 self.bond_lost = False
-                self.ancs = ancs.AncsClient(self.bus, chars, self.name, self.notifier, self.owner)
+                self.ancs = ancs.AncsClient(self.bus, chars, self.name, self.notifier, self.owner,
+                                            self.ancs_memory)
                 self.ancs.on_link_lost = lambda: self._detach(("ancs",))
                 self.ancs.start()
-                self.owner.link_changed()
+                self._changed()
         if self.ams is None and self.config.module_enabled("media"):
             chars = self._find(objects, hosts, ams.SERVICE)
             if chars and all(u in chars for u in (ams.REMOTE_COMMAND, ams.ENTITY_UPDATE)):
@@ -749,28 +894,113 @@ class Link:
                 self.ams.start()
                 self.owner.media_changed()
 
+    # --- GATT over the classic link ----------------------------------------------------------
+
+    def _wanted_services(self):
+        wanted = []
+        if self.ancs is None and self.config.module_enabled("notifications"):
+            wanted.append(ancs.SERVICE)
+        if self.ams is None and self.config.module_enabled("media"):
+            wanted.append(ams.SERVICE)
+        return wanted
+
+    def _attach_classic(self):
+        """ANCS/AMS through the classic link: it comes back by itself after a reboot or a
+        suspend, the LE link only when the iPhone wants to (see att.py)."""
+        address = self.props.get("Address")
+        if self.att or self.att_timer or not address or not self.props.get("Connected") \
+                or self.bond_lost or not self._wanted_services():
+            return
+        link = AttLink(address, self._wanted_services(),
+                       on_ready=lambda services: self._on_att_ready(link, services),
+                       on_lost=lambda: self._on_att_lost(link))
+        self.att = link
+        link.open()
+
+    def _on_att_ready(self, link, services):
+        if link is not self.att:
+            return
+        self.att_failures = 0
+        chars = services.get(ancs.SERVICE, {})
+        if self.ancs is None and self.config.module_enabled("notifications") and \
+                all(u in chars for u in (ancs.NOTIFICATION_SOURCE, ancs.CONTROL_POINT,
+                                         ancs.DATA_SOURCE)):
+            log("ANCS : service trouvé sur la liaison classique, abonnement")
+            self.bond_lost = False
+            self.ancs = ancs.AncsClient(self.bus, chars, self.name, self.notifier, self.owner,
+                                            self.ancs_memory)
+            self.ancs.transport = link
+            self.ancs.on_link_lost = lambda: self._detach(("ancs",))
+            self.ancs.start()
+            self._changed()
+        chars = services.get(ams.SERVICE, {})
+        if self.ams is None and self.config.module_enabled("media") and \
+                all(u in chars for u in (ams.REMOTE_COMMAND, ams.ENTITY_UPDATE)):
+            self.ams = ams.AmsClient(self.bus, chars, self.owner.media_state_changed)
+            self.ams.transport = link
+            self.ams.on_link_lost = lambda: self._detach(("ams",))
+            self.ams.start()
+            self.owner.media_changed()
+        if not any(getattr(c, "transport", None) is link for c in (self.ancs, self.ams)):
+            self._close_att()  # nothing taken from this channel: LE serves both
+
+    def _on_att_lost(self, link):
+        if link is not self.att:
+            return
+        self.att = None
+        for attr in ("ancs", "ams"):
+            client = getattr(self, attr)
+            if client and client.transport is link:
+                client.transport = None  # the channel is gone: nothing to unsubscribe
+                client.notifying = []
+                self._detach((attr,))
+        if self.props.get("Connected"):
+            # Try again later, more slowly each time (10 s up to 5 min).
+            delay = RECONNECT_DELAYS[min(self.att_failures, len(RECONNECT_DELAYS) - 1)]
+            self.att_failures += 1
+            self.att_timer = GLib.timeout_add_seconds(delay, self._att_retry)
+
+    def _att_retry(self):
+        self.att_timer = 0
+        self._attach()
+        return False
+
+    def _close_att(self):
+        if self.att_timer:
+            GLib.source_remove(self.att_timer)
+            self.att_timer = 0
+        link, self.att = self.att, None
+        if link:
+            link.close()
+
     def _detach(self, which=("ancs", "ams")):
         for attr in which:
             client = getattr(self, attr)
             if client:
                 client.stop()
                 setattr(self, attr, None)
+        if self.att and not any(getattr(c, "transport", None) is self.att
+                                for c in (self.ancs, self.ams)):
+            self._close_att()
         self.owner.media_changed()
-        self.owner.link_changed()
+        self._changed()
 
     def _detach_under(self, path):
         """Drop the GATT clients living on this object (its link went down)."""
         for attr in ("ancs", "ams"):
             client = getattr(self, attr)
-            if client and any(p.startswith(path + "/") for p in client.chars.values()):
+            if client and client.transport is None and \
+                    any(p.startswith(path + "/") for p in client.chars.values()):
                 self._detach((attr,))
 
     def _detach_if_gone(self):
         objects = self._objects()
         hosts = [self.device] + self._shadows(objects)
-        if self.ancs and self._find(objects, hosts, ancs.SERVICE) is None:
+        if self.ancs and self.ancs.transport is None \
+                and self._find(objects, hosts, ancs.SERVICE) is None:
             self._detach(("ancs",))
-        if self.ams and self._find(objects, hosts, ams.SERVICE) is None:
+        if self.ams and self.ams.transport is None \
+                and self._find(objects, hosts, ams.SERVICE) is None:
             self._detach(("ams",))
 
     def module_toggled(self):
@@ -790,14 +1020,35 @@ class Link:
 
     # --- reconnection -----------------------------------------------------------------------
 
+    def _check_le(self):
+        self._changed()
+        if not self.le_missing or self.le_warned:
+            return
+        self.le_warned = True  # once per daemon run: a reconnection does not fix it
+        log("iPhone connecté sans ANCS : il ne s'est pas connecté en Bluetooth basse consommation")
+        self.notifier.notify(
+            "Boomerang", "dialog-warning", _("Notifications de l'iPhone interrompues"),
+            _("L'iPhone est connecté mais n'envoie plus ses notifications. Vérifiez "
+              "« Partager les notifications système » sur l'iPhone, sinon appairez-le à nouveau."),
+            actions=[("open", _("Ouvrir Boomerang"))], own=True,
+            on_action=lambda _key: launch(["io.github.melvincouwez.Boomerang", "--page", "device"]))
+
     def _on_device_connected(self):
+        self.connected_since = GLib.get_monotonic_time()
+        # Look again once the grace period is over: no signal arrives if LE never comes.
+        GLib.timeout_add_seconds(LE_GRACE_SECONDS + 1, lambda: self._check_le() and False)
+        # ANCS/AMS over the classic link once the profiles have settled.
+        GLib.timeout_add_seconds(CLASSIC_ATT_DELAY, lambda: self._attach() and False)
         self.owner.device_connected(self.device, self.props.get("Address", ""))
+
+    def _next_delay(self):
+        return RECONNECT_DELAYS[min(self.reconnect_failures, len(RECONNECT_DELAYS) - 1)]
 
     def _schedule_reconnect(self, delay=None):
         if self.reconnect_timer:
             GLib.source_remove(self.reconnect_timer)
         if delay is None:
-            delay = RECONNECT_DELAYS[min(self.reconnect_failures, len(RECONNECT_DELAYS) - 1)]
+            delay = self._next_delay()
         self.reconnect_timer = GLib.timeout_add_seconds(delay, self._reconnect_tick)
 
     def _should_reconnect(self):
@@ -826,18 +1077,46 @@ class Link:
             if error is None:
                 log("reconnexion : iPhone reconnecté")
                 self.reconnect_failures = 0
+                self.busy_count, self.busy_since = 0, 0
                 self.bond_lost = False
                 return
+            if "InProgress" in error.message:
+                self._connect_busy()
+                return
+            self.busy_count, self.busy_since = 0, 0
             self.connect_failed(error)
             if not self.bond_lost and not self.props.get("Connected"):
                 self._schedule_reconnect()
 
         call_async(self.bus, BLUEZ, self.device, "org.bluez.Device1", "Connect",
-                   on_done=done, timeout=30000)
+                   on_done=done, timeout=CONNECT_TIMEOUT_MS)
         return False
 
+    def _connect_busy(self):
+        """BlueZ answered « InProgress »: not a failure of the iPhone, so the back-off
+        does not grow. If it lasts, cancel BlueZ's stuck operation with Disconnect()."""
+        now = GLib.get_monotonic_time()
+        if not self.busy_count:
+            self.busy_since = now
+        self.busy_count += 1
+        if self.busy_count >= BUSY_RESET_COUNT and \
+                now - self.busy_since >= BUSY_RESET_SECONDS * 1e6:
+            log("reconnexion : BlueZ reste occupé avec l'iPhone, annulation de l'opération en cours")
+            self.busy_count, self.busy_since = 0, 0
+            call_async(self.bus, BLUEZ, self.device, "org.bluez.Device1", "Disconnect",
+                       on_done=lambda _v, _e: self._schedule_reconnect(5), timeout=10000)
+            return
+        if not self.props.get("Connected"):
+            self._schedule_reconnect(BUSY_RETRY_SECONDS)
+
+    def profile_failed(self, error):
+        """A profile request (HFP) failed: it says whether the iPhone forgot this PC,
+        never how far away it is, so it leaves the reconnection back-off alone."""
+        if bond_lost_error(error):
+            self.connect_failed(error)
+
     def connect_failed(self, error):
-        """A connection or profile request to the iPhone failed (also used by calls)."""
+        """A connection request to the iPhone failed."""
         if bond_lost_error(error):
             if not self.bond_lost:
                 log("iPhone : il ne reconnaît plus ce PC (appairage supprimé sur l'iPhone),"
@@ -846,7 +1125,7 @@ class Link:
                 if self.reconnect_timer:
                     GLib.source_remove(self.reconnect_timer)
                     self.reconnect_timer = 0
-                self.owner.link_changed()
+                self._changed()
             return
         self.reconnect_failures += 1
         if self.reconnect_failures in (1, 5) or self.reconnect_failures % 20 == 0:

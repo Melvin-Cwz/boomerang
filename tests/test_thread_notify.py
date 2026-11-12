@@ -52,12 +52,12 @@ class ThreadNotifyTest(unittest.TestCase):
         self.m.store.close()
         self.tmp.cleanup()
 
-    def receive(self, text="On se voit demain ?"):
+    def receive(self, text="On se voit demain ?", size=None):
         self.handle += 1
         self.m._merge({"inbox": dict([listing(
             str(self.handle), SenderAddress=self.NUMBER, Sender="Alice",
             RecipientAddress="+33600000009", Timestamp=time.strftime("%Y%m%dT%H%M%S"),
-            Subject=text, Size=len(text), Read=False)])}, initial=False)
+            Subject=text, Size=size or len(text), Read=False)])}, initial=False)
         return self.m.store.threads()[0]["id"]
 
     def test_round_trip(self):
@@ -120,13 +120,35 @@ class ThreadNotifyTest(unittest.TestCase):
         self.m.set_quick_replies([])
         self.assertEqual(self.m.quick_replies(), [])  # emptied on purpose: no defaults back
 
+    def test_inline_bubble(self):
+        """A server with inline reply (patched elementary): history, Tout lire, resident."""
+        self.notifier.capabilities = lambda: {"actions", "inline-reply"}
+        self.notifier.close = lambda nid: self.closed.append(nid)
+        self.closed = []
+        self.receive("Premier")
+        tid = self.receive("Deuxième, tronqué", size=400)
+        note = self.notifier.shown[-1]
+        keys = [k for k, _ in note["actions"]]
+        self.assertEqual(keys[:3], ["default", "read-full", "inline-reply"])
+        self.assertEqual(note["actions"][0][1], "Ouvrir")
+        self.assertTrue(note["hints"]["resident"].unpack())
+        self.assertEqual(note["hints"]["x-boomerang-history"].unpack(), [(False, "Premier")])
+        asked = []
+        self.m.read_full = lambda key: asked.append(key) or True
+        note["on_action"]("read-full")  # stays open, refreshed once the text is here
+        self.assertEqual(len(asked), 1)
+        self.assertEqual(self.closed, [])
+        note["on_action"]("inline-reply:Oui")
+        self.assertEqual(self.sent, [(tid, "Oui")])
+        self.assertEqual(self.closed, [])  # the server closed it itself
+
     def test_quick_reply_action_sends(self):
         self.m.set_quick_replies(["J'arrive", "Plus tard", "Merci"])
         tid = self.receive()
         note = self.notifier.shown[-1]
         keys = [k for k, _ in note["actions"]]
-        self.assertEqual(keys, ["default", "reply", "quick:0", "quick:1"])
-        self.assertEqual(note["actions"][3][1], "Plus tard")
+        self.assertEqual(keys, ["default", "quick:0", "quick:1"])
+        self.assertEqual(note["actions"][2][1], "Plus tard")
         self.m.set_quick_replies(["Autre chose"])  # changed after the banner was shown
         note["on_action"]("quick:1")
         self.assertEqual(self.sent, [(tid, "Plus tard")])

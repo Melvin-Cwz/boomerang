@@ -118,6 +118,17 @@ class Notifications:
         if self.items.pop(uid, None) is not None:
             self.on_changed()
 
+    def known(self, uid):
+        return uid in self.items
+
+    def keep_only(self, uids):
+        """After a reconnection: drop what the iPhone no longer shows."""
+        gone = [uid for uid in self.items if uid not in uids]
+        for uid in gone:
+            del self.items[uid]
+        if gone:
+            self.on_changed()
+
     def clear(self):
         self.items.clear()
         self.on_changed()

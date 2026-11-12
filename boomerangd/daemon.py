@@ -5,6 +5,7 @@
 import os
 import signal
 import sys
+import threading
 
 from gi.repository import Gio, GLib
 
@@ -19,6 +20,7 @@ from .hotspot import Hotspot
 from .icloud import ICloud
 from .link import Link
 from .linkpreview import LinkPreviews
+from .mailcodes import MailCodes
 from .messages import Messages
 from .migrate import migrate
 from .mirror import Mirror
@@ -34,7 +36,8 @@ from .sounds import Sounds
 from .updates import Updates
 from .apps import OptionalApps
 from .i18n import _
-from .util import Notifier, log
+from . import catalog
+from .util import Notifier, icloud_account_exists, launch, log, start_watchdog
 
 LOW_BATTERY_LEVELS = (20, 10)
 
@@ -59,6 +62,8 @@ class Daemon:
         self.icloud = ICloud(self.notifier, self.link_changed)
         self.mpris = MprisPlayer(self.session, "iPhone")
         self.messages = Messages(self.session, self.notifier, self)
+        self.mail_codes = None  # watches mail notifications: « codes » module only
+        self.missing_packages = []
         self.link_previews = LinkPreviews(self.config)
         self.notifications = Notifications(self.config, self._notifications_changed)
         self.now_playing = NowPlaying(self.system, self.config, self.notifications.icons,
@@ -70,24 +75,31 @@ class Daemon:
         self.calls.on_ringing = self._call_ringing
         self.call_windows = set()
         self.contact_book = ContactBook(self.config, self._contacts_changed)
-        self.headphones = Headphones(self.system, self.session, self.config, self._headphones_changed)
+        self.headphones = Headphones(self.system, self.session, self.config, self._headphones_changed,
+                                     self.notifier)
         self.audio = PhoneAudio(self.system, self.config, self.link_changed)
         self.updates = Updates(self.config, self.notifier, self.link_changed)
         self.apps = OptionalApps(self.link_changed)
         self.hotspot = Hotspot(self.system, self._device_info, self.link_changed)
+        self.hotspot.on_offer = self._offer_hotspot
+        self.calls.can_text = lambda: self.messages.state() == "ready"
+        self.calls.decline_text = lambda: self.config.string(
+            "calls", "decline_text", _("Je te rappelle dans un instant."))
+        self.calls.send_sms = self._send_sms
         self.proximity = Proximity(self.config, in_call=lambda: bool(self.calls.active_calls()),
                                    on_changed=self.link_changed, session_bus=self.session)
         self.files = Files(self.config, self.notifier, self.link_changed)
         self.mirror = Mirror(self.link_changed, self.config)
         self.control = Control(self.system, self.config,
                                lambda: self.link.adapter if self.link else None, self.link_changed)
+        self.mirror.on_video_size = self.control.set_video_size  # the pointer follows the picture
         self.photos_usb = PhotosUsb(self.config, self.notifier, self.link_changed)
         self.drive_provider = DriveProvider(self.session)
         self.link = Link(self.system, self.notifier, self.config, self)
         self.now_playing.attach(self.link)
         if self.config.module_enabled("calls"):
             self.calls.enable()
-        if self.config.module_enabled("icloud"):
+        if self.config.module_enabled("icloud") and catalog.added(self.config, "icloud"):
             self.icloud.enable()
         if self.config.module_enabled("messages"):
             self.messages.enable()
@@ -105,6 +117,7 @@ class Daemon:
             "Advertising": bool(link and link.advertising),
             "Pairing": bool(link and link.pairing),
             "LinkProblem": link.problem if link else "",
+            "LinkState": link.state if link else "off",
             "AdapterName": link.adapter_name if link else "",
             "DeviceName": link.name if link and link.device else "",
             "DeviceAddress": address,
@@ -144,6 +157,7 @@ class Daemon:
             "TetheringState": tethering["state"],
             "TetheringError": tethering["error"],
             "Proximity": self.proximity.state(),
+            "Catalog": self.catalog(),
             "Files": self.files.state(),
             "Mirror": self.mirror.state(),
             "Control": self.control.state(),
@@ -176,13 +190,10 @@ class Daemon:
         self.service.send_progress(thread, key, fraction)
 
     def _update_badge(self):
-        """Badges on the dock icons (LauncherEntry API): unread messages on Messages,
-        missed calls on Téléphone, both on Boomerang."""
+        """Badge on the dock icon (LauncherEntry API): unread messages and missed calls."""
         unread = self.messages.unread_total() if self.config.module_enabled("messages") else 0
         missed = self.messages.missed_unseen() if self.config.module_enabled("messages") else 0
-        badges = {"io.github.melvincouwez.Boomerang.desktop": unread + missed,
-                  "io.github.melvincouwez.Boomerang.Messages.desktop": unread,
-                  "io.github.melvincouwez.Boomerang.Phone.desktop": missed}
+        badges = {"io.github.melvincouwez.Boomerang.desktop": unread + missed}
         previous = getattr(self, "badges", {})
         for desktop, count in badges.items():
             if previous.get(desktop) == count:
@@ -220,6 +231,12 @@ class Daemon:
 
     def notification_removed(self, uid):
         self.notifications.removed(uid)
+
+    def notification_known(self, uid):
+        return self.notifications.known(uid)
+
+    def notifications_present(self, uids):
+        self.notifications.keep_only(uids)
 
     def _notifications_changed(self):
         if not getattr(self, "notifications_pending", False):
@@ -281,7 +298,7 @@ class Daemon:
         app = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
                            "io.github.melvincouwez.Boomerang")
         try:
-            Gio.Subprocess.new([app, "--call"], Gio.SubprocessFlags.NONE)
+            launch([app, "--call"])
         except GLib.Error as error:
             log(f"appels : fenêtre d'appel non ouverte ({error.message})")
 
@@ -397,7 +414,7 @@ class Daemon:
         if not link or link.device != device_path or link.bond_lost \
                 or not link.props.get("Connected"):
             return
-        self.calls.ensure_hfp(device_path, address, on_error=link.connect_failed)
+        self.calls.ensure_hfp(device_path, address, on_error=link.profile_failed)
 
     def device_disconnected(self):
         self.messages.device_disconnected()
@@ -406,11 +423,39 @@ class Daemon:
     def device_rssi(self, value):
         self.proximity.rssi_sample(value)
 
+    def _send_sms(self, number, text, on_done):
+        conversation = self.messages.open_conversation(number)
+        if not conversation:
+            on_done("invalid number")
+            return
+        self.messages.send(conversation["id"], text, on_done)
+
+    def _offer_hotspot(self):
+        """Network lost: offer the iPhone's connection (boomerangd.conf [hotspot] offer)."""
+        if not self.config.boolean("hotspot", "offer", True) or not (self.link and self.link.props.get("Connected")):
+            return
+
+        def answered(key):
+            if key == "share":
+                try:
+                    self.hotspot.connect()
+                except RuntimeError as error:
+                    log(f"partage de connexion : {error}")
+
+        self.notifier.notify("Boomerang", "network-wireless-offline-symbolic", _("Plus de connexion"),
+                             _("Utiliser le partage de connexion de l'iPhone ?"),
+                             [("share", _("Partager la connexion")), ("later", _("Pas maintenant"))],
+                             own=True, on_action=answered)
+
     def _device_info(self):
         """(address, service UUIDs) of the iPhone, for the Bluetooth tethering."""
         props = self.link.props if self.link else {}
         address = props.get("Address", "") or self.config.device_address
         return address, list(props.get("UUIDs", []))
+
+    def mail_code(self, text, sender=""):
+        """ANCS notification from a mail app of the iPhone: offer its code, if any."""
+        self.messages.code_from_mail(text, sender)
 
     def message_notification(self, title, subtitle, message, date=None, replay=False, uid=None,
                              modified=False):
@@ -493,6 +538,91 @@ class Daemon:
             self.notifier.close(self.battery_note)
         self.link_changed()
 
+    # --- modules on demand (catalog.py) -------------------------------------------------
+
+    def _modules_in_use(self):
+        """Features already relied on before Boomerang 2: their module stays."""
+        address = self.link.props.get("Address", "") if self.link else ""
+        try:
+            hotspot = bool(address and self.hotspot._find(address))
+        except GLib.Error:
+            hotspot = False
+        return {
+            "airpods": bool(self.headphones.pods),
+            "audio": self.config.boolean("audio", "receive", False),
+            "icloud": self.config.module_enabled("icloud") and icloud_account_exists(),
+            "files": self.config.boolean("files", "localsend", False),
+            "photos": self.config.keyfile.has_group("photos"),
+            "mirror": self.config.keyfile.has_group("mirror"),
+            "hotspot": hotspot,
+            "proximity": self.proximity.enabled,
+            "codes": self.config.string("messages", "one_time_codes", "copy") == "browser",
+        }
+
+    def _migrate_catalog(self):
+        self._refresh_missing()
+        if not self.config.boolean(catalog.GROUP, "migrated", False):
+            kept = catalog.migrate(self.config, self._modules_in_use())
+            log(f"modules : catalogue créé, repris : {', '.join(kept) or 'aucun'}")
+            self._apply_catalog()
+        self.link_changed()
+
+    def _refresh_missing(self):
+        """Packages modules may need: probed now and then. The probe runs rclone and
+        pipewire (up to 25 s): in a thread, never on the loop the watchdog pings from."""
+        def probe():
+            try:
+                from .components import missing
+                found = [package for package, _label, _state in missing()]
+            except Exception:  # a probe must never break the daemon
+                found = []
+            GLib.idle_add(apply, found)
+
+        def apply(found):
+            if found != self.missing_packages:
+                self.missing_packages = found
+                self.link_changed()
+            return False
+
+        threading.Thread(target=probe, name="components", daemon=True).start()
+
+    def _apply_catalog(self):
+        """Start what added modules need, stop what removed ones left running."""
+        added = lambda module: catalog.added(self.config, module)  # noqa: E731
+        # AirPods: also watched before the first catalogue, which keeps the module if some are paired.
+        if added("airpods") or not self.config.boolean(catalog.GROUP, "migrated", False):
+            self.headphones.start()
+        else:
+            self.headphones.stop()
+        if added("icloud"):
+            self.drive_provider.start()
+            if self.config.module_enabled("icloud"):
+                self.icloud.enable()
+        else:
+            self.drive_provider.stop()
+            self.icloud.disable()
+        if added("files") and self.files.enabled:
+            self.files.start()
+        elif not added("files"):
+            self.files.stop()
+        if added("codes") and self.mail_codes is None:
+            self.mail_codes = MailCodes(self.messages.code_from_mail)
+        elif not added("codes") and self.mail_codes is not None:
+            self.mail_codes.stop()
+            self.mail_codes = None
+
+    def set_module_added(self, module, value):
+        self.config.set_boolean(catalog.GROUP, module, value)
+        log(f"module {module} {'ajouté' if value else 'retiré'}")
+        if module == "files" and value and not self.config.boolean("files", "localsend", False):
+            self.files.set_enabled(True)  # adding it means using it
+        self._refresh_missing()
+        self._apply_catalog()
+        self.link_changed()
+
+    def catalog(self):
+        return catalog.entries(self.config, self.missing_packages)
+
     # --- lifecycle ---------------------------------------------------------------------
 
     def run(self):
@@ -501,7 +631,10 @@ class Daemon:
         GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.stop)
         log(f"boomerangd {__version__} démarré")
         self.updates.start()
-        self.drive_provider.start()
+        self._apply_catalog()
+        # Boomerang 2, first run: BlueZ and NetworkManager answer first, then the migration.
+        GLib.timeout_add_seconds(5, lambda: self._migrate_catalog() and False)
+        start_watchdog()
         self.loop.run()
 
     def _on_name_lost(self, _conn, _name):

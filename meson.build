@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 MelvinCwz
 project('io.github.melvincouwez.Boomerang', 'vala', 'c',
-  version: '0.8.3',
+  version: '2.0.0~beta1',
   license: 'GPL-3.0-or-later',
   meson_version: '>= 1.0',
 )
@@ -24,6 +24,10 @@ conf.set('BINDIR', bindir)
 conf.set('PKGDATADIR', pkgdatadir)
 conf.set('PYTHON', python.full_path())
 conf.set('LIBEXECDIR', pkglibexecdir)
+wingpanel_dep = dependency('wingpanel-9', required: get_option('indicator'))
+# Wingpanel indicator add-on: copied into Wingpanel's directory by a root helper (see
+# bin/boomerang-wingpanel-addon.in). Empty when Wingpanel is not built here.
+conf.set('WINGPANEL_DIR', wingpanel_dep.found() ? wingpanel_dep.get_variable('indicatorsdir') : '')
 conf.set('GETTEXT_PACKAGE', gettext_package)
 conf.set('LOCALEDIR', localedir)
 
@@ -37,6 +41,11 @@ foreach script : ['boomerangd', 'boomerang-icloud-signin', 'boomerang-icloud-dri
   configure_file(input: 'bin' / script + '.in', output: script, configuration: conf,
                  install: true, install_dir: bindir, install_mode: 'rwxr-xr-x')
 endforeach
+
+# Wingpanel indicator add-on helper, run as root through pkexec (Réglages).
+configure_file(input: 'bin' / 'boomerang-wingpanel-addon.in', output: 'boomerang-wingpanel-addon',
+               configuration: conf, install: true, install_dir: pkglibexecdir,
+               install_mode: 'rwxr-xr-x')
 
 # Update installer run as root through pkexec, and its polkit action (see updates.py).
 configure_file(input: 'bin' / 'boomerang-install-update.in', output: 'boomerang-install-update',
@@ -65,8 +74,8 @@ install_data('docs' / 'mentions-legales.md', 'docs' / 'confidentialite.md', 'doc
 subdir('data')
 subdir('po')
 subdir('src')
+subdir('tests')
 
-wingpanel_dep = dependency('wingpanel-9', required: get_option('indicator'))
 if wingpanel_dep.found()
   subdir('indicator')
 endif

@@ -37,12 +37,52 @@ def icloud_uid_prefix():
             if has(legacy):
                 return legacy
     return ICLOUD_UID_PREFIX
+def icloud_account_exists():
+    """An iCloud account was added to Evolution Data Server (any name of the app)."""
+    sources = os.path.join(GLib.get_user_config_dir(), "evolution", "sources")
+    return any(os.path.exists(os.path.join(sources, f"{prefix}-collection.source"))
+               for prefix in ICLOUD_UID_PREFIXES)
+
+
 BLUEZ = "org.bluez"
+
+
+def sd_notify(message):
+    """Tell systemd something (« WATCHDOG=1 »...); a no-op outside a systemd unit."""
+    path = os.environ.get("NOTIFY_SOCKET")
+    if not path:
+        return False
+    import socket
+    if path.startswith("@"):
+        path = "\0" + path[1:]  # abstract socket
+    with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM | socket.SOCK_CLOEXEC) as sock:
+        sock.connect(path)
+        sock.sendall(message.encode())
+    return True
+
+
+def start_watchdog():
+    """Ping systemd from the main loop: if the loop hangs, the pings stop and
+    systemd restarts the daemon (WatchdogSec= in boomerangd.service)."""
+    usec = int(os.environ.get("WATCHDOG_USEC", "0") or 0)
+    if not usec or os.environ.get("WATCHDOG_PID", str(os.getpid())) != str(os.getpid()):
+        return 0
+    return GLib.timeout_add_seconds(max(1, usec // 2_000_000),
+                                    lambda: sd_notify("WATCHDOG=1") or True)
 
 
 def log(message):
     # journald adds the timestamp and the unit name.
     print(message, flush=True)
+
+
+def launch(argv):
+    """Start a window (Boomerang, a folder) from the daemon in its own systemd scope:
+    a plain child would sit in boomerangd.service and close when the daemon restarts.
+    Raises GLib.Error like Gio.Subprocess.new."""
+    if GLib.find_program_in_path("systemd-run"):
+        argv = ["systemd-run", "--user", "--scope", "--quiet", "--collect", "--"] + list(argv)
+    return Gio.Subprocess.new(argv, Gio.SubprocessFlags.NONE)
 
 
 def call_sync(bus, name, path, interface, method, args=None, reply=None, timeout=5000):
@@ -81,6 +121,9 @@ def set_prop(bus, name, path, interface, prop, value, what=None):
                GLib.Variant("(ssv)", (interface, prop, value)), what=what)
 
 
+NOTIFY_TIMEOUT_MS = 1500
+
+
 class Notifier:
     """org.freedesktop.Notifications client with action callbacks."""
 
@@ -104,7 +147,8 @@ class Notifier:
         if self._caps is None:
             try:
                 self._caps = set(call_sync(self.bus, self.NAME, self.PATH, self.NAME,
-                                           "GetCapabilities", reply="(as)").unpack()[0])
+                                           "GetCapabilities", reply="(as)",
+                                           timeout=NOTIFY_TIMEOUT_MS).unpack()[0])
             except GLib.Error:
                 return set()  # server not up yet: ask again next time
         return self._caps
@@ -120,7 +164,8 @@ class Notifier:
         """Show or replace a notification; returns its id (0 on failure).
 
         own=True ties the notification to the Boomerang launcher (its name, icon and
-        notification settings); iPhone notifications keep the phone name instead.
+        notification settings), own="<desktop id>" to another launcher (Messages, Phone);
+        iPhone notifications keep the phone name instead.
         """
         # Bodies carry text from outside (SMS, iPhone notifications, file names): with a
         # server that reads markup in them, a "<a href>" or "<img>" must stay plain text.
@@ -132,12 +177,13 @@ class Notifier:
             flat += [key, label]
         hint_dict = dict(hints or {})
         if own:
-            hint_dict["desktop-entry"] = GLib.Variant("s", APP_ID)
+            hint_dict["desktop-entry"] = GLib.Variant("s", own if isinstance(own, str) else APP_ID)
         try:
+            # Short timeout: a frozen notification server (gala) must not hold the loop.
             result = call_sync(self.bus, self.NAME, self.PATH, self.NAME, "Notify",
                                GLib.Variant("(susssasa{sv}i)", (
                                    app_name, replaces, icon, summary, body, flat,
-                                   hint_dict, timeout)), "(u)")
+                                   hint_dict, timeout)), "(u)", timeout=NOTIFY_TIMEOUT_MS)
         except GLib.Error as error:
             log(f"notification impossible : {error.message}")
             return 0

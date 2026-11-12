@@ -134,7 +134,7 @@ public class Boomerang.ComposeField : Gtk.Box {
             accepts_tab = false,
             top_margin = 8,
             bottom_margin = 8,
-            left_margin = 4,
+            left_margin = 12,
             right_margin = 4,
             valign = Gtk.Align.CENTER
         };
@@ -167,7 +167,7 @@ public class Boomerang.ComposeField : Gtk.Box {
 
         placeholder = new Gtk.Label (_("Message texte")) {
             xalign = 0,
-            margin_start = 5,
+            margin_start = 13,
             can_target = false
         };
         placeholder.add_css_class (Granite.CssClass.DIM);
@@ -196,8 +196,9 @@ public class Boomerang.ComposeField : Gtk.Box {
         emoji_button.add_css_class ("compose-round");
         emoji_button.add_css_class ("compose-emoji");
 
+        // As in Apple's Messages: the send arrow shows only once there is something to send.
         send_button = new Gtk.Button.from_icon_name ("go-up-symbolic") {
-            sensitive = false,
+            visible = false,
             tooltip_text = _("Envoyer (Entrée)"),
             valign = Gtk.Align.END
         };
@@ -214,11 +215,11 @@ public class Boomerang.ComposeField : Gtk.Box {
 
         view.buffer.changed.connect (() => {
             placeholder.visible = view.buffer.text == "";
-            send_button.sensitive = text () != "";
+            send_button.visible = text () != "";
         });
 
-        append (emoji_button);
         append (scroll);
+        append (emoji_button);
         append (send_button);
     }
 

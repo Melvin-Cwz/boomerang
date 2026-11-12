@@ -15,9 +15,22 @@ public class Boomerang.Application : Gtk.Application {
             background-color: alpha(@fg_color, 0.09);
             color: @fg_color;
         }
+        /* Sent: blueberry 300 to 500, blueberry 900 text; the tail is a tighter corner on the
+           last bubble of a run. */
         .bubble.outgoing {
-            background-color: @selected_bg_color;
-            color: @selected_fg_color;
+            background-color: @BLUEBERRY_500;
+            background-image: linear-gradient(to bottom, @BLUEBERRY_300, @BLUEBERRY_500);
+            color: @BLUEBERRY_900;
+            font-weight: 500;
+        }
+        .bubble.outgoing link {
+            color: @BLUEBERRY_900;
+        }
+        .bubble.incoming.run-end {
+            border-bottom-left-radius: 5px;
+        }
+        .bubble.outgoing.run-end {
+            border-bottom-right-radius: 5px;
         }
         .scroll-down {
             border-radius: 9999px;
@@ -33,14 +46,6 @@ public class Boomerang.Application : Gtk.Application {
         }
         .find-match .bubble {
             box-shadow: 0 0 0 2px alpha(@accent_color, 0.55);
-        }
-        .unread-marker label {
-            color: @accent_color;
-            font-size: 0.85em;
-            font-weight: bold;
-        }
-        .unread-marker separator {
-            background-color: alpha(@accent_color, 0.4);
         }
         button.link-card {
             padding: 0;
@@ -59,65 +64,95 @@ public class Boomerang.Application : Gtk.Application {
         .link-title {
             font-weight: bold;
         }
-        /* Header bars in Boomerang's colour, from the icon's screen, like Cassette and
-           the web apps: raspberry-violet gradient, white title and buttons. Popovers
-           opened from the bar keep the theme's colours. */
-        headerbar.brand {
-            min-height: 36px;
-            padding-top: 0;
-            padding-bottom: 0;
-            background: linear-gradient(#b4519f, #96368a);
-            box-shadow: inset 0 1px alpha(white, 0.22), inset 0 -1px #6f2266;
-            border: none;
-        }
-        headerbar.brand > windowhandle > box {
+        /* A conversation with its own colour tints its header bar (ThreadStyle): white text on it. */
+        headerbar.tinted > windowhandle > box,
+        headerbar.tinted > windowhandle > box button,
+        headerbar.tinted > windowhandle > box menubutton > button,
+        headerbar.tinted windowcontrols button {
             color: white;
         }
-        headerbar.brand > windowhandle > box label {
-            text-shadow: 0 1px alpha(black, 0.25);
-        }
-        headerbar.brand > windowhandle > box {
-            min-height: 36px;
-        }
-        headerbar.brand > windowhandle > box button,
-        headerbar.brand windowcontrols button {
-            min-height: 26px;
-            min-width: 26px;
-            padding: 0 4px;
-            margin-top: 0;
-            margin-bottom: 0;
-        }
-        headerbar.brand > windowhandle > box button,
-        headerbar.brand > windowhandle > box menubutton > button,
-        headerbar.brand windowcontrols button {
-            color: white;
-            background: none;
-            border: none;
-            box-shadow: none;
-        }
-        headerbar.brand > windowhandle > box button:hover,
-        headerbar.brand > windowhandle > box menubutton > button:hover,
-        headerbar.brand windowcontrols button:hover {
+        headerbar.tinted > windowhandle > box button:hover,
+        headerbar.tinted > windowhandle > box menubutton > button:hover,
+        headerbar.tinted windowcontrols button:hover {
             background-color: alpha(white, 0.16);
         }
-        headerbar.brand > windowhandle > box button:active,
-        headerbar.brand > windowhandle > box button:checked,
-        headerbar.brand > windowhandle > box menubutton > button:checked {
-            background-color: alpha(black, 0.14);
-        }
-        headerbar.brand > windowhandle > box button:disabled {
-            color: alpha(white, 0.4);
-        }
-        headerbar.brand .dim-label,
-        headerbar.brand .dim {
+        headerbar.tinted .dim-label,
+        headerbar.tinted .dim {
             color: alpha(white, 0.85);
             opacity: 1;
         }
-        @media (prefers-color-scheme: dark) {
-            headerbar.brand {
-                background: linear-gradient(#8f3a80, #74296a);
-                box-shadow: inset 0 1px alpha(white, 0.12), inset 0 -1px alpha(black, 0.6);
-            }
+        /* The iPhone link, only while it is missing: a thin band, and a dot on « iPhone ». */
+        .link-banner {
+            padding: 6px 12px;
+            background-color: mix(@base_color, @BANANA_500, 0.18);
+            border-bottom: 1px solid alpha(@fg_color, 0.1);
+        }
+        .mode-switcher button.needs-attention > label {
+            padding-right: 12px;
+            background-image: radial-gradient(circle, @BANANA_700 3px, transparent 3.5px);
+            background-size: 8px 8px;
+            background-repeat: no-repeat;
+            background-position: right center;
+        }
+        /* Received: a faint gradient with an inner hairline. */
+        .bubble.incoming {
+            background-color: transparent;
+            background-image: linear-gradient(mix(@base_color, @fg_color, 0.02), mix(@base_color, @fg_color, 0.1));
+            box-shadow: inset 0 0 0 1px alpha(@fg_color, 0.08);
+        }
+        /* Personnes: names in weight 600, the chosen person tinted with the accent, a missed
+           call in red (the words say it too), the thread's calls as pills, Appeler in lime. */
+        .person-name {
+            font-weight: 600;
+        }
+        .people-sidebar row:selected {
+            background-color: alpha(@accent_color, 0.22);
+            color: @fg_color;
+        }
+        .event-missed {  /* mixed with the text colour: dark red when light, light red when dark */
+            color: mix(@STRAWBERRY_500, @fg_color, 0.45);
+            opacity: 1;
+        }
+        .call-pill {
+            border-radius: 9999px;
+            padding: 5px 14px;
+        }
+        .call-pill.with-button {
+            padding: 4px 5px 4px 14px;
+        }
+        .call-pill.done {
+            background-color: mix(@base_color, @LIME_500, 0.12);
+            border: 1px solid mix(@base_color, @LIME_500, 0.5);
+        }
+        .call-pill.done image {
+            color: mix(@LIME_500, @fg_color, 0.3);
+        }
+        .call-pill.missed {
+            background-color: mix(@base_color, @STRAWBERRY_300, 0.1);
+            border: 1px solid mix(@base_color, @STRAWBERRY_300, 0.5);
+            color: mix(@STRAWBERRY_500, @fg_color, 0.45);
+        }
+        .call-pill.missed image {
+            color: mix(@STRAWBERRY_500, @fg_color, 0.45);
+        }
+        .call-pill button {
+            min-height: 0;
+            padding: 3px 12px;
+            border-radius: 9999px;
+            border: 1px solid alpha(@fg_color, 0.2);
+            background-color: @base_color;
+            color: @fg_color;
+            font-weight: 600;
+            box-shadow: none;
+        }
+        /* The name at the top of a conversation opens the person's card. */
+        button.thread-title {
+            padding: 2px 8px;
+        }
+        button.details-action {
+            min-width: 64px;
+            padding: 8px 6px;
+            border-radius: 12px;
         }
         button.style-thumb {
             padding: 0;
@@ -187,17 +222,10 @@ public class Boomerang.Application : Gtk.Application {
             background-color: alpha(@accent_color, 0.18);
             color: @accent_color;
         }
-        .sent-check {
-            color: alpha(@fg_color, 0.45);
-            margin-top: -1px;
-        }
         .search-flash .bubble {
             outline: 2px solid @selected_bg_color;
             outline-offset: 2px;
             transition: outline-color 300ms ease-out;
-        }
-        .hover-tools {
-            transition: opacity 120ms ease-out;
         }
         .unread-dot {
             min-width: 9px;
@@ -245,6 +273,34 @@ public class Boomerang.Application : Gtk.Application {
             border-radius: 9999px;
             padding: 3px 12px;
         }
+        /* Drawn here, not left to the theme: Granite 9 draws plain buttons without a frame. */
+        button.keypad-key,
+        button.call-option,
+        menubutton.call-option > button,
+        button.call-choice {
+            border-radius: 9999px;
+            border: 1px solid alpha(@fg_color, 0.12);
+            background-color: alpha(@fg_color, 0.04);
+            box-shadow: none;
+        }
+        button.keypad-key:hover,
+        button.call-option:hover,
+        menubutton.call-option > button:hover,
+        button.call-choice:hover {
+            background-color: alpha(@fg_color, 0.08);
+        }
+        button.keypad-key:active,
+        button.call-option:active,
+        menubutton.call-option > button:active,
+        menubutton.call-option > button:checked,
+        button.call-choice:active {
+            background-color: alpha(@fg_color, 0.14);
+        }
+        button.call-option:checked {
+            background-color: alpha(@accent_color, 0.2);
+            border-color: alpha(@accent_color, 0.5);
+            color: @accent_color;
+        }
         button.keypad-key {
             min-width: 58px;
             min-height: 58px;
@@ -262,9 +318,26 @@ public class Boomerang.Application : Gtk.Application {
         entry.dial-number {
             font-size: 1.4em;
         }
-        button.call-option {
+        button.call-option,
+        menubutton.call-option > button {
             min-width: 52px;
             min-height: 52px;
+            padding: 0;
+        }
+        /* Double call banner: full-width choices, answer in Lime like the answer button. */
+        .call-banner {
+            padding: 12px;
+        }
+        button.call-choice {
+            padding: 6px 14px;
+        }
+        button.call-choice.answer {
+            background-image: linear-gradient(@LIME_500, @LIME_700);
+            border-color: transparent;
+            color: white;
+        }
+        button.call-choice.decline {
+            color: @STRAWBERRY_500;
         }
         button.call-green,
         button.call-red {
@@ -419,10 +492,15 @@ public class Boomerang.Application : Gtk.Application {
                          _("Show the in-call window"), null);
         add_main_option ("to", 0, OptionFlags.NONE, OptionArg.STRING,
                          _("Write to a phone number or address (Messages)"), "ADDRESS");
+        add_main_option ("dial", 0, OptionFlags.NONE, OptionArg.STRING,
+                         _("Show the keypad with this number, without calling"), "NUMBER");
         add_main_option ("thread", 0, OptionFlags.NONE, OptionArg.STRING,
                          _("Open a message thread"), "ID");
         add_main_option ("reply", 0, OptionFlags.NONE, OptionArg.STRING,
                          _("Open a message thread ready to answer"), "ID");
+        add_main_option ("send", 0, OptionFlags.NONE, OptionArg.NONE,
+                         _("Send the files given after the options to the iPhone (LocalSend)"), null);
+        add_main_option (OPTION_REMAINING, 0, OptionFlags.NONE, OptionArg.FILENAME_ARRAY, "", "FILE…");
         add_main_option ("resolve-packages", 0, OptionFlags.HIDDEN, OptionArg.STRING,
                          _("Development: resolve comma-separated packages through PackageKit, install nothing"),
                          "NAMES");
@@ -455,8 +533,31 @@ public class Boomerang.Application : Gtk.Application {
         bool reply = options.lookup ("reply", "s", out thread);
         string? page = null;
         string? packages = null;
+        // tel: and sms: links (MimeType in the launchers) arrive as a bare argument.
+        var rest = options.lookup_value (OPTION_REMAINING, VariantType.BYTESTRING_ARRAY);
+        if (rest != null && rest.n_children () > 0 && !options.contains ("send")) {
+            string uri = rest.get_bytestring_array ()[0];
+            if (uri.has_prefix ("sms:")) {
+                string number = Uri.unescape_string (uri.substring (4).split ("?")[0]) ?? "";
+                options.insert_value ("to", new Variant.string (number.replace ("/", "")));
+            } else if (uri.has_prefix ("tel:")) {
+                options.insert_value ("dial", new Variant.string (
+                    Uri.unescape_string (uri.substring (4).split ("?")[0]) ?? ""));
+            }
+        }
         if (options.lookup ("resolve-packages", "s", out packages)) {
             return resolve_packages (packages);
+        }
+        string? number = null;
+        if (options.lookup ("dial", "s", out number)) {
+            try {
+                register (null);
+            } catch (Error e) {
+                return 1;
+            }
+            activate_action ("dial", new Variant ("s", number));
+            skip_activate = !get_is_remote ();
+            return get_is_remote () ? 0 : -1;
         }
         if (options.contains ("setup") || options.lookup ("page", "s", out page)) {
             try {
@@ -481,6 +582,23 @@ public class Boomerang.Application : Gtk.Application {
                 return 1;
             }
             activate_action ("show-call", null);
+            skip_activate = !get_is_remote ();
+            return get_is_remote () ? 0 : -1;
+        }
+        if (options.contains ("send")) {
+            string[] paths = {};
+            var files = options.lookup_value (OPTION_REMAINING, VariantType.BYTESTRING_ARRAY);
+            if (files != null) {
+                foreach (var name in files.get_bytestring_array ()) {
+                    paths += File.new_for_commandline_arg (name).get_path ();
+                }
+            }
+            try {
+                register (null);
+            } catch (Error e) {
+                return 1;
+            }
+            activate_action ("send-files", new Variant.strv (paths));
             skip_activate = !get_is_remote ();
             return get_is_remote () ? 0 : -1;
         }
@@ -520,10 +638,14 @@ public class Boomerang.Application : Gtk.Application {
         quit_action.activate.connect (() => quit ());
         add_action (quit_action);
         set_accels_for_action ("app.quit", { "<Control>q" });
-        // Ctrl+1 to Ctrl+8: sections of the main window (win.section). Set here: in the
-        // window's construct block the window has no application yet.
+        // Ctrl+1 to 3: Personnes, Pavé, iPhone; Alt+1 to 8: sections of the iPhone column.
+        // Set here: in the window's construct block the window has no application yet.
+        string[] modes = { "people", "keypad", "iphone" };
+        for (int i = 0; i < modes.length; i++) {
+            set_accels_for_action ("win.mode::" + modes[i], { "<Control>%d".printf (i + 1) });
+        }
         for (int i = 0; i < 8; i++) {
-            set_accels_for_action ("win.section(%d)".printf (i), { "<Control>%d".printf (i + 1) });
+            set_accels_for_action ("win.section(%d)".printf (i), { "<Alt>%d".printf (i + 1) });
         }
 
         // F1 in every window, detached apps included: the built-in guide.
@@ -545,36 +667,39 @@ public class Boomerang.Application : Gtk.Application {
             bool reply;
             param.get ("(sb)", out thread, out reply);
             if (reply) {
-                new QuickReply (this, thread).present ();
+                var card = new QuickReply (this, thread);
+                card.present ();
+                maybe_snapshot (card);
                 return;
             }
-            if (mode != Mode.MESSAGES) {
-                launch (Mode.MESSAGES, { "--thread", thread });
+            if (mode != Mode.HUB) {
+                launch (Mode.HUB, { "--thread", thread });
                 return;
             }
-            var window = messages_window ();
+            var window = main_window ();
             window.present ();
-            window.open_thread (thread);
+            window.open_thread (thread, false);
             maybe_snapshot (window);
         });
         add_action (open_thread);
 
         var show_setup = new SimpleAction ("show-page", VariantType.STRING);
         show_setup.activate.connect ((param) => {
-            MainWindow? window = null;
-            foreach (var w in get_windows ()) {
-                if (w is MainWindow) {
-                    window = (MainWindow) w;
-                }
-            }
-            if (window == null) {
-                window = new MainWindow (this);
-            }
+            var window = main_window ();
             window.present ();
             window.show_page (param.get_string ());
             maybe_snapshot ();
         });
         add_action (show_setup);
+
+        var send_files = new SimpleAction ("send-files", VariantType.STRING_ARRAY);
+        send_files.activate.connect ((param) => {
+            var window = main_window ();
+            window.present ();
+            window.send_files (param.get_strv ());
+            maybe_snapshot ();
+        });
+        add_action (send_files);
 
         var show_call = new SimpleAction ("show-call", null);
         show_call.activate.connect (() => {
@@ -592,35 +717,59 @@ public class Boomerang.Application : Gtk.Application {
 
         var write_to = new SimpleAction ("write-to", VariantType.STRING);
         write_to.activate.connect ((param) => {
-            if (mode != Mode.MESSAGES) {
-                launch (Mode.MESSAGES, { "--to", param.get_string () });
+            if (mode != Mode.HUB) {
+                launch (Mode.HUB, { "--to", param.get_string () });
                 return;
             }
-            var window = messages_window ();
+            var window = main_window ();
             window.present ();
             window.write_to (param.get_string ());
+            maybe_snapshot (window);
         });
         add_action (write_to);
 
-        Launchers.apply (Mode.MESSAGES);
-        Launchers.apply (Mode.CONTACTS);
-        Launchers.apply (Mode.PHONE);
+        var dial = new SimpleAction ("dial", VariantType.STRING);
+        dial.activate.connect ((param) => {
+            if (mode != Mode.HUB) {
+                launch (Mode.HUB, { "--dial", param.get_string () });
+                return;
+            }
+            var window = main_window ();
+            window.present ();
+            window.dial (param.get_string ());
+            maybe_snapshot (window);
+        });
+        add_action (dial);
+
         Launchers.apply (Mode.HEADPHONES);
         Launchers.apply (Mode.MIRROR);
 
         var css = new Gtk.CssProvider ();
-        css.load_from_string (STYLE);
+        css.load_from_string (Style.colors (STYLE + avatar_css ()));
         Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), css,
                                                   Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
 
-    private AppWindow messages_window () {
+    /* Contact pictures: a light vertical gradient of the elementary colour (300 to 700), white
+       initials in bold. */
+    private static string avatar_css () {
+        string[] families = { "BLUEBERRY", "BLUEBERRY", "MINT", "LIME", "STRAWBERRY", "ORANGE", "ORANGE",
+                              "STRAWBERRY", "BUBBLEGUM", "GRAPE", "BLUEBERRY", "BUBBLEGUM", "GRAPE", "SLATE" };
+        var css = new StringBuilder ("avatar label { font-weight: 700; }\n");
+        for (int i = 0; i < families.length; i++) {
+            css.append_printf ("avatar.color%d { background-image: linear-gradient(to bottom, @%s_300, @%s_700); color: white; }\n",
+                               i + 1, families[i], families[i]);
+        }
+        return css.str;
+    }
+
+    private MainWindow main_window () {
         foreach (var w in get_windows ()) {
-            if (w is AppWindow) {
-                return (AppWindow) w;
+            if (w is MainWindow) {
+                return (MainWindow) w;
             }
         }
-        return new AppWindow (this, Mode.MESSAGES);
+        return new MainWindow (this);
     }
 
     protected override void activate () {
@@ -651,6 +800,8 @@ public class Boomerang.Application : Gtk.Application {
         }
         // BOOMERANG_SNAPSHOT_DELAY: seconds before the capture (default 3).
         var delay = int.parse (Environment.get_variable ("BOOMERANG_SNAPSHOT_DELAY") ?? "3");
+        // No transitions: off screen, a crossfade may never advance and the capture shows the page before.
+        Gtk.Settings.get_default ().gtk_enable_animations = false;
         Timeout.add_seconds (delay > 0 ? delay : 3, () => {
             var window = shown ?? active_window ?? (get_windows ().length () > 0 ? get_windows ().nth_data (0) : null);
             if (window == null) {

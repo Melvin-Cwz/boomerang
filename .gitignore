@@ -10,3 +10,7 @@ debian/files
 debian/*.substvars
 debian/debhelper-build-stamp
 extension/out/
+build-dev/
+.impeccable/review/
+debian/*.debhelper
+debian/*.debhelper.log

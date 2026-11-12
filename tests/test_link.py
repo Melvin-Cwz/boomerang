@@ -151,3 +151,82 @@ class LinkTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Lot1Test(LinkTest):
+    """Audit 2026-11-02: classic fallback, BlueZ busy, HFP failures."""
+
+    def test_classic_att_tried_without_resolved_services(self):
+        lk, fake = self.make(Connected=True, ServicesResolved=False)
+        lk.props = dict(fake.phone)
+        lk.device = PHONE
+        with mock.patch.object(lk, "_attach_classic") as classic:
+            lk._attach(fake.objects())
+            classic.assert_called_once()
+
+    def test_in_progress_does_not_grow_backoff(self):
+        lk, fake = self.make()
+        lk._pick_device(fake.objects())
+        for _ in range(5):
+            lk._connect_busy()
+        self.assertEqual(lk.reconnect_failures, 0)
+        self.assertNotIn((PHONE, "Disconnect"), fake.calls)  # not long enough yet
+
+    def test_lasting_in_progress_cancels_with_disconnect(self):
+        lk, fake = self.make()
+        lk._pick_device(fake.objects())
+        lk._connect_busy()
+        lk.busy_since -= (link.BUSY_RESET_SECONDS + 1) * 1e6
+        lk._connect_busy()
+        lk._connect_busy()
+        self.assertIn((PHONE, "Disconnect"), fake.calls)
+        self.assertEqual(lk.busy_count, 0)
+
+    def test_hfp_failure_leaves_backoff_alone(self):
+        lk, fake = self.make()
+        lk._pick_device(fake.objects())
+        lk.profile_failed(error("Page Timeout"))
+        self.assertEqual(lk.reconnect_failures, 0)
+        lk.profile_failed(error("br-connection-key-missing"))
+        self.assertTrue(lk.bond_lost)
+
+    def test_stranger_nudges_only_after_backoff_grew(self):
+        lk, fake = self.make()
+        lk._pick_device(fake.objects())
+        with mock.patch.object(lk, "_schedule_reconnect") as sched, \
+                mock.patch.object(lk, "_is_ours", return_value=False):
+            lk._on_seen(ADAPTER + "/dev_AA_BB_CC_DD_EE_FF")
+            sched.assert_not_called()
+            lk.reconnect_failures = 3  # next delay 120 s
+            lk._on_seen(ADAPTER + "/dev_AA_BB_CC_DD_EE_FF")
+            sched.assert_called_once_with(0)
+
+
+class DamagedStoreTest(unittest.TestCase):
+    def test_damaged_database_is_put_aside(self):
+        from boomerangd import store
+        tmp = tempfile.mkdtemp()
+        with open(os.path.join(tmp, "messages.db"), "wb") as f:
+            f.write(b"ceci n'est pas une base SQLite" * 200)
+        st = store.Store(tmp)
+        self.assertTrue(st.recovered)
+        self.assertTrue(os.path.exists(st.recovered))
+        self.assertEqual(st.db.execute("PRAGMA quick_check").fetchone()[0], "ok")
+
+
+class RepairTest(LinkTest):
+    def test_repair_drops_stale_keys_when_notifications_stopped(self):
+        lk, fake = self.make(Connected=True)
+        lk._pick_device(fake.objects())
+        lk.connected_since -= (link.LE_GRACE_SECONDS + 1) * 1e6
+        self.assertTrue(lk.le_missing)
+        with mock.patch.object(link, "call_sync"):
+            lk.start_pairing()
+        self.assertIn((ADAPTER, "RemoveDevice"), fake.calls)
+
+    def test_plain_pairing_keeps_a_working_bond(self):
+        lk, fake = self.make(Connected=True)
+        lk._pick_device(fake.objects())
+        with mock.patch.object(link, "call_sync"):
+            lk.start_pairing()
+        self.assertNotIn((ADAPTER, "RemoveDevice"), fake.calls)

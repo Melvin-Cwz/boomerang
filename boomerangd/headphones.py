@@ -25,6 +25,13 @@ such as multipoint or loud sound reduction, are left out).
 
 Settings the AirPods cannot report back (long-press cycle) are kept in
 boomerangd.conf and written again on each connection, as LibrePods advises.
+
+The BlueZ watch only runs while the AirPods module is added (start() and stop(),
+called by the daemon from the catalogue): a removed module costs nothing.
+
+Low battery: one notification per pod or case each time its level goes down past
+20 % then 10 % (10 % only for the case), not while it charges; the warning comes
+again only after the level has climbed back above the threshold.
 """
 
 import socket
@@ -33,7 +40,7 @@ import time
 
 from gi.repository import Gio, GLib
 
-from .i18n import N_
+from .i18n import N_, _
 from .util import BLUEZ, log
 
 PSM = 0x1001
@@ -65,6 +72,16 @@ CMD_CYCLE = 0x1A         # long-press cycle bitmask: 1 off, 2 ANC, 4 transparenc
 CMD_ONE_BUD = 0x1B       # 1 on, 2 off
 CMD_CONVERSATION = 0x28  # 1 on, 2 off
 CMD_ADAPTIVE = 0x2E      # 0..100
+# Also in docs/control_commands.md, with their values (the page says the identifiers
+# come from iOS's Bluetooth stack: still to be tried on each model).
+CMD_EAR_DETECTION = 0x0A   # 1 enabled, 2 disabled
+CMD_HOLD = 0x16            # two bytes, right bud then left bud: 1 noise control, 5 Siri
+CMD_HOLD_INTERVAL = 0x18   # 0 default, 1 slower, 2 slowest
+CMD_SWIPE_INTERVAL = 0x23  # 0 default, 1 longer, 2 longest
+CMD_SWIPE = 0x25           # volume swipe on the stem: 1 enabled, 2 disabled
+HOLD_NOISE, HOLD_SIRI = 0x01, 0x05
+# Double tap (DoubleClickMode, 0x15): the page gives its size (one byte) but no values,
+# so Boomerang does not send it.
 
 EAR = {0x00: "in", 0x01: "out", 0x02: "case"}
 LEFT, RIGHT, CASE = 0x04, 0x02, 0x08
@@ -85,22 +102,67 @@ MODELS = {
     "A3056": "AirPods 4 (ANC)", "A3055": "AirPods 4 (ANC)", "A3057": "AirPods 4 (ANC)",
 }
 # What each family can do: noise control, adaptive audio, conversation awareness,
-# ear detection, one-bud noise cancellation.
+# ear detection, one-bud noise cancellation, press and hold on the stem (noise control
+# or Siri, per bud), volume swipe on the stem.
 FEATURES = {
-    "AirPods Pro 3": {"anc", "adaptive", "conversation", "ear", "one_bud"},
-    "AirPods Pro 2": {"anc", "adaptive", "conversation", "ear", "one_bud"},
-    "AirPods 4 (ANC)": {"anc", "adaptive", "conversation", "ear"},
-    "AirPods Pro": {"anc", "ear", "one_bud"},
+    "AirPods Pro 3": {"anc", "adaptive", "conversation", "ear", "one_bud", "hold", "swipe"},
+    "AirPods Pro 2": {"anc", "adaptive", "conversation", "ear", "one_bud", "hold", "swipe"},
+    "AirPods 4 (ANC)": {"anc", "adaptive", "conversation", "ear", "hold"},
+    "AirPods Pro": {"anc", "ear", "one_bud", "hold"},
     "AirPods Max": {"anc"},
     "AirPods": {"ear"},
 }
+ALL_FEATURES = {"anc", "adaptive", "conversation", "ear", "one_bud", "hold", "swipe"}
+
+# Low battery thresholds (pods like the iPhone; the case only at 10 %).
+LOW_PODS = (20, 10)
+LOW_CASE = (10,)
+LOW_MARGIN = 5  # climbing this far above a threshold arms its warning again
 
 
 def features_for(model):
     for prefix in ("AirPods Pro 3", "AirPods Pro 2", "AirPods 4 (ANC)", "AirPods Pro", "AirPods Max"):
         if model.startswith(prefix):
             return FEATURES[prefix]
-    return FEATURES["AirPods"] if model else {"anc", "adaptive", "conversation", "ear", "one_bud"}
+    return FEATURES["AirPods"] if model else set(ALL_FEATURES)
+
+
+class LowBattery:
+    """Which parts just went down past a threshold: each one is reported once per descent.
+
+    check() takes {component: (level, charging)} and returns [(component, level)] for
+    the parts to warn about now. A part that charges, or climbs back above a threshold
+    plus a margin, arms that threshold again. Unknown levels (-1) change nothing: the
+    case reports nothing while it is closed away from the pods.
+    """
+
+    def __init__(self):
+        self.warned = {}  # component -> thresholds already warned in this descent
+
+    @staticmethod
+    def thresholds(component):
+        return LOW_CASE if component == CASE else LOW_PODS
+
+    def check(self, levels):
+        due = []
+        for component, (level, charging) in levels.items():
+            if level < 0:
+                continue
+            warned = self.warned.setdefault(component, set())
+            if charging:
+                warned.clear()
+                continue
+            thresholds = self.thresholds(component)
+            for threshold in thresholds:
+                if level > threshold + LOW_MARGIN:
+                    warned.discard(threshold)
+            for threshold in sorted(thresholds):
+                if level <= threshold and threshold not in warned:
+                    # The higher ones count as warned too: 9 % straight away is one warning.
+                    warned.update(t for t in thresholds if t >= threshold)
+                    due.append((component, level))
+                    break
+        return due
 
 
 def control(identifier, value1, value2=0):
@@ -257,6 +319,11 @@ class Pods:
         self.conversation = 0
         self.adaptive = -1
         self.one_bud = 0
+        self.ear_detection = 0   # 1 on, 2 off, 0 not reported yet
+        self.hold = (0, 0)       # (right, left): 1 noise control, 5 Siri, 0 not reported
+        self.hold_interval = -1
+        self.swipe = 0           # 1 on, 2 off, 0 not reported yet
+        self.swipe_interval = -1
         self.model = ""
         self.firmware = ""
 
@@ -279,8 +346,13 @@ class Pods:
             "ear_left": self.ear_of(LEFT), "ear_right": self.ear_of(RIGHT),
             "mode": self.mode, "cycle": cycle, "conversation": self.conversation,
             "adaptive": self.adaptive, "one_bud": self.one_bud,
+            "ear_detection": self.ear_detection,
+            "hold_right": self.hold[0], "hold_left": self.hold[1],
+            "hold_interval": self.hold_interval,
+            "swipe": self.swipe, "swipe_interval": self.swipe_interval,
             "features": sorted(features_for(self.model)),
             "auto_pause": self.owner.auto_pause,
+            "battery_alerts": getattr(self.owner, "battery_alerts", True),
         }
 
     # --- session -----------------------------------------------------------------------
@@ -389,7 +461,7 @@ class Pods:
         elif opcode == OP_EAR and len(data) >= 8:
             self._ear(EAR.get(data[6], ""), EAR.get(data[7], ""))
         elif opcode == OP_CONTROL and len(data) >= 8:
-            self._control(data[6], data[7])
+            self._control(data[6], data[7], data[8] if len(data) > 8 else 0)
         elif opcode == OP_METADATA:
             self._metadata(data)
         elif opcode == OP_CONVERSATION:
@@ -423,8 +495,18 @@ class Pods:
         self.ear = [primary, secondary]
         self.owner.ear_changed(self, before)
 
-    def _control(self, identifier, value):
-        if identifier == CMD_MODE:
+    def _control(self, identifier, value, value2=0):
+        if identifier == CMD_EAR_DETECTION:
+            self.ear_detection = value
+        elif identifier == CMD_HOLD:
+            self.hold = (value, value2)
+        elif identifier == CMD_HOLD_INTERVAL:
+            self.hold_interval = value
+        elif identifier == CMD_SWIPE:
+            self.swipe = value
+        elif identifier == CMD_SWIPE_INTERVAL:
+            self.swipe_interval = value
+        elif identifier == CMD_MODE:
             self.mode = value
         elif identifier == CMD_CONVERSATION:
             self.conversation = value
@@ -503,6 +585,31 @@ class Pods:
                 self.one_bud = 1 if value else 2
         elif key == "cycle":
             ok = self._send(control(CMD_CYCLE, int(value)))
+        elif key == "ear_detection":
+            ok = self._send(control(CMD_EAR_DETECTION, 1 if value else 2))
+            if ok:
+                self.ear_detection = 1 if value else 2
+        elif key in ("hold_right", "hold_left"):
+            if int(value) not in (HOLD_NOISE, HOLD_SIRI):
+                raise ValueError(value)
+            right, left = self.hold
+            right, left = (int(value), left) if key == "hold_right" else (right, int(value))
+            # Both bytes go together: a side never reported keeps the usual noise control.
+            right, left = right or HOLD_NOISE, left or HOLD_NOISE
+            ok = self._send(control(CMD_HOLD, right, left))
+            if ok:
+                self.hold = (right, left)
+        elif key in ("hold_interval", "swipe_interval"):
+            if int(value) not in (0, 1, 2):
+                raise ValueError(value)
+            identifier = CMD_HOLD_INTERVAL if key == "hold_interval" else CMD_SWIPE_INTERVAL
+            ok = self._send(control(identifier, int(value)))
+            if ok:
+                setattr(self, key, int(value))
+        elif key == "swipe":
+            ok = self._send(control(CMD_SWIPE, 1 if value else 2))
+            if ok:
+                self.swipe = 1 if value else 2
         elif key == "name":
             name = str(value).strip()
             ok = bool(name) and self._send(rename_packet(name))
@@ -515,28 +622,75 @@ class Pods:
 
 
 class Headphones:
-    def __init__(self, system, session, config, on_change):
+    def __init__(self, system, session, config, on_change, notifier=None):
         self.bus = system
         self.session = session
         self.config = config
         self.on_change = on_change
-        self.pods = {}        # BlueZ path -> Pods
-        self.paused = set()   # MPRIS players Boomerang paused on ear removal
+        self.notifier = notifier
+        self.pods = {}           # BlueZ path -> Pods
+        self.paused = set()      # MPRIS players Boomerang paused on ear removal
+        self.subscriptions = []  # BlueZ signal ids, while the module runs
+        self.low = {}            # address -> LowBattery
+        self.low_notes = {}      # address -> notification id, replaced by the next warning
+        self.listening = None
+        self.listen_timeout = 0
+
+    # --- module on and off -------------------------------------------------------------
+
+    @property
+    def running(self):
+        return bool(self.subscriptions)
+
+    def start(self):
+        """Watch BlueZ for paired AirPods (module added)."""
+        if self.running:
+            return
         for member, handler in (("InterfacesAdded", self._on_added),
                                 ("InterfacesRemoved", self._on_removed)):
-            system.signal_subscribe(BLUEZ, "org.freedesktop.DBus.ObjectManager", member,
-                                    None, None, Gio.DBusSignalFlags.NONE, handler)
-        system.signal_subscribe(BLUEZ, "org.freedesktop.DBus.Properties", "PropertiesChanged",
-                                None, "org.bluez.Device1", Gio.DBusSignalFlags.NONE,
-                                self._on_device_changed)
-        system.call(BLUEZ, "/", "org.freedesktop.DBus.ObjectManager", "GetManagedObjects",
-                    None, None, Gio.DBusCallFlags.NONE, -1, None, self._on_objects, None)
+            self.subscriptions.append(self.bus.signal_subscribe(
+                BLUEZ, "org.freedesktop.DBus.ObjectManager", member, None, None,
+                Gio.DBusSignalFlags.NONE, handler))
+        self.subscriptions.append(self.bus.signal_subscribe(
+            BLUEZ, "org.freedesktop.DBus.Properties", "PropertiesChanged", None,
+            "org.bluez.Device1", Gio.DBusSignalFlags.NONE, self._on_device_changed))
+        self._get_objects()
+        log("écouteurs : suivi Bluetooth démarré")
+
+    def stop(self):
+        """Stop watching BlueZ and close every control link (module removed, or the daemon
+        quits). A BlueZ reply or a timer still on its way then finds nothing to act on."""
+        self.stop_listening()
+        was_running = self.running
+        for subscription in self.subscriptions:
+            self.bus.signal_unsubscribe(subscription)
+        self.subscriptions = []
+        had = bool(self.pods)
+        for pods in self.pods.values():
+            pods.connected = False  # a pending open() gives up
+            pods.close()
+        self.pods.clear()
+        self.paused.clear()
+        self._close_warnings()
+        self.low.clear()
+        if was_running:
+            log("écouteurs : suivi Bluetooth arrêté")
+        if had:
+            self.on_change()
+
+    def _get_objects(self):
+        self.bus.call(BLUEZ, "/", "org.freedesktop.DBus.ObjectManager", "GetManagedObjects",
+                      None, None, Gio.DBusCallFlags.NONE, -1, None, self._on_objects, None)
 
     # --- settings ---------------------------------------------------------------------
 
     @property
     def auto_pause(self):
         return self.config.boolean("headphones", "auto_pause", True)
+
+    @property
+    def battery_alerts(self):
+        return self.config.boolean("headphones", "battery_alerts", True)
 
     def cycle(self, address):
         try:
@@ -545,9 +699,11 @@ class Headphones:
             return 0  # never set here: the AirPods keep their own
 
     def set(self, address, key, value):
-        if key == "auto_pause":
-            self.config.keyfile.set_boolean("headphones", "auto_pause", bool(value))
+        if key in ("auto_pause", "battery_alerts"):
+            self.config.keyfile.set_boolean("headphones", key, bool(value))
             self.config.save()
+            if key == "battery_alerts" and not value:
+                self._close_warnings()
             self.changed()
             return True
         pods = next((p for p in self.pods.values() if p.address == address), None)
@@ -567,7 +723,37 @@ class Headphones:
         return [p.as_dict() for p in self.pods.values()]
 
     def changed(self):
+        self._check_batteries()
         self.on_change()
+
+    # --- low battery -------------------------------------------------------------------
+
+    def _check_batteries(self):
+        for pods in self.pods.values():
+            if not pods.linked:
+                continue
+            low = self.low.setdefault(pods.address, LowBattery())
+            due = low.check({c: (pods.battery[c], pods.charging[c]) for c in (LEFT, RIGHT, CASE)})
+            if due and self.battery_alerts:
+                self._warn(pods, due)
+
+    def _warn(self, pods, due):
+        names = {LEFT: _("écouteur gauche"), RIGHT: _("écouteur droit"), CASE: _("boîtier")}
+        parts = ", ".join(_("{part} {level} %").format(part=names[c], level=level) for c, level in due)
+        log(f"écouteurs : batterie faible ({', '.join(f'{level} %' for _c, level in due)})")
+        if self.notifier is None:
+            return
+        self.low_notes[pods.address] = self.notifier.notify(
+            "Boomerang", "battery-caution",
+            _("Batterie de {name} faible").format(name=pods.alias),
+            _("Il reste : {parts}.").format(parts=parts),
+            replaces=self.low_notes.get(pods.address, 0), own=True)
+
+    def _close_warnings(self):
+        if self.notifier is not None:
+            for note in self.low_notes.values():
+                self.notifier.close(note)
+        self.low_notes.clear()
 
     def set_alias(self, path, name):
         self.bus.call(BLUEZ, path, "org.freedesktop.DBus.Properties", "Set",
@@ -593,10 +779,10 @@ class Headphones:
         return True
 
     def stop_listening(self):
-        if getattr(self, "listen_timeout", 0):
+        if self.listen_timeout:
             GLib.source_remove(self.listen_timeout)
             self.listen_timeout = 0
-        pods = getattr(self, "listening", None)
+        pods = self.listening
         self.listening = None
         if pods is not None:
             pods.stop_gestures()
@@ -614,6 +800,8 @@ class Headphones:
             objects = bus.call_finish(result).unpack()[0]
         except GLib.Error:
             return
+        if not self.running:
+            return  # the module was removed while BlueZ answered
         for path, interfaces in objects.items():
             self._add(path, interfaces)
 
@@ -643,8 +831,7 @@ class Headphones:
         pods = self.pods.get(path)
         if pods is None:
             if changed.get("Paired"):
-                self.bus.call(BLUEZ, "/", "org.freedesktop.DBus.ObjectManager", "GetManagedObjects",
-                              None, None, Gio.DBusCallFlags.NONE, -1, None, self._on_objects, None)
+                self._get_objects()
             return
         if "Alias" in changed:
             pods.alias = changed["Alias"]
@@ -704,7 +891,3 @@ class Headphones:
             for name in self.paused:
                 self._mpris(name, "Play")
         self.paused.clear()
-
-    def stop(self):
-        for pods in self.pods.values():
-            pods.close()

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 MelvinCwz
+# Right click in Fichiers: send the selected files to the iPhone with LocalSend.
+[Contractor Entry]
+Name=Send to iPhone
+Name[fr]=Envoyer à l'iPhone
+Icon=phone
+Description=Send these files to the iPhone with LocalSend
+Description[fr]=Envoyer ces fichiers à l'iPhone avec LocalSend
+Exec=@BINDIR@/@APP_ID@ --send %F
+MimeType=!inode;

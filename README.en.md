@@ -7,7 +7,7 @@
 **Your iPhone and your Apple account, at home on elementary OS.**
 
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
-![Version 0.8.3 alpha](https://img.shields.io/badge/version-0.8.3%20alpha-orange)
+![Version 2.0 alpha](https://img.shields.io/badge/version-2.0%20alpha-orange)
 ![elementary OS 8+](https://img.shields.io/badge/elementary%20OS-8%2B-64baff)
 
 [Website](https://melvin-cwz.github.io/boomerang/) ·
@@ -26,8 +26,14 @@ through a server of ours.
 *Boomerang was called Covalence until version 0.6. Moving to Boomerang keeps your settings,
 messages and iCloud accounts.*
 
-> **Alpha.** Version 0.8 is a public preview. It works every day on its author's computer,
+> **Alpha.** Version 2.0 is a public preview. It works every day on its author's computer,
 > but expect rough edges. The interface is in French, with English in beta.
+
+Boomerang 2 keeps a fixed core (Messages, Phone, Contacts, Notifications, Now Playing and the
+iPhone page) and offers the rest as **modules** you add from the app: AirPods, iPhone sound,
+iCloud services, iCloud Drive and Photos, file sending, Personal Hotspot, proximity lock,
+screen mirroring, one-time codes. A module installs what it needs when you add it, and stops
+entirely when you remove it.
 
 ## Two connections
 
@@ -35,13 +41,13 @@ messages and iCloud accounts.*
 
 | | |
 |---|---|
-| **Notifications** | Every iPhone notification on the desktop, with its actions and the icon of the app that sent it. Choose which apps show up. |
+| **Notifications** | Every iPhone notification on the desktop, with its actions and the icon of the app that sent it. A notification cleared on the iPhone leaves the PC too, even during a cut, and one closed on the PC does not come back. Choose which apps show up. |
 | **Now Playing** | What the iPhone plays, with its cover, progress and volume, in its own page and in a mini player above Settings. Play starts the iPhone's music again even when it is stopped. |
 | **Battery** | Level in the panel, alerts at 20 % and 10 %. |
-| **Messages** | Read your SMS conversations, reply to one person, draft, search. Delete a message or a conversation from Boomerang (it stays on the iPhone). |
-| **Phone** | Answer, decline and place calls with the computer's microphone and speakers, dial pad, call history. Needs PipeWire 1.4 or later. |
-| **Contacts** | The iPhone's contacts over Bluetooth (read only), or your iCloud contacts, which you can edit. |
-| **AirPods** | Battery of each bud and the case, noise control, conversation awareness, ear detection, rename. Experimental: nod to answer a call, shake your head to decline. Based on the protocol documented by LibrePods. |
+| **Messages** | Read your SMS conversations, the whole history included, reply to one person, draft, search. Unread and Unknown filters, links exchanged in the details, Mac-like keyboard shortcuts (Ctrl+? shows them), attachments flagged. A message deleted on the iPhone leaves Boomerang; deleting in Boomerang does not touch the iPhone. |
+| **Phone** | Answer, decline and place calls with the computer's microphone and speakers, call waiting (hold and answer, swap, merge where the carrier allows), audio output during a call, favourites, voicemail, search and call lengths in recents. Needs PipeWire 1.4 or later. |
+| **Contacts** | The iPhone's contacts over Bluetooth (read only), or your iCloud contacts, which you can edit. Whole cards (company, addresses, birthday, websites, notes, photo), alphabetical index, vCard export and import. |
+| **AirPods** | Battery of each bud and the case (also in the panel), low battery alert, noise control, conversation awareness, automatic ear detection, press and hold per bud, volume swipe, rename. Experimental: nod to answer a call, shake your head to decline. Based on the protocol documented by LibrePods. |
 | **iPhone sound** | Send the iPhone's audio to the computer from the AirPlay button, or refuse it. |
 
 <p align="center">
@@ -73,10 +79,10 @@ messages and iCloud accounts.*
 
 ### From the package (recommended)
 
-1. Download `boomerang_0.8.3-1_amd64.deb` from the
+1. Download the `boomerang_…_amd64.deb` package from the
    [latest release](https://github.com/Melvin-Cwz/boomerang/releases/latest).
 2. Install it from a terminal, in the download folder:
-   `sudo apt install ./boomerang_0.8.3-1_amd64.deb`. apt also installs the packages it needs.
+   `sudo apt install ./boomerang_*_amd64.deb`. apt also installs the packages it needs.
    On Ubuntu, the App Center can also open the file with a double-click.
 3. Log out and back in (or run `systemctl --user start boomerangd`), then open Boomerang.
    The setup assistant guides you through pairing the iPhone and signing in to iCloud.
@@ -93,7 +99,8 @@ Uninstall with `sudo apt remove boomerang`. Your data stays in `~/.local/share/b
 
 | System | Status |
 |---|---|
-| elementary OS 8 or later | Everything works. Calls need PipeWire 1.4 or later: with an older PipeWire, Boomerang greys the calls out and says why. |
+| elementary OS 9 | Everything works, with Granite 9. Calls need PipeWire 1.4 or later. |
+| elementary OS 8 | Everything works, with Granite 7. With a PipeWire older than 1.4, Boomerang greys the calls out and says why. |
 | Ubuntu 24.04 or later | The package needs Granite 7.7 or later. Calls need PipeWire 1.4 or later. Ubuntu 24.04 ships rclone 1.60, too old for iCloud: use the "Download rclone" button. |
 
 Hardware: a Bluetooth adapter that supports Bluetooth Low Energy (almost all recent ones).
@@ -106,9 +113,10 @@ ninja -C build && meson install -C build
 systemctl --user daemon-reload && systemctl --user enable --now boomerangd
 ```
 
-Build dependencies: `valac`, `meson`, `libgranite-7-dev` (7.7 or later), `libgtk-4-dev`.
-Runtime dependencies are listed in `debian/control`. Offline tests:
-`python3 -m unittest tests.test_offline`. Package: `packaging/build-deb.sh`.
+Build dependencies: `valac`, `meson`, `libgranite-9-dev` (or `libgranite-7-dev` 7.7 or later,
+used when Granite 9 is missing), `libgtk-4-dev`. Runtime dependencies are listed in
+`debian/control`. Offline tests (daemon and interface): `meson test -C build`. Package:
+`packaging/build-deb.sh`.
 
 ## What it cannot do
 
@@ -117,29 +125,30 @@ These limits come mostly from what an iPhone accepts from a non-Apple computer:
 - No iMessage sending, no group replies, no attachments: Bluetooth only sends one-to-one SMS.
 - No universal clipboard, Handoff, AirDrop or Continuity Camera: they need Apple's own
   encryption and Wi-Fi stack.
-- Deleting a message only removes it from Boomerang. iOS ignores deletions over Bluetooth.
-- The iPhone does not always reconnect by itself to a Bluetooth LE accessory. The
-  [guide](data/guide/en/12-troubleshooting.md) explains what to do.
+- Deleting a message in Boomerang does not remove it from the iPhone: iOS ignores deletions
+  over Bluetooth.
+- No FaceTime or visual voicemail, no changes to the iPhone's favourites, no holding a single
+  call (PipeWire's hands-free profile does not offer it).
+- The iPhone does not always reopen the Bluetooth LE link by itself. Boomerang then uses the
+  classic link; if notifications stay off, « Pair again » guides a clean repair (see the
+  [guide](data/guide/en/12-troubleshooting.md)).
 - Unlocking the computer with the iPhone is left out on purpose: Bluetooth signal strength
   can be faked.
 
-## New in 0.8
+## New in 2.0
 
-Since 0.7.0:
-
-- Messages: a conversation opens on its newest message. Each one can have its own look
-  (nickname, emoji, bubble colour, background, text size) and notifications (priority, muted,
-  own sound). Search in the conversation (Ctrl+F), a button back to new messages, an "Unread"
-  line, custom quick replies, link previews (off by default), export to PDF or text.
-- Notifications: per iPhone app (normal, priority or quiet), own sound, text hidden from the
-  banner if you wish.
-- Screen mirroring in a Boomerang window sized to the picture, full screen with F11, optional
-  MP4 recording and an experimental Bluetooth beacon so the iPhone finds the computer.
-- AirPods, experimental: nod to answer a call, shake your head to decline it.
-- Contributors page under Settings: every project Boomerang relies on, with authors, licenses
-  and links.
-- One header bar in Boomerang's colours, left column that folds to icons (F9).
-- Lighter daemon and app, new icon in the elementary style.
+- Link: its state in the header bar, faster and lighter reconnection, a watched background
+  service that holds when Bluetooth is busy or the message cache is damaged.
+- Notifications that keep working after a suspend or a restart, with no ghosts or doubles;
+  a guided repair when they stop.
+- Messages: the whole history in pages, filters, shortcuts, links exchanged, attachments
+  flagged, menus from the keyboard, deletions made on the iPhone carried over.
+- Phone: call waiting, audio output during a call, favourites, voicemail, call lengths.
+- Contacts: whole cards, iCloud editor with photo, alphabetical index, vCard.
+- AirPods and Mirroring: battery alerts, stem settings, iPhone keys and gestures from the
+  mirror, screenshot, file drop to LocalSend.
+- Modules added on demand around a fixed core.
+- elementary OS 9: built with Granite 9 (Granite 7 fallback for elementary OS 8).
 
 ## Help
 
@@ -163,8 +172,8 @@ MelvinCwz
   It talks to the iPhone through BlueZ (ANCS and AMS over Bluetooth LE, MAP and PBAP through
   obexd, HFP through PipeWire's `org.pipewire.Telephony`), to iCloud through Evolution Data
   Server and libsecret, and runs rclone for Drive and Photos.
-- **The app** (Vala, GTK 4, Granite): one window, plus separate Messages, Phone, Contacts and
-  AirPods apps for the dock. It talks to the daemon over D-Bus
+- **The app** (Vala, GTK 4, Granite): one app (Messages, Phone, Contacts and the rest are
+  its pages), plus separate Headphones and Mirror apps. It talks to the daemon over D-Bus
   (`io.github.melvincouwez.Boomerang.Daemon`).
 - Logs never contain notification or message text, names or numbers.
 

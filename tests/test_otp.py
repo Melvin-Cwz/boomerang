@@ -71,7 +71,8 @@ class MemoryTest(unittest.TestCase):
 
 class FakeConfig:
     def __init__(self, mode, auto_copy=True):
-        self.values = {("messages", "one_time_codes"): mode, ("messages", "auto_copy_codes"): auto_copy}
+        self.values = {("messages", "one_time_codes"): mode, ("messages", "auto_copy_codes"): auto_copy,
+                       ("catalog", "codes"): True}  # the browser part is the « codes » module
 
     def string(self, group, key, default=""):
         return self.values.get((group, key), default)

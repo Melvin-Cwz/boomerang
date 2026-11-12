@@ -13,7 +13,14 @@ The background service is stopped. Open a Terminal and type `systemctl --user re
 5. As a last resort, click **Forget** in the Overview, forget the computer on the iPhone too, then [pair](guide:link) again.
 
 ### No notifications
-The low energy link is not open. Check **Share System Notifications** (Settings › Bluetooth › ⓘ), then turn the iPhone's Bluetooth off and on. As a last resort, the free nRF Connect app can open this link from the iPhone: tap **Connect** next to "Boomerang".
+Boomerang receives notifications over the low energy link or, failing that, over the classic link. If it says **Notifications interrupted**:
+
+1. Check **Share System Notifications** (Settings › Bluetooth › ⓘ next to the computer).
+2. Turn the iPhone's Bluetooth off and on again in Settings.
+3. If nothing changes, click **Pair again** in the Overview. Boomerang drops its old keys and guides you: forget the computer on the iPhone (ⓘ › **Forget This Device**), then pair it again.
+
+### A notification stays or comes back
+A notification cleared on the iPhone leaves the desktop, even when it was cleared during a cut: Boomerang sorts them out about twenty seconds after reconnecting. A notification closed on the computer does not come back, even if the iPhone updates it. If one stays anyway, report it on the project page.
 
 ### The iPhone refuses messages
 Turn on **Show Notifications** (Settings › Bluetooth › ⓘ), then click **Check** in the setup.

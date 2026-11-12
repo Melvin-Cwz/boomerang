@@ -12,6 +12,9 @@ BusName=io.github.melvincouwez.Boomerang.Daemon
 ExecStart=@BINDIR@/boomerangd
 Restart=on-failure
 RestartSec=5
+# A hung main loop stops the pings (util.start_watchdog): systemd restarts it.
+WatchdogSec=30
+NotifyAccess=main
 # Logs never contain notification text, phone numbers or secrets.
 
 [Install]

@@ -24,6 +24,7 @@ public class Boomerang.Sidebar : Gtk.Box {
     /* A bottom entry added by add_footer_action () was clicked. */
     public signal void action_activated (string id);
     private Gtk.Box player_slot;
+    private Gtk.Separator footer_line;
 
     /* Icons only, with the counts on them. */
     public bool collapsed { get; set; default = false; }
@@ -53,8 +54,17 @@ public class Boomerang.Sidebar : Gtk.Box {
     private static extern void add_provider_for_display (Gdk.Display display, Gtk.StyleProvider provider,
                                                          uint priority);
     private const string CSS = """
+        label.sidebar-badge {
+            background-color: alpha(@fg_color, 0.1);
+            color: alpha(@fg_color, 0.8);
+            font-size: 0.8em;
+            font-weight: 600;
+            border-radius: 999px;
+            min-width: 12px;
+            padding: 1px 6px;
+        }
         label.sidebar-dock-badge {
-            background-color: #c6262e;
+            background-color: @STRAWBERRY_500;
             color: white;
             font-weight: bold;
             font-size: 10px;
@@ -90,7 +100,7 @@ public class Boomerang.Sidebar : Gtk.Box {
                 } else {
                     row.set_header (null);
                 }
-            } else if (section != previous) {
+            } else if (section != previous && section != "") {  // "": the core, no heading
                 var label = new Gtk.Label (section) { xalign = 0, margin_start = 9, margin_top = 12 };
                 label.add_css_class (Granite.CssClass.DIM);
                 label.add_css_class (Granite.CssClass.SMALL);
@@ -131,13 +141,15 @@ public class Boomerang.Sidebar : Gtk.Box {
         append (scroll);
         player_slot = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         append (player_slot);
-        append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+        footer_line = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { visible = false };
+        append (footer_line);
+        footer.visible = false;
         append (footer);
 
         if (!css_added) {
             css_added = true;
             var provider = new Gtk.CssProvider ();
-            provider.load_from_string (CSS);
+            provider.load_from_string (Style.colors (CSS));
             add_provider_for_display (Gdk.Display.get_default (), provider,
                                       Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
@@ -212,7 +224,7 @@ public class Boomerang.Sidebar : Gtk.Box {
 
     private void apply_collapsed () {
         list.invalidate_headers ();
-        player_slot.visible = !collapsed;
+        player_slot.visible = !collapsed && pages.visible_child_name != "nowplaying";
         foreach (var entry in entries.get_values ()) {
             update_entry (entry);
         }
@@ -283,6 +295,7 @@ public class Boomerang.Sidebar : Gtk.Box {
     }
 
     public void add_footer (string page, string icon, string title) {
+        footer.visible = footer_line.visible = true;
         footer.append (make_row (page, icon, title));
         sync ();
     }
@@ -290,14 +303,15 @@ public class Boomerang.Sidebar : Gtk.Box {
     /* A bottom entry that runs an action (opens a window) instead of showing a page. */
     public void add_footer_action (string id, string icon, string title) {
         actions.add (id);
+        footer.visible = footer_line.visible = true;
         footer.append (make_row (id, icon, title));
     }
 
     private Gtk.ListBoxRow make_row (string page, string icon, string title) {
-        var image = new Gtk.Image.from_icon_name (icon) { pixel_size = 24 };
+        var image = new Gtk.Image.from_icon_name (icon) { pixel_size = 16 };
         var label = new Gtk.Label (title) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
         var badge = new Gtk.Label ("") { visible = false, valign = Gtk.Align.CENTER };
-        badge.add_css_class (Granite.STYLE_CLASS_BADGE);
+        badge.add_css_class ("sidebar-badge");
         // Folded: the count on the icon's top-right corner, as on the dock.
         var dock_badge = new Gtk.Label ("") {
             visible = false,
@@ -327,11 +341,24 @@ public class Boomerang.Sidebar : Gtk.Box {
         return row;
     }
 
-    /* Page shown by Ctrl+1…9: the n-th entry of the list. */
+    /* A module's page leaves or joins the list (Boomerang 2 modules). */
+    public void set_shown (string page, bool shown) {
+        unowned Entry? entry = entries[page];
+        if (entry != null && entry.row.visible != shown) {
+            entry.row.visible = shown;
+            list.invalidate_headers ();
+        }
+    }
+
+    /* Page shown by Alt+1…8: the n-th visible entry of the list. */
     public void select_index (int index) {
-        var row = list.get_row_at_index (index);
-        if (row != null) {
-            pages.visible_child_name = row.get_data<string> ("page");
+        int seen = 0;
+        for (int i = 0; list.get_row_at_index (i) != null; i++) {
+            var row = list.get_row_at_index (i);
+            if (row.visible && seen++ == index) {
+                pages.visible_child_name = row.get_data<string> ("page");
+                return;
+            }
         }
     }
 
@@ -347,6 +374,8 @@ public class Boomerang.Sidebar : Gtk.Box {
 
     private void sync () {
         var name = pages.visible_child_name;
+        // The mini player would repeat the page itself.
+        player_slot.visible = !collapsed && name != "nowplaying";
         syncing = true;
         foreach (var box in new Gtk.ListBox[] { list, footer }) {
             Gtk.ListBoxRow? match = null;

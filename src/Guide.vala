@@ -182,7 +182,7 @@ public class Boomerang.GuideWindow : Gtk.Window {
         var main = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         main.append (main_header);
         main.append (scroll);
-        main.add_css_class (Granite.STYLE_CLASS_VIEW);
+        main.add_css_class ("view");
 
         var paned = new Gtk.Paned (Gtk.Orientation.HORIZONTAL) {
             start_child = side,

@@ -15,9 +15,9 @@ import time
 
 from gi.repository import GLib
 
-from . import localsend
+from . import catalog, localsend
 from .i18n import _, ngettext
-from .util import log
+from .util import launch, log
 
 APP_ICON = "io.github.melvincouwez.Boomerang"
 # Types of the Files property (a{sv}).
@@ -57,7 +57,7 @@ class Files:
 
     @property
     def enabled(self):
-        return self.config.boolean("files", "localsend", False)
+        return self.config.boolean("files", "localsend", False) and catalog.added(self.config, "files")
 
     def state(self):
         now = time.time()
@@ -193,8 +193,7 @@ class Files:
                     ngettext("{n} fichier reçu", "{n} fichiers reçus", count).format(n=count),
                     _("Enregistré dans {folder}").format(folder=downloads_folder()),
                     [("open", _("Ouvrir le dossier"))], own=True,
-                    on_action=lambda _a: GLib.spawn_async(
-                        ["xdg-open", downloads_folder()], flags=GLib.SpawnFlags.SEARCH_PATH))
+                    on_action=lambda _a: launch(["xdg-open", downloads_folder()]))
             elif kind == "cancelled":
                 log("fichiers : réception annulée")
         self.changed()

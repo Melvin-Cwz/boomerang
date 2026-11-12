@@ -22,7 +22,31 @@
   <url type="vcs-browser">https://github.com/Melvin-Cwz/boomerang</url>
   <content_rating type="oars-1.1"/>
   <releases>
-    <release version="@VERSION@" date="2026-10-11" type="development">
+    <release version="@VERSION@" date="2026-11-02" type="development">
+      <description>
+        <p>Fourth alpha: richer apps. Messages loads older history, filters unread and unknown senders and has keyboard shortcuts; Phone handles call waiting, merging and the call's audio output, with favourites and voicemail; Contacts shows full cards, edits them with a photo and imports or exports vCard files; AirPods warn of a low battery and pause when taken out; Mirroring takes screenshots. Boomerang now builds against elementary OS 9 (Granite 9) and uses Bluetooth more sparingly.</p>
+        <p xml:lang="fr">Quatrième alpha : des applications plus riches. Messages charge l'historique plus ancien, filtre les non-lus et les inconnus et se pilote au clavier ; Téléphone gère le double appel, la conférence et la sortie audio de l'appel, avec favoris et messagerie vocale ; Contacts affiche des fiches complètes, les modifie avec photo et importe ou exporte des fichiers vCard ; les AirPods préviennent d'une batterie faible et se mettent en pause quand on les retire ; la Recopie fait des captures. Boomerang se construit désormais pour elementary OS 9 (Granite 9) et sollicite moins le Bluetooth.</p>
+      </description>
+    </release>
+    <release version="2.0.0~alpha3" date="2026-11-02" type="development">
+      <description>
+        <p>Third alpha: notifications no longer linger or come back after being cleared, « Pair again » really repairs a link whose notifications stopped, and the background service stays steady when Bluetooth is busy or the message cache is damaged.</p>
+        <p xml:lang="fr">Troisième alpha : les notifications ne traînent plus et ne reviennent plus une fois effacées, « Appairer à nouveau » répare vraiment une liaison dont les notifications se sont arrêtées, et le service d'arrière-plan tient bon quand le Bluetooth est occupé ou que le cache des messages est abîmé.</p>
+      </description>
+    </release>
+    <release version="2.0.0~alpha2" date="2026-10-28" type="development">
+      <description>
+        <p>Second alpha: iPhone notifications keep working after a reconnection or a restart, without pairing again. The Wingpanel indicator can be installed from Réglages.</p>
+        <p xml:lang="fr">Deuxième alpha : les notifications de l'iPhone continuent après une reconnexion ou un redémarrage, sans appairer à nouveau. L'indicateur de Wingpanel s'installe depuis Réglages.</p>
+      </description>
+    </release>
+    <release version="2.0.0~alpha1" date="2026-10-16" type="development">
+      <description>
+        <p>Boomerang 2, first alpha: the iPhone link in the header bar, faster reconnection, a watchdog for the background service, and modules added on demand (AirPods, iCloud, files, mirror and more) next to a fixed core: messages, calls, contacts, notifications and Now Playing.</p>
+        <p xml:lang="fr">Boomerang 2, première alpha : la liaison avec l'iPhone dans la barre d'en-tête, une reconnexion plus rapide, un service d'arrière-plan surveillé, et des modules ajoutés à la demande (AirPods, iCloud, fichiers, recopie, etc.) à côté d'un cœur fixe : messages, appels, contacts, notifications et lecture en cours.</p>
+      </description>
+    </release>
+    <release version="0.8.3" date="2026-10-11" type="development">
       <description>
         <p>French texts reviewed, MelvinCwz signature, and the new GitHub address: github.com/Melvin-Cwz/boomerang. The website moves to melvin-cwz.github.io/boomerang.</p>
         <p xml:lang="fr">Relecture des textes en français, signature MelvinCwz et nouvelle adresse GitHub : github.com/Melvin-Cwz/boomerang. Le site est désormais à l'adresse melvin-cwz.github.io/boomerang.</p>

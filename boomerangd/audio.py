@@ -5,7 +5,7 @@
 PipeWire plays the iPhone's stream (bluez_input.<address>) on the default
 output. Boomerang adds two settings:
 
-- receive: when off, the A2DP link is dropped whenever the iPhone opens it,
+- receive (off by default): when off, the A2DP link is dropped whenever the iPhone opens it,
   so video or music stays on the iPhone. HFP (calls) is left alone.
 - output: a PipeWire sink name, or "" for the default output. It is applied
   through the "default" metadata (target.object) each time the stream appears,
@@ -19,6 +19,7 @@ import subprocess
 
 from gi.repository import Gio, GLib
 
+from . import catalog
 from .util import BLUEZ, call_async, log
 
 TRANSPORT = "org.bluez.MediaTransport1"
@@ -119,7 +120,7 @@ class PhoneAudio:
 
     @property
     def receive(self):
-        return self.config.boolean("audio", "receive", True)
+        return self.config.boolean("audio", "receive", False) and catalog.added(self.config, "audio")
 
     @property
     def output(self):

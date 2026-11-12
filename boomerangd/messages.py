@@ -43,7 +43,7 @@ import uuid
 
 from gi.repository import Gio, GLib
 
-from . import bmsg
+from . import bmsg, catalog, vcard
 from . import i18n
 from . import otp
 from . import reactions
@@ -51,7 +51,7 @@ from . import sounds as sounds_module
 from . import store as store_module
 from .store import Store, excerpt, sender_from_title
 from .i18n import N_, _, ngettext
-from .util import log
+from .util import launch, log
 
 OBEX = "org.bluez.obex"
 OBEX_ROOT = "/org/bluez/obex"
@@ -73,6 +73,11 @@ FOLDERS = ("inbox", "outbox", "sent")
 INITIAL_COUNT = 1000
 EVENT_COUNT = 20
 PERIODIC_SYNC = 300  # seconds: catches events MNS may have missed
+PERIODIC_SYNC_QUIET = 1800  # the same once MNS has proved it delivers events this session
+CALLS_EVERY = 3600  # call history read at least this often; also after each call
+TICK_SLACK = 30  # a periodic tick a little early still counts
+REMOVED_SETTLE_MS = 3000  # gather Message1 removals this long before acting on them
+REMOVED_BURST = 20  # more removed at once: obexd tearing down, not the user deleting
 FORBIDDEN_RETRY = 600
 ERROR_RETRY = 120
 CONTACTS_MAX_AGE = 24 * 3600
@@ -176,6 +181,39 @@ def history_listing(list_messages, base, now=None):
     return extra, counts
 
 
+# iOS words an attachment-only message in a notification « Pièce jointe : 1 image » or
+# « Attachment: 1 Image »: a placeholder, not text written by the sender.
+_ATTACHMENT_NOTE = re.compile(
+    r"^\s*(?:pi[eè]ces?\s+jointes?|attachments?)\s*:\s*\d+\s+\w+(?:\s+\w+)?\s*$", re.IGNORECASE)
+_LINK = re.compile(r"(?:https?://|www\.)[^\s<>\"]+")
+
+
+def attachment_note(body):
+    """True when the text is only iOS's placeholder for an attachment."""
+    return bool(_ATTACHMENT_NOTE.match(body or ""))
+
+
+def links_in(text):
+    """Web links of a text, trailing punctuation left out, www. made https://."""
+    found = []
+    for url in _LINK.findall(text or ""):
+        url = url.rstrip(".,;:!?)]»'\"")
+        if url.startswith("www."):
+            url = "https://" + url
+        if len(url) > 10:
+            found.append(url)
+    return found
+
+
+def periodic_due(now, last_listing, mns_seen, last_calls):
+    """(list the MAP folders, read the call history) at a periodic tick. The listing every
+    5 min catches events MNS missed; once an event arrived this session MNS is known to
+    work and every 30 min is enough. The call history is read after each call and hourly."""
+    every = PERIODIC_SYNC_QUIET if mns_seen else PERIODIC_SYNC
+    return (now - last_listing >= every - TICK_SLACK,
+            now - last_calls >= CALLS_EVERY - TICK_SLACK)
+
+
 class Worker(threading.Thread):
     """Runs blocking OBEX jobs one after the other; results come back on the main loop."""
 
@@ -227,8 +265,14 @@ class Messages:
         self.sync_again = None
         self.listed = set()  # handles seen in listings of this session
         self.read_anyway = set()  # unread messages the user asked to read in full
+        self.refresh_notes = {}   # message key -> thread: notification to refresh once read in full
         self.announced = set()  # handles announced by MNS, not yet listed
         self.event_timer = 0
+        self.mns_seen = False  # an MNS event arrived in this MAP session
+        self.last_listing = 0.0  # time.monotonic() of the last good listing
+        self.last_calls = 0.0  # and of the last call history request
+        self.removed_pending = set()  # handles whose Message1 object obexd just dropped
+        self.removed_timer = 0
         self.periodic_timer = 0
         self.retry_timer = 0
         self.ancs_pending = []
@@ -251,6 +295,11 @@ class Messages:
         self.enabled = True
         if self.store is None:
             self.store = Store()
+            if self.store.recovered:
+                self.notifier.notify(
+                    "Boomerang", "dialog-warning", _("Cache des messages reconstruit"),
+                    _("Le cache des messages était endommagé. Il a été mis de côté et les "
+                      "messages sont relus depuis l'iPhone."), own=True)
             # A send interrupted by a stop of the daemon: offer it again, never resend it.
             self.store.db.execute(
                 "UPDATE messages SET status='failed' WHERE source='boomerang' AND status='sending'")
@@ -500,6 +549,7 @@ class Messages:
             return
         self.session = path
         self.map_state = "ready"
+        self.mns_seen = False
         self.listed.clear()
         self.first_sync_done = False
         log("messages : session MAP ouverte")
@@ -514,6 +564,7 @@ class Messages:
             if getattr(self, attr):
                 GLib.source_remove(getattr(self, attr))
                 setattr(self, attr, 0)
+        self._drop_removed()
         path, self.session = self.session, None
         self.map_state = "idle"
         self.listed.clear()  # both are about this session's listings and events
@@ -524,9 +575,11 @@ class Messages:
 
     def _periodic(self):
         if self.session:
-            self.sync(count=50)
-            self.periodic_ticks = getattr(self, "periodic_ticks", 0) + 1
-            if self.periodic_ticks % 3 == 0:
+            listing, calls = periodic_due(time.monotonic(), self.last_listing, self.mns_seen,
+                                          self.last_calls)
+            if listing:
+                self.sync(count=50)
+            if calls:
                 self._maybe_pull_contacts(calls_only=True)
         return True
 
@@ -670,6 +723,7 @@ class Messages:
                 log(f"messages : dossiers {', '.join(sorted(available))} ; "
                     + ", ".join(f"{f} {len(v)}" for f, v in listing.items())
                     + f" (total {total}, types {kinds})")
+            self.last_listing = time.monotonic()
             self._merge(listing, initial)
             self._fetch_bodies()
             if initial:
@@ -690,6 +744,9 @@ class Messages:
                 # No usable timestamp: the parser gave "now", which must not move a stored
                 # message to the bottom of its conversation at every sync.
                 entry["time_known"] = bool(_TIMESTAMP.match((props.get("Timestamp") or "").strip()))
+                # A photo or a file: MAP lists the text only. An MMS with no text at all is one.
+                entry["attachment"] = int(props.get("AttachmentSize") or 0) > 0 or (
+                    entry["type"] == "mms" and not entry["subject"].strip())
                 entries.append(entry)
         return entries
 
@@ -749,6 +806,8 @@ class Messages:
                                   e["time"], body, complete, kind=e["type"],
                                   phone_read=e["read"], seen=e["read"] or bool(already),
                                   source="map", handle=e["handle"], time_known=e["time_known"])
+            if e.get("attachment"):
+                store.mark_attachment(key)
             # already: shown earlier from its ANCS notification, not notified twice
             if is_new and already is None and not e["outgoing"] and not e["read"] and \
                     (not initial or (last_sync and e["time"] > last_sync)):
@@ -781,7 +840,7 @@ class Messages:
             self._notify(tid, key)
             self.hooks.message_received(tid, key)
         if len(fresh) > NOTIFY_BURST:
-            self.notifier.notify(f"Boomerang ({self.hooks.device_name})", "io.github.melvincouwez.Boomerang.Messages",
+            self.notifier.notify(f"Boomerang ({self.hooks.device_name})", APP_ID,
                                  ngettext("{n} nouveau message", "{n} nouveaux messages",
                                           len(fresh)).format(n=len(fresh)), "", own=True)
 
@@ -858,6 +917,11 @@ class Messages:
                          source="map", handle=m["handle"])
             self._classify(key)
         store.commit()
+        # « Tout lire » asked from a notification: show the full text in the same bubble.
+        for key in list(results):
+            tid = self.refresh_notes.pop(key, None)
+            if tid and tid in self.notifications and results[key] is not None:
+                self._notify(tid, key, quiet=True)
         if got:
             log(f"messages : texte complet récupéré pour {got} message(s)")
             self.hooks.messages_changed(threads=True)
@@ -872,6 +936,8 @@ class Messages:
         if handle in self.listed or self.store.has_handle(handle):
             return
         self.announced.add(handle)
+        if not self.syncing:  # (objects created by our own listing are no MNS event)
+            self.mns_seen = True
         if not self.event_timer:
             self.event_timer = GLib.timeout_add(800, self._on_event_timer)
 
@@ -890,9 +956,45 @@ class Messages:
             log("messages : session MAP fermée par obexd")
             self.session = None
             self.map_state = "idle"
+            self._drop_removed()
             if self.address:
                 self._schedule_retry(10)
             self.hooks.messages_changed()
+        elif MESSAGE in interfaces and self.session and path.startswith(self.session + "/"):
+            # obexd drops the object of a message deleted on the iPhone (MNS « MessageDeleted »).
+            # Gathered a moment first: a teardown of the session drops every object at once.
+            self.removed_pending.add(path.rsplit("/message", 1)[-1])
+            if not self.removed_timer:
+                self.removed_timer = GLib.timeout_add(REMOVED_SETTLE_MS, self._on_removed_timer)
+
+    def _drop_removed(self):
+        if self.removed_timer:
+            GLib.source_remove(self.removed_timer)
+            self.removed_timer = 0
+        self.removed_pending.clear()
+
+    def _on_removed_timer(self):
+        self.removed_timer = 0
+        handles, self.removed_pending = self.removed_pending, set()
+        if not self.session or not self.store:
+            return False  # the session went with them: nothing was deleted by the user
+        if len(handles) > REMOVED_BURST:
+            log(f"messages : {len(handles)} objets retirés d'un coup par obexd, ignorés")
+            return False
+        hidden = 0
+        for handle in handles:
+            key = "map:" + handle
+            m = self.store.message(key)
+            if handle not in self.listed or m is None or m["source"] != "map":
+                continue
+            self.store.hide(key)  # a later listing or its notification will not bring it back
+            self.listed.discard(handle)
+            hidden += 1
+        if hidden:
+            self.store.commit()
+            log(f"messages : {hidden} message(s) supprimé(s) sur l'iPhone, retiré(s) de Boomerang")
+            self.hooks.messages_changed(threads=True)
+        return False
 
     def _on_message_changed(self, _conn, _sender, path, _iface, _signal, params):
         if not self.session or not path.startswith(self.session + "/"):
@@ -918,14 +1020,16 @@ class Messages:
         if not self.address or self.contacts_state == "forbidden" or self.pbap_busy:
             return
         age = time.time() - int(self.store.meta("contacts_time", "0") or 0)
-        if self.store.meta("contacts_schema") != store_module.CONTACTS_SCHEMA:
-            age = CONTACTS_MAX_AGE  # older cache without photos: pull again
+        if self.store.meta("contacts_schema") != store_module.CONTACTS_SCHEMA \
+                or not os.path.exists(os.path.join(self.store.dir, vcard.CACHE_NAME)):
+            age = CONTACTS_MAX_AGE  # older cache without photos or details: pull again
         want_book = not calls_only and (force or age >= CONTACTS_MAX_AGE)
         want_favorites = want_book and self._alpha("pbap_favorites")
         if age < CONTACTS_MAX_AGE:
             self.contacts_state = "ready"
         address, tmp = self.address, self.store.tmp
         self.pbap_busy = True
+        self.last_calls = time.monotonic()
 
         def pull(session, book, fields, max_count=None):
             target = os.path.join(tmp, f"pb-{uuid.uuid4().hex}.vcf")
@@ -949,8 +1053,10 @@ class Messages:
                                  GLib.Variant("(sa{sv})", (address, {"Target": GLib.Variant("s", "pbap")})),
                                  "(o)", timeout=45000)[0]
             try:
-                cards = bmsg.parse_vcards(pull(session, "pb", ["FN", "N", "TEL", "EMAIL", "PHOTO"])) \
-                    if want_book else None
+                book = pull(session, "pb", vcard.PBAP_FIELDS) if want_book else None
+                cards = bmsg.parse_vcards(book) if want_book else None
+                if want_book:  # company, address, birthday… for the Contacts page
+                    vcard.remember_phonebook(os.path.dirname(tmp), address, book)
                 history = bmsg.parse_call_history(
                     pull(session, "cch", ["FN", "N", "TEL", "X-IRMC-CALL-DATETIME"], CALLS_MAX))
                 favorites = None
@@ -981,6 +1087,9 @@ class Messages:
             changed = getattr(self.hooks, "contacts_changed", None)
             if changed:
                 changed()
+        if not self.store.meta("calls_seen"):
+            # First read: what is already in the history counts as seen.
+            self.store.set_meta("calls_seen", int(time.time()))
         self.store.replace_calls(history)
         self.store.commit()
         missed = sum(1 for c in history if c["kind"] == "missed")
@@ -1013,9 +1122,7 @@ class Messages:
             return 0
         seen = int(self.store.meta("calls_seen", "0") or 0)
         if not seen:
-            # First run: what was already in the history counts as seen.
-            self.store.set_meta("calls_seen", int(time.time()))
-            return 0
+            return 0  # history never read yet (a property getter writes nothing)
         return self.store.db.execute("SELECT COUNT(*) FROM calls WHERE kind='missed' AND time>?",
                                      (seen,)).fetchone()[0]
 
@@ -1200,7 +1307,7 @@ class Messages:
 
     # --- notifications ---------------------------------------------------------------------------------
 
-    def _notify(self, tid, key, subtitle=""):
+    def _notify(self, tid, key, subtitle="", quiet=False):
         m = self.store.message(key)
         thread = self.store.thread(tid)
         if not m or not thread:
@@ -1225,27 +1332,42 @@ class Messages:
         else:
             summary = self.store.thread_title(thread) or sender
         body = "\n".join(filter(None, [subtitle, m["body"] or ""]))
-        actions = [("default", _("Ouvrir"))]
+        inline = "inline-reply" in self.notifier.capabilities() \
+            if hasattr(self.notifier, "capabilities") else False
+        # A click on the banner: with inline reply the server unfolds it in place (last
+        # messages, Tout lire, field), "default" is then its Open button; otherwise the
+        # reply card opens.
+        actions = [("default", _("Ouvrir") if inline else _("Répondre"))]
         if code:
             # As on the iPhone: the code is one click away; nobody answers these senders.
             actions += [("copy-code", _("Copier le code")),
                         ("copy-code-delete", _("Copier et supprimer"))]
         quick = []
+        if inline and not m["complete"] and m["source"] == "map":
+            actions.append(("read-full", _("Tout lire")))
         if not code and self.can_send(thread):
-            inline = "inline-reply" in self.notifier.capabilities() \
-                if hasattr(self.notifier, "capabilities") else False
-            actions.append(("inline-reply" if inline else "reply", _("Répondre")))
+            if inline:
+                actions.append(("inline-reply", _("Répondre")))
             # The texts shown are the texts sent, even if Réglages changes them meanwhile.
             quick = self.quick_replies()[:QUICK_IN_NOTIFICATION]
             actions += [(f"quick:{i}", text) for i, text in enumerate(quick)]
         hints = {"category": GLib.Variant("s", "im.received")}
+        if inline:
+            # Unfolded bubble: the messages before this one, and it stays open after
+            # « Tout lire » (resident); Boomerang closes it after the other actions.
+            before = [r for r in self.store.messages(tid, limit=5) if r["key"] != key][-4:]
+            hints["x-boomerang-history"] = GLib.Variant(
+                "a(bs)", [(bool(r["outgoing"]), r["body"] or "") for r in before])
+            hints["x-kde-reply-placeholder-text"] = GLib.Variant("s", _("Message texte"))
+            hints["resident"] = GLib.Variant("b", True)
         photo = self.store.photo(m["sender"] or "")
         if photo:
             hints["image-path"] = GLib.Variant("s", photo)
-        self._sound(hints, mode, sound)
+        if not quiet:
+            self._sound(hints, mode, sound)
         self.notifications[tid] = self.notifier.notify(
-            f"Boomerang ({self.hooks.device_name})", "io.github.melvincouwez.Boomerang.Messages", summary, body, actions, hints,
-            replaces=self.notifications.get(tid, 0),
+            f"Boomerang ({self.hooks.device_name})", APP_ID, summary, body, actions, hints,
+            replaces=self.notifications.get(tid, 0), own=True,
             on_action=lambda action, t=tid, k=key, q=tuple(quick):
                 self._on_notification_action(t, action, k, q),
             on_closed=lambda t=tid: self.notifications.pop(t, None))
@@ -1331,6 +1453,8 @@ class Messages:
         """off | copy (notification with a copy button) | browser (also offered in the browser)."""
         config = getattr(self.hooks, "config", None)
         mode = config.string("messages", "one_time_codes", "copy") if config else "copy"
+        if mode == "browser" and config and not catalog.added(config, "codes"):
+            return "copy"  # the browser part is the « codes » module
         return mode if mode in ("off", "copy", "browser") else "copy"
 
     def set_code_mode(self, mode):
@@ -1365,6 +1489,18 @@ class Messages:
                 return "", 0
         code, age, _key = self.codes.latest()
         return code, age
+
+    def code_from_mail(self, text, sender=""):
+        """A mail notification (desktop or iPhone): keep and copy its code like an SMS one."""
+        if self.code_mode() == "off":
+            return
+        code = otp.detect(text or "")
+        if not code or code == self.codes.latest()[0]:
+            return  # nothing, or the same code seen twice (iPhone and desktop)
+        self.codes.remember(code, "", sender)
+        log("messages : code à usage unique reçu par mail")  # never the code itself
+        if self.auto_copy_codes():
+            self._copy_code("", False)
 
     def _copy_code(self, key, delete):
         """The daemon has no clipboard: the Boomerang app copies the code and clears it later."""
@@ -1478,9 +1614,9 @@ class Messages:
             hints["image-path"] = GLib.Variant("s", photo)
         self._sound(hints, mode, sound)
         self.notifications[tid] = self.notifier.notify(
-            f"Boomerang ({self.hooks.device_name})", "io.github.melvincouwez.Boomerang.Messages",
+            f"Boomerang ({self.hooks.device_name})", APP_ID,
             summary, body, [("default", _("Ouvrir"))], hints,
-            replaces=self.notifications.get(tid, 0),
+            replaces=self.notifications.get(tid, 0), own=True,
             on_action=lambda action, t=tid: self._on_notification_action(t, action),
             on_closed=lambda t=tid: self.notifications.pop(t, None))
 
@@ -1510,7 +1646,14 @@ class Messages:
         return ""
 
     def _on_notification_action(self, tid, action, key="", quick=None):
-        self.notifications.pop(tid, None)
+        if action == "read-full":
+            # The bubble stays open (resident): it is replaced once the full text is here.
+            if self.read_full(key):
+                self.refresh_notes[key] = tid
+            return
+        shown = self.notifications.pop(tid, None)
+        if shown and not action.startswith("inline-reply:"):
+            self.notifier.close(shown)  # resident bubbles stay until closed
         if action in ("copy-code", "copy-code-delete"):
             self._copy_code(key, action == "copy-code-delete")
             return
@@ -1530,13 +1673,16 @@ class Messages:
                       lambda error: error and log("messages : réponse rapide non envoyée"))
             self.mark_seen(tid)
             return
-        app = self._app_path((APP_ID + ".Messages", APP_ID))  # the Messages app, else Boomerang
+        app = self._app_path((APP_ID,))
         if not app:
             log("messages : application Boomerang introuvable")
             return
-        args = [app, "--reply" if action == "reply" else "--thread", tid]
+        inline = "inline-reply" in self.notifier.capabilities() \
+            if hasattr(self.notifier, "capabilities") else False
+        reply = action == "reply" or (action == "default" and not inline)
+        args = [app, "--reply" if reply else "--thread", tid]
         try:
-            Gio.Subprocess.new(args, Gio.SubprocessFlags.NONE)
+            launch(args)
         except GLib.Error as error:
             log(f"messages : ouverture de l'application impossible ({error.message})")
 
@@ -1553,15 +1699,21 @@ class Messages:
             return []
         result = []
         drafts = self.store.drafts()
-        for t in self.store.threads():
+        threads = self.store.threads()
+        with_file = self.store.attachment_keys(t["last_key"] for t in threads)
+        for t in threads:
+            snippet = t["snippet"]
+            if attachment_note(snippet) or (not snippet.strip() and t["last_key"] in with_file):
+                snippet = "📎 " + _("Pièce jointe")
             result.append({
-                "id": t["id"], "name": t["name"], "snippet": t["snippet"], "time": t["time"],
+                "id": t["id"], "name": t["name"], "snippet": snippet, "time": t["time"],
                 "unread": t["unread"], "group": t["is_group"], "outgoing": t["last_outgoing"],
                 "can_send": self.can_send(t), "participants": t["participants"],
                 "avatar": "" if t["is_group"] or not t["participants"]
                 else self.store.photo(t["participants"][0]),
                 "draft": drafts.get(t["id"], ""),
                 "pinned": t["pinned"], "marked_unread": t["marked_unread"],
+                "known": t["known"],
             })
         return result
 
@@ -1648,16 +1800,27 @@ class Messages:
                 "avatar": self.store.photo(address)}
 
     def messages(self, tid):
+        """The latest 500 messages (export, quick reply); the app pages with messages_page."""
+        return self.messages_page(tid, count=500)[0]
+
+    def messages_page(self, tid, before_time=0, before_key="", count=200):
+        """GetMessagesPage: `count` messages older than the one given (time and id; time 0:
+        the newest), oldest first, and whether older ones remain."""
         if not self.store:
-            return []
+            return [], False
         result = []
         badges = self.store.reactions_for(tid)
-        for m in self.store.messages(tid):
+        rows, more = self.store.messages_page(tid, before_time, before_key, count)
+        with_file = self.store.attachment_keys(m["key"] for m in rows)
+        for m in rows:
+            placeholder = attachment_note(m["body"])
             result.append({
                 "id": m["key"], "outgoing": bool(m["outgoing"]),
                 "sender": "" if m["outgoing"] else self.store.display_name(
                     m["sender"], m["sender_name"] or _("Inconnu")),
-                "address": m["sender"] or "", "time": m["time"], "body": m["body"] or "",
+                "address": m["sender"] or "", "time": m["time"],
+                "body": "" if placeholder else m["body"] or "",
+                "attachment": placeholder or m["key"] in with_file,
                 "complete": bool(m["complete"]), "source": m["source"] or "",
                 "status": m["status"] or "",
                 "avatar": "" if m["outgoing"] else self.store.photo(m["sender"] or ""),
@@ -1665,6 +1828,22 @@ class Messages:
                               for emoji, author, pending in badges.get(m["key"], [])],
                 "note": self._reaction_note(m) if m["kind"] == "reaction-note" else "",
             })
+        return result, more
+
+    def links(self, tid, limit=50):
+        """Web links exchanged in the conversation, newest first, each once (ListLinks)."""
+        if not self.store:
+            return []
+        seen, result = set(), []
+        for m in self.store.links(tid):
+            for url in links_in(m["body"]):
+                if url in seen:
+                    continue
+                seen.add(url)
+                result.append({"url": url, "time": m["time"], "outgoing": bool(m["outgoing"]),
+                               "message": m["key"]})
+                if len(result) >= limit:
+                    return result
         return result
 
     def _reaction_note(self, m):

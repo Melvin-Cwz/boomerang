@@ -11,15 +11,22 @@ The user picks the source in the Contacts page:
 - "bluetooth": the phone book read over PBAP, cached, read only (default);
 - "icloud": the iCloud address book, editable; needs the iCloud account.
 
+Whole cards (company, postal address, birthday…) are read the same way from both
+sources: vcard.py parses the vCard of the EDS contact, or the PBAP details cache.
+Writing goes through vcard.properties (), the same mapping as the export file.
+
 All EBook calls are blocking: they run on a worker thread, and the results
 come back on the main loop.
 """
 
+import base64
 import hashlib
 import os
+import re
 
 import gi
 
+from . import vcard
 from .bmsg import normalize_address
 from .messages import Worker
 from .util import icloud_uid_prefix, log
@@ -37,49 +44,143 @@ from gi.repository import GLib
 SOURCES = ("bluetooth", "icloud")
 PHOTO_DIR = os.path.join(GLib.get_user_data_dir(), "boomerang", "contacts", "photos")
 
-# Labels offered in the editor, with the vCard TYPE parameters Apple understands.
-PHONE_LABELS = {"mobile": ["CELL", "VOICE"], "iphone": ["IPHONE", "CELL", "VOICE"],
-                "domicile": ["HOME", "VOICE"], "travail": ["WORK", "VOICE"],
-                "principal": ["MAIN"], "autre": ["OTHER", "VOICE"]}
-EMAIL_LABELS = {"domicile": ["INTERNET", "HOME"], "travail": ["INTERNET", "WORK"],
-                "autre": ["INTERNET", "OTHER"]}
-# Apple's own labels (item1.X-ABLabel:_$!<Mobile>!$_) read back to ours.
-APPLE_LABELS = {"mobile": "mobile", "home": "domicile", "work": "travail", "main": "principal",
-                "iphone": "iphone", "other": "autre"}
+# Labels offered in the editor (kept here for older imports).
+PHONE_LABELS = vcard.PHONE_LABELS
+EMAIL_LABELS = vcard.EMAIL_LABELS
+
+# Card fields written to iCloud, by the vCard properties that hold them. A field missing
+# from a saved card is left as it is (older clients send only the first six).
+FIELD_PROPERTIES = {
+    "names": ("N", "FN"), "nickname": ("NICKNAME",), "org": ("ORG",), "title": ("TITLE",),
+    "note": ("NOTE",), "birthday": ("BDAY",), "phones": ("TEL",), "emails": ("EMAIL",),
+    "addresses": ("ADR",), "urls": ("URL",), "dates": ("X-ABDATE", "ANNIVERSARY"),
+}
+EDITABLE = ("given", "family", "nickname", "org", "title", "note", "birthday", "phones", "emails",
+            "addresses", "urls", "dates")
+# Properties Apple ties to a labelled one through its group: they go with it.
+GROUP_COMPANIONS = ("X-ABLABEL", "X-ABADR")
+IMPORT_MAX_BYTES = 20 * 1024 * 1024
+IMPORT_MAX_CARDS = 5000
+PHOTO_MAX_BYTES = 2 * 1024 * 1024
 
 
-def _label(attr, contact, labels):
-    """Our label for a TEL or EMAIL attribute ('' when none is known)."""
-    group = attr.get_group()
-    if group:
-        for other in EBookContacts.VCard.get_attributes(contact):
-            if other.get_group() == group and other.get_name().upper() == "X-ABLABEL":
-                raw = (other.get_value() or "").strip("_$!<>").lower()
-                return APPLE_LABELS.get(raw, raw)
-    types = [t.upper() for t in (attr.get_param("TYPE") or [])]
-    if "IPHONE" in types and "iphone" in labels:
-        return "iphone"
-    for name, wanted in labels.items():
-        # INTERNET and VOICE are on every entry: match on the distinctive type.
-        key = next(t for t in wanted if t not in ("INTERNET", "VOICE"))
-        if key in types:
-            return name
-    if "CELL" in types:
-        return "mobile"
-    return ""
+def vcard_format_30():
+    return getattr(EBookContacts.VCardFormat, "30", None) or EBookContacts.VCardFormat.VCARD_30
 
 
-def _replace(contact, name, values):
-    """Set a single-instance vCard attribute (None removes it)."""
-    for attr in list(EBookContacts.VCard.get_attributes(contact)):
-        if attr.get_name().upper() == name:
-            EBookContacts.VCard.remove_attribute(contact, attr)
-    if values is None:
-        return
-    attr = EBookContacts.VCardAttribute.new(None, name)
+def is_duplicate(card, cards):
+    """Whether an imported card is already in the book: same name, and a shared address
+    (or neither has one)."""
+    name = (card.get("name") or "").casefold()
+    addresses = set(vcard.addresses_of(card))
+    for other in cards:
+        if (other.get("name") or "").casefold() != name:
+            continue
+        theirs = set(other.get("addresses", []))
+        if addresses & theirs or (not addresses and not theirs):
+            return True
+    return False
+
+
+def preview(text, cards):
+    """What an import would do, before it is confirmed: [{name, org, count, duplicate}]."""
+    if len(text.encode("utf-8", "replace")) > IMPORT_MAX_BYTES:
+        raise ValueError("fichier trop volumineux (20 Mo au plus)")
+    found = vcard.parse(text)
+    if len(found) > IMPORT_MAX_CARDS:
+        raise ValueError(f"trop de fiches ({IMPORT_MAX_CARDS} au plus)")
+    return [{"name": c["name"], "org": c["org"],
+             "count": len(c["phones"]) + len(c["emails"]),
+             "duplicate": is_duplicate(c, cards)} for c in found if c["name"]]
+
+
+def details_for_dbus(card, photo=""):
+    """A parsed card as GetContactDetails and GetContact give it."""
+    out = {k: card.get(k, "") for k in vcard.TEXT_FIELDS if k not in ("photo_uri",)}
+    for key in vcard.LIST_FIELDS:
+        out[key] = [tuple(item) for item in card.get(key, [])]
+    out["photo"] = photo
+    return out
+
+
+def _attributes(contact):
+    return list(EBookContacts.VCard.get_attributes(contact))
+
+
+def _attribute(group, name, params, values):
+    attr = EBookContacts.VCardAttribute.new(group or None, name)
+    for key, vals in params:
+        for value in vals:  # one parameter per value, as EDS and Apple write TYPE
+            param = EBookContacts.VCardAttributeParam.new(key)
+            param.add_value(value)
+            attr.add_param(param)
     for value in values:
         attr.add_value(value)
-    EBookContacts.VCard.append_attribute(contact, attr)
+    return attr
+
+
+def _values(attr):
+    try:
+        return [v or "" for v in (attr.get_values() or [])]
+    except (AttributeError, TypeError):
+        return [attr.get_value() or ""]
+
+
+def fill(contact, card):
+    """Write a card's fields into an EDS contact; fields the card does not carry stay.
+
+    Labelled lists (numbers, e-mails, addresses, sites, dates) are written again as a
+    whole, with Apple's label groups of the old ones; everything Boomerang does not edit
+    (social profiles, related names, Apple's own fields) is kept."""
+    present = {k for k in card if k in EDITABLE}
+    if present & {"given", "family"}:
+        present.add("names")
+        # Middle name, prefix and suffix are not edited: keep the ones the card has.
+        for attr in _attributes(contact):
+            if attr.get_name().upper() == "N":
+                old = _values(attr) + [""] * 5
+                for key, value in zip(("middle", "prefix", "suffix"), old[2:5]):
+                    card.setdefault(key, value)
+    if "org" in present and "department" not in card:
+        for attr in _attributes(contact):
+            if attr.get_name().upper() == "ORG":
+                card["department"] = ", ".join(v for v in _values(attr)[1:] if v)
+    names = set()
+    for field, props in FIELD_PROPERTIES.items():
+        if field in present:
+            names.update(props)
+    if card.get("photo_data") or card.get("photo_remove"):
+        names.add("PHOTO")
+
+    groups = set()
+    for attr in _attributes(contact):
+        if attr.get_name().upper() in names:
+            if attr.get_group():
+                groups.add(attr.get_group().lower())
+            EBookContacts.VCard.remove_attribute(contact, attr)
+    used = 0
+    for attr in _attributes(contact):
+        group = (attr.get_group() or "").lower()
+        if group in groups and attr.get_name().upper() in GROUP_COMPANIONS:
+            EBookContacts.VCard.remove_attribute(contact, attr)
+        elif group:
+            m = re.fullmatch(r"item(\d+)", group)
+            if m:
+                used = max(used, int(m.group(1)))
+
+    fields = set(present)
+    if "names" in present:
+        fields |= {"given", "family", "middle", "prefix", "suffix"}
+    if "org" in present:
+        fields.add("department")
+    for group, name, params, values in vcard.properties(card, fields, first_group=used + 1):
+        EBookContacts.VCard.append_attribute(contact, _attribute(group, name, params, values))
+    if card.get("photo_data"):
+        data = bytes(card["photo_data"])
+        kind = "PNG" if data[:8] == b"\x89PNG\r\n\x1a\n" else "JPEG"
+        EBookContacts.VCard.append_attribute(contact, _attribute(
+            "", "PHOTO", [("ENCODING", ["b"]), ("TYPE", [kind])],
+            [base64.b64encode(data).decode("ascii")]))
 
 
 class ContactBook:
@@ -89,7 +190,8 @@ class ContactBook:
         self.worker = None
         self.client = None
         self.state = "off"   # off, connecting, ready, no-account, missing, error
-        self.cards = []      # [{'uid', 'name', 'addresses', 'photo'}]
+        self.cards = []      # [{'uid', 'name', 'addresses', 'photo', 'given', 'family', 'org'}]
+        self.phonebook = vcard.PhonebookDetails()
         if self.source == "icloud":
             self._open()
 
@@ -189,13 +291,16 @@ class ContactBook:
                     address = normalize_address(attr.get_value() or "")
                     if address and address not in addresses:
                         addresses.append(address)
+            given = (contact.get_property("given-name") or "").strip()
+            family = (contact.get_property("family-name") or "").strip()
+            org = (contact.get_property("org") or "").strip()
             # iOS often leaves FN empty and only fills N: build the name like the iPhone does.
             name = (contact.get_property("full-name") or "").strip() or " ".join(
-                p for p in (contact.get_property("given-name"), contact.get_property("family-name"))
-                if p and p.strip()) or (contact.get_property("org") or "").strip() \
+                p for p in (given, family) if p) or org \
                 or (contact.get_property("nickname") or "").strip()
             cards.append({"uid": uid, "name": name, "addresses": addresses,
-                          "photo": self._photo(uid, contact)})
+                          "photo": self._photo(uid, contact), "given": given,
+                          "family": family, "org": org})
         cards.sort(key=lambda c: c["name"].casefold())
         return cards
 
@@ -222,28 +327,122 @@ class ContactBook:
                 f.write(data)
         return path
 
+    @classmethod
+    def _parsed(cls, uid, contact):
+        """A whole EDS contact as a vcard.py card, its photo as a file path."""
+        cards = vcard.parse(contact.to_string(vcard_format_30()))
+        card = cards[0] if cards else vcard.empty_card()
+        card["uid"] = uid
+        return details_for_dbus(card, cls._photo(uid, contact))
+
     def details(self, uid, on_done):
-        """Editable fields of one card: on_done(dict | None, error)."""
+        """Every field of one iCloud card: on_done(dict | None, error)."""
         client = self.client
 
         def job():
             _ok, contact = client.get_contact_sync(uid, None)
-            phones, emails = [], []
-            for attr in EBookContacts.VCard.get_attributes(contact):
-                kind = attr.get_name().upper()
-                if kind == "TEL":
-                    phones.append((_label(attr, contact, PHONE_LABELS), attr.get_value() or ""))
-                elif kind == "EMAIL":
-                    emails.append((_label(attr, contact, EMAIL_LABELS), attr.get_value() or ""))
-            return {"uid": uid,
-                    "given": contact.get_property("given-name") or "",
-                    "family": contact.get_property("family-name") or "",
-                    "org": contact.get_property("org") or "",
-                    "note": contact.get_property("note") or "",
-                    "phones": phones, "emails": emails}
+            return self._parsed(uid, contact)
 
         if client is None:
             on_done(None, "carnet iCloud non ouvert")
+            return
+        self._submit(job, on_done)
+
+    # --- list and details for both sources -----------------------------------------------
+
+    def enrich(self, cards, store):
+        """List cards with what sorting and the detail pane need: key (the iCloud uid, or
+        « pbap: » and the first address), given and family names, company."""
+        directory = store.dir if store else None
+        device = store.meta("device", "") if store else ""
+        out = []
+        for card in cards:
+            card = dict(card)
+            if card.get("uid") and self.source == "icloud":
+                card["key"] = card["uid"]
+            else:
+                card["key"] = "pbap:" + (card["addresses"][0] if card.get("addresses") else "")
+                cached = self.phonebook.find(directory, card.get("addresses", []), device,
+                                             card.get("name")) if directory else None
+                if cached:
+                    for key in ("given", "family", "org"):
+                        card.setdefault(key, cached.get(key, ""))
+            out.append(card)
+        return out
+
+    def _pbap_card(self, listed, store):
+        """Whole card of a PBAP list entry: the details cache, else what the list knows."""
+        directory = store.dir if store else None
+        device = store.meta("device", "") if store else ""
+        cached = self.phonebook.find(directory, listed.get("addresses", []), device,
+                                     listed.get("name")) if directory else None
+        if cached:
+            card = vcard.empty_card()
+            card.update({k: v for k, v in cached.items() if k in card})
+            card["name"] = listed.get("name") or card["name"]
+        else:
+            card = vcard.empty_card()
+            card["name"] = listed.get("name", "")
+            for address in listed.get("addresses", []):
+                (card["emails"] if "@" in address else card["phones"]).append(("", address))
+        return card
+
+    def card_details(self, key, listed, store, on_done):
+        """GetContactDetails: on_done(dict | None, error). listed: the list cards (enriched)."""
+        entry = next((c for c in listed if c.get("key") == key), None)
+        if key and not key.startswith("pbap:") and self.client is not None:
+            photo = entry.get("photo", "") if entry else ""
+
+            def done(card, error):
+                if card is not None and not card.get("photo"):
+                    card["photo"] = photo  # the iPhone's photo while iCloud's is not there
+                on_done(card, error)
+
+            self.details(key, done)
+            return
+        if entry is None:
+            address = key[5:] if key.startswith("pbap:") else ""
+            entry = next((c for c in listed if address and address in c.get("addresses", [])),
+                         None)
+        if entry is None:
+            on_done(None, "fiche inconnue")
+            return
+        card = self._pbap_card(entry, store)
+        on_done(details_for_dbus(card, entry.get("photo", "")), None)
+
+    def export(self, keys, listed, store, on_done):
+        """vCard 3.0 text of these cards (all listed ones when keys is empty), photos inlined:
+        on_done(text | None, error)."""
+        wanted = [c for c in listed if not keys or c.get("key") in keys]
+        client = self.client
+
+        def photo_bytes(path):
+            try:
+                if path and os.path.getsize(path) <= PHOTO_MAX_BYTES:
+                    with open(path, "rb") as f:
+                        return f.read()
+            except OSError:
+                pass
+            return None
+
+        def job():
+            texts = []
+            for entry in wanted:
+                if entry.get("uid") and not entry["key"].startswith("pbap:") and client:
+                    _ok, contact = client.get_contact_sync(entry["uid"], None)
+                    parsed = vcard.parse(contact.to_string(vcard_format_30()))
+                    card = parsed[0] if parsed else vcard.empty_card()
+                    if not card.get("photo"):
+                        card["photo"] = photo_bytes(self._photo(entry["uid"], contact)
+                                                    or entry.get("photo", ""))
+                else:
+                    card = self._pbap_card(entry, store)
+                    card["photo"] = photo_bytes(entry.get("photo", ""))
+                texts.append(vcard.serialize(card))
+            return "".join(texts)
+
+        if not wanted:
+            on_done(None, "aucune fiche à exporter")
             return
         self._submit(job, on_done)
 
@@ -296,43 +495,57 @@ class ContactBook:
         self._submit(lambda: client.remove_contact_by_uid_sync(
             uid, EBookContacts.BookOperationFlags.NONE, None), done)
 
+    def import_cards(self, text, on_done):
+        """Add the cards of a vCard text to iCloud, skipping those already there:
+        on_done({'added', 'duplicates', 'failed', 'names'} | None, error)."""
+        client = self.client
+        if client is None:
+            on_done(None, "carnet iCloud non ouvert")
+            return
+        try:
+            preview(text, [])  # size limits
+        except ValueError as error:
+            on_done(None, str(error))
+            return
+        known = [dict(c) for c in self.cards]
+
+        def job():
+            report = {"added": 0, "duplicates": 0, "failed": 0, "names": []}
+            for card in vcard.parse(text):
+                if not card["name"]:
+                    report["failed"] += 1
+                    continue
+                if is_duplicate(card, known):
+                    report["duplicates"] += 1
+                    continue
+                try:
+                    contact = EBookContacts.Contact.new_from_vcard(card["raw"])
+                    # A fresh card in iCloud: an exported UID would collide with its source.
+                    for attr in _attributes(contact):
+                        if attr.get_name().upper() in ("UID", "REV", "PRODID"):
+                            EBookContacts.VCard.remove_attribute(contact, attr)
+                    client.add_contact_sync(contact, EBookContacts.BookOperationFlags.NONE, None)
+                except GLib.Error as error:
+                    log(f"contacts : fiche non importée ({error.message})")
+                    report["failed"] += 1
+                    continue
+                report["added"] += 1
+                report["names"].append(card["name"])
+                known.append({"name": card["name"], "addresses": vcard.addresses_of(card)})
+            return report
+
+        def done(report, error):
+            if error:
+                log(f"contacts : import interrompu ({error})")
+            else:
+                log(f"contacts : import vCard, {report['added']} fiche(s) ajoutée(s), "
+                    f"{report['duplicates']} déjà présente(s), {report['failed']} refusée(s)")
+                if report["added"]:
+                    self.reload()
+            on_done(report, error)
+
+        self._submit(job, done)
+
     @staticmethod
     def _fill(contact, card):
-        given = card.get("given", "").strip()
-        family = card.get("family", "").strip()
-        org = card.get("org", "").strip()
-        # contact.set() takes a raw pointer that PyGObject cannot pass: write the attributes.
-        _replace(contact, "N", [family, given, "", "", ""])
-        _replace(contact, "FN", [" ".join(p for p in (given, family) if p) or org])
-        _replace(contact, "ORG", [org] if org else None)
-        _replace(contact, "NOTE", [card.get("note", "").strip()] if card.get("note", "").strip() else None)
-
-        # Numbers and addresses are written again as a whole; Apple's label groups
-        # (itemN.X-ABLabel) of the old ones go with them. Everything else is kept.
-        groups = set()
-        for attr in list(EBookContacts.VCard.get_attributes(contact)):
-            if attr.get_name().upper() in ("TEL", "EMAIL"):
-                if attr.get_group():
-                    groups.add(attr.get_group())
-                EBookContacts.VCard.remove_attribute(contact, attr)
-        for attr in list(EBookContacts.VCard.get_attributes(contact)):
-            if attr.get_group() in groups and attr.get_name().upper() == "X-ABLABEL":
-                EBookContacts.VCard.remove_attribute(contact, attr)
-        for kind, labels, entries in (("TEL", PHONE_LABELS, card.get("phones", [])),
-                                      ("EMAIL", EMAIL_LABELS, card.get("emails", []))):
-            first = True
-            for label, value in entries:
-                value = value.strip()
-                if not value:
-                    continue
-                attr = EBookContacts.VCardAttribute.new(None, kind)
-                types = list(labels.get(label, labels["autre"]))
-                if first:
-                    types.append("pref")
-                    first = False
-                for t in types:
-                    param = EBookContacts.VCardAttributeParam.new("TYPE")
-                    param.add_value(t)
-                    attr.add_param(param)
-                attr.add_value(value)
-                EBookContacts.VCard.append_attribute(contact, attr)
+        fill(contact, card)

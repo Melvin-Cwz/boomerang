@@ -101,10 +101,11 @@ class OneTimeCodes:
         self.clock = clock
         self.code = ""
         self.key = ""  # the message that carried it
+        self.sender = ""  # who sent it, when no message holds it (a mail)
         self.when = 0.0
 
-    def remember(self, code, key=""):
-        self.code, self.key, self.when = code, key, self.clock()
+    def remember(self, code, key="", sender=""):
+        self.code, self.key, self.sender, self.when = code, key, sender, self.clock()
 
     def latest(self):
         """(code, age in seconds, message key), ("", 0, "") when none or too old."""
@@ -117,4 +118,4 @@ class OneTimeCodes:
         return self.code, int(age), self.key
 
     def forget(self):
-        self.code, self.key, self.when = "", "", 0.0
+        self.code, self.key, self.sender, self.when = "", "", "", 0.0

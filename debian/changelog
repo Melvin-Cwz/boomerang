@@ -1,3 +1,87 @@
+boomerang (2.0.0~beta1-1) unstable; urgency=medium
+
+  * Boomerang 2, first beta.
+  * One application by person replaces Messages, Phone and Contacts:
+    People, Keypad and iPhone; a single thread of messages and calls with
+    the contact card beside it. The three separate launchers are gone.
+  * Link state: nothing in the header when all is well; an amber dot and a
+    thin banner with the helpful button when the link is partial or absent.
+  * Advanced settings as a list of eight sections with their own pages;
+    common page layout (large title, centred column).
+  * « Show in the top bar »: Install alone until the add-on is there, then
+    the switch and a discreet Remove.
+  * Complete English translation.
+
+ -- MelvinCwz <301110918+Melvin-Cwz@users.noreply.github.com>  Thu, 12 Nov 2026 20:00:00 +0100
+
+boomerang (2.0.0~alpha4-1) unstable; urgency=medium
+
+  * Boomerang 2, fourth alpha.
+  * Builds against Granite 9 (elementary OS 9), Granite 7.7 still accepted;
+    named colours go through Style.colors (); frameless buttons get their
+    own frame where the shape matters.
+  * Messages: history by pages, unread and unknown filters, shortcuts
+    window, deletions from the iPhone, attachments flagged, links listed.
+  * Phone: call waiting (hold and answer, swap, merge, end and answer),
+    call audio output, favourites, voicemail, search.
+  * Contacts: full vCard fields, editor with photo cropping, alphabetical
+    index, vCard import into iCloud and export.
+  * AirPods: low battery alerts, automatic ear detection, stem swipe;
+    Mirroring: screenshots, pointer follows the picture; indicator no
+    longer blocks on D-Bus.
+  * Sparing: BlueZ signals filtered, GATT attaches coalesced, iCloud Drive
+    woken by systemd instead of polling.
+  * Complete English translation.
+
+ -- MelvinCwz <301110918+Melvin-Cwz@users.noreply.github.com>  Mon, 02 Nov 2026 21:00:00 +0100
+
+boomerang (2.0.0~alpha3-1) unstable; urgency=medium
+
+  * Boomerang 2, third alpha.
+  * Notifications: the link between iPhone and desktop notifications survives
+    reconnections; notifications cleared on the iPhone during a cut are
+    closed after the replay; an update no longer reopens a notification
+    closed on the PC.
+  * « Appairer à nouveau » when notifications stopped drops the stale keys and
+    guides the iPhone through forgetting the PC first.
+  * Link: classic ATT fallback tried without resolved LE services;
+    « InProgress » handled without growing the back-off; HFP failures kept
+    apart; 60 s connect timeout.
+  * Message cache: a damaged database is put aside and rebuilt (WAL).
+  * Every test file runs under meson test.
+
+ -- MelvinCwz <301110918+Melvin-Cwz@users.noreply.github.com>  Mon, 02 Nov 2026 20:00:00 +0100
+
+boomerang (2.0.0~alpha2-1) unstable; urgency=medium
+
+  * Boomerang 2, second alpha.
+  * Link: the LE object of the iPhone is never removed. Removing it made
+    BlueZ unpair the identity address over LE and drop the iPhone's LE keys,
+    so notifications (ANCS) stopped after each reconnection until a new pairing.
+  * Wingpanel indicator as an add-on installed from Réglages (pkexec helper).
+  * Presence: AlreadyExists means the monitor is registered.
+  * Phone: Récents as wide as Messages and Contacts, short times.
+  * iCloud packages become Recommends, installed on demand by the module.
+  * rclone download sends its own User-Agent (403 otherwise).
+
+ -- MelvinCwz <301110918+Melvin-Cwz@users.noreply.github.com>  Wed, 28 Oct 2026 15:00:00 +0100
+
+boomerang (2.0.0~alpha1-1) unstable; urgency=medium
+
+  * Boomerang 2, first alpha.
+  * The iPhone link in the header bar (LinkState: off, unpaired, bond-lost,
+    absent, seen, classic, complete), the same words in the indicator.
+  * Presence: an Apple device nearby triggers a reconnection attempt (at most
+    one a minute) when bluetoothd exposes advertisement monitors.
+  * systemd watchdog: a hung daemon is restarted.
+  * Modules on demand: AirPods, iPhone sound, iCloud services, file sending,
+    photo import, mirror, hotspot, proximity lock and browser codes leave the
+    core; features already in use stay added.
+  * Header menu for Réglages, the guide and About; Phone › Récents filter.
+  * meson test runs the interface and daemon checks.
+
+ -- MelvinCwz <301110918+Melvin-Cwz@users.noreply.github.com>  Fri, 16 Oct 2026 18:30:00 +0200
+
 boomerang (0.8.3-1) unstable; urgency=medium
 
   * French texts reviewed (interface, guide, documentation).

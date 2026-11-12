@@ -127,7 +127,7 @@ public class Boomerang.InstallBox : Gtk.Box {
 namespace Boomerang.PageHeader {
     public Gtk.Widget build (string title, string subtitle, string? pill = null) {
         var name = new Gtk.Label (title) { xalign = 0 };
-        name.add_css_class (Granite.HeaderLabel.Size.H2.to_string ());
+        name.add_css_class (Granite.HeaderLabel.Size.H1.to_string ());
         var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9);
         line.append (name);
         if (pill != null) {
@@ -143,16 +143,9 @@ namespace Boomerang.PageHeader {
         return box;
     }
 
-    /* The scrolled, centred column every page of this kind uses. */
-    public Gtk.Box column (out Gtk.ScrolledWindow scroll) {
-        var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
-            margin_top = 18,
-            margin_bottom = 24,
-            margin_start = 24,
-            margin_end = 24,
-            width_request = 520,
-            halign = Gtk.Align.CENTER
-        };
+    /* The scrolled, centred column every page of this kind uses (the one of Réglages). */
+    public PageColumn column (out Gtk.ScrolledWindow scroll) {
+        var content = new PageColumn ();
         scroll = new Gtk.ScrolledWindow () {
             child = content,
             hscrollbar_policy = Gtk.PolicyType.NEVER,

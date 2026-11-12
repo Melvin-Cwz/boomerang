@@ -96,7 +96,8 @@ def arch():
 def _get(url, opener, timeout=30):
     if not url.startswith("https://"):
         raise FetchError(_("adresse non sécurisée refusée"))
-    return opener(url, timeout=timeout)
+    # downloads.rclone.org answers 403 to urllib's default "Python-urllib" agent.
+    return opener(urllib.request.Request(url, headers={"User-Agent": "Boomerang (rclone fetch)"}), timeout=timeout)
 
 
 def latest_version(opener=urllib.request.urlopen):

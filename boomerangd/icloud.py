@@ -14,9 +14,12 @@ import time
 
 import gi
 
-gi.require_version("EDataServer", "1.2")
-gi.require_version("Secret", "1")
-from gi.repository import EDataServer, Secret  # noqa: E402
+try:  # the « icloud » module installs them on demand (catalog.py)
+    gi.require_version("EDataServer", "1.2")
+    gi.require_version("Secret", "1")
+    from gi.repository import EDataServer, Secret  # noqa: E402
+except (ImportError, ValueError):
+    EDataServer = Secret = None
 
 from .i18n import _  # noqa: E402
 from .util import ICLOUD_UID_PREFIXES, icloud_uid_prefix, log  # noqa: E402
@@ -25,9 +28,9 @@ EDS_SCHEMA = Secret.Schema.new(
     "org.gnome.Evolution.Data.Source",
     Secret.SchemaFlags.DONT_MATCH_NAME,
     {"e-source-uid": Secret.SchemaAttributeType.STRING},
-)
+) if Secret else None
 MAX_ATTEMPTS = 3  # per source and per 10 minutes, to never hammer Apple's servers
-Reason = EDataServer.SourceCredentialsReason
+Reason = EDataServer.SourceCredentialsReason if EDataServer else None
 
 
 class ICloud:
@@ -46,6 +49,9 @@ class ICloud:
         if self.enabled:
             return
         self.enabled = True
+        if EDataServer is None:
+            self.on_state()  # state(): « unavailable » until the module's packages are there
+            return
         if self.registry is None:
             EDataServer.SourceRegistry.new(None, self._on_registry)
         else:

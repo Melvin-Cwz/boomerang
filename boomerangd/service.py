@@ -11,6 +11,7 @@ import os
 
 from gi.repository import Gio, GLib
 
+from . import catalog
 from .callers import Callers
 from .config import ALPHA, MODULES
 from .i18n import _
@@ -23,6 +24,10 @@ INTERFACE = "io.github.melvincouwez.Boomerang1"
 XML = f"""
 <node>
   <interface name="{INTERFACE}">
+    <method name="SetModuleAdded">
+      <arg name="module" type="s" direction="in"/>
+      <arg name="added" type="b" direction="in"/>
+    </method>
     <method name="SetModuleEnabled">
       <arg name="module" type="s" direction="in"/>
       <arg name="enabled" type="b" direction="in"/>
@@ -41,6 +46,18 @@ XML = f"""
     <method name="GetMessages">
       <arg name="thread" type="s" direction="in"/>
       <arg name="messages" type="aa{{sv}}" direction="out"/>
+    </method>
+    <method name="GetMessagesPage">
+      <arg name="thread" type="s" direction="in"/>
+      <arg name="before_time" type="x" direction="in"/>
+      <arg name="before_id" type="s" direction="in"/>
+      <arg name="count" type="u" direction="in"/>
+      <arg name="messages" type="aa{{sv}}" direction="out"/>
+      <arg name="more" type="b" direction="out"/>
+    </method>
+    <method name="ListLinks">
+      <arg name="thread" type="s" direction="in"/>
+      <arg name="links" type="aa{{sv}}" direction="out"/>
     </method>
     <method name="SendMessage">
       <arg name="thread" type="s" direction="in"/>
@@ -124,6 +141,10 @@ XML = f"""
       <arg name="call" type="o" direction="in"/>
       <arg name="action" type="s" direction="in"/>
     </method>
+    <method name="DeclineWithMessage">
+      <arg name="call" type="o" direction="in"/>
+      <arg name="text" type="s" direction="in"/>
+    </method>
     <method name="SetCallAudio">
       <arg name="on_pc" type="b" direction="in"/>
     </method>
@@ -135,6 +156,12 @@ XML = f"""
     </method>
     <method name="SendTones">
       <arg name="tones" type="s" direction="in"/>
+    </method>
+    <method name="ListCallAudioOutputs">
+      <arg name="outputs" type="aa{{sv}}" direction="out"/>
+    </method>
+    <method name="SetCallAudioOutput">
+      <arg name="output" type="s" direction="in"/>
     </method>
     <signal name="ActiveCallsChanged"/>
     <property name="AudioOnPC" type="b" access="read"/>
@@ -217,6 +244,7 @@ XML = f"""
     <property name="TetheringState" type="s" access="read"/>
     <property name="TetheringError" type="s" access="read"/>
     <property name="Proximity" type="a{{sv}}" access="read"/>
+    <property name="Catalog" type="aa{{sv}}" access="read"/>
     <method name="SetLocalSend">
       <arg name="enabled" type="b" direction="in"/>
     </method>
@@ -232,6 +260,7 @@ XML = f"""
     <property name="Files" type="a{{sv}}" access="read"/>
     <method name="StartMirror"/>
     <method name="StopMirror"/>
+    <method name="MirrorScreenshot"/>
     <property name="Mirror" type="a{{sv}}" access="read"/>
     <method name="SetMirrorOption">
       <arg name="key" type="s" direction="in"/>
@@ -272,6 +301,15 @@ XML = f"""
     <method name="SetControlSize">
       <arg name="width" type="u" direction="in"/>
       <arg name="height" type="u" direction="in"/>
+    </method>
+    <method name="ControlMedia">
+      <arg name="key" type="s" direction="in"/>
+    </method>
+    <method name="ControlGesture">
+      <arg name="gesture" type="s" direction="in"/>
+    </method>
+    <method name="SetControlAutoSize">
+      <arg name="enabled" type="b" direction="in"/>
     </method>
     <method name="RefreshPhotosUsb"/>
     <method name="PairPhotosUsb"/>
@@ -349,6 +387,22 @@ XML = f"""
     <method name="DeleteContact">
       <arg name="uid" type="s" direction="in"/>
     </method>
+    <method name="GetContactDetails">
+      <arg name="key" type="s" direction="in"/>
+      <arg name="card" type="a{{sv}}" direction="out"/>
+    </method>
+    <method name="ExportContacts">
+      <arg name="keys" type="as" direction="in"/>
+      <arg name="vcard" type="s" direction="out"/>
+    </method>
+    <method name="PreviewContactsImport">
+      <arg name="vcard" type="s" direction="in"/>
+      <arg name="cards" type="aa{{sv}}" direction="out"/>
+    </method>
+    <method name="ImportContacts">
+      <arg name="vcard" type="s" direction="in"/>
+      <arg name="report" type="a{{sv}}" direction="out"/>
+    </method>
     <signal name="ContactsChanged"/>
     <property name="ContactsSource" type="s" access="read"/>
     <property name="UnreadMessages" type="u" access="read"/>
@@ -377,6 +431,7 @@ XML = f"""
     <property name="Advertising" type="b" access="read"/>
     <property name="Pairing" type="b" access="read"/>
     <property name="LinkProblem" type="s" access="read"/>
+    <property name="LinkState" type="s" access="read"/>
     <property name="AdapterName" type="s" access="read"/>
     <property name="DeviceName" type="s" access="read"/>
     <property name="DeviceAddress" type="s" access="read"/>
@@ -407,7 +462,7 @@ XML = f"""
 
 SIGNATURES = {
     "Version": "s", "BluetoothAvailable": "b", "Advertising": "b", "Pairing": "b",
-    "LinkProblem": "s", "AdapterName": "s",
+    "LinkProblem": "s", "LinkState": "s", "AdapterName": "s",
     "DeviceName": "s", "DeviceAddress": "s", "Paired": "b", "Connected": "b",
     "NotificationsLinked": "b", "MediaLinked": "b", "CallsLinked": "b", "CallsSupported": "b",
     "Battery": "i",
@@ -416,7 +471,7 @@ SIGNATURES = {
     "ContactsState": "s", "AudioOnPC": "b", "MicMuted": "b",
     "PhoneAudio": "s", "PhoneAudioOutput": "s", "ContactsSource": "s", "ContactsBook": "s",
     "UnreadMessages": "u", "MissedCalls": "u", "NowPlaying": "a{sv}", "AlphaFeatures": "a{sb}", "FetchUnread": "b", "CallsQuiet": "b", "Sounds": "a{ss}",
-    "Update": "a{sv}", "Apps": "a{sv}", "Proximity": "a{sv}",
+    "Update": "a{sv}", "Apps": "a{sv}", "Proximity": "a{sv}", "Catalog": "aa{sv}",
     "Tethering": "b", "TetheringState": "s", "TetheringError": "s",
     "Files": "a{sv}", "Mirror": "a{sv}", "PhotosUsb": "a{sv}", "Control": "a{sv}",
 }
@@ -444,6 +499,11 @@ def _variant(name, value):
     if name == "Proximity":
         return GLib.Variant("a{sv}", {k: GLib.Variant(PROXIMITY_TYPES[k], v)
                                       for k, v in value.items() if k in PROXIMITY_TYPES})
+    if name == "Catalog":
+        types = {"id": "s", "title": "s", "summary": "s", "icon": "s", "page": "s",
+                 "added": "b", "missing": "as"}
+        return GLib.Variant("aa{sv}", [{k: GLib.Variant(types[k], v) for k, v in entry.items()}
+                                       for entry in value])
     if name == "NowPlaying":
         from .nowplaying import TYPES
         return GLib.Variant("a{sv}", {k: GLib.Variant(TYPES[k], v) for k, v in value.items()
@@ -452,19 +512,31 @@ def _variant(name, value):
 
 THREAD_TYPES = {"id": "s", "name": "s", "snippet": "s", "time": "x", "unread": "u",
                 "group": "b", "outgoing": "b", "can_send": "b", "participants": "as",
-                "avatar": "s", "draft": "s", "pinned": "b", "marked_unread": "b"}
+                "avatar": "s", "draft": "s", "pinned": "b", "marked_unread": "b", "known": "b"}
 SEARCH_TYPES = {"thread": "s", "name": "s", "message": "s", "time": "x", "before": "s",
                 "match": "s", "after": "s", "outgoing": "b", "group": "b", "avatar": "s"}
 MESSAGE_TYPES = {"id": "s", "outgoing": "b", "sender": "s", "address": "s", "time": "x",
                  "body": "s", "complete": "b", "source": "s", "status": "s", "avatar": "s",
-                 "reactions": "a(ssbb)", "note": "s"}
+                 "reactions": "a(ssbb)", "note": "s", "attachment": "b"}
+LINK_TYPES = {"url": "s", "time": "x", "outgoing": "b", "message": "s"}
 
 
-CONTACT_TYPES = {"name": "s", "addresses": "as", "photo": "s", "uid": "s", "favorite": "b"}
+# Contacts: key (iCloud uid or « pbap: » and an address), given, family and org were added
+# for sorting and the detail pane; older clients ignore them.
+CONTACT_TYPES = {"name": "s", "addresses": "as", "photo": "s", "uid": "s", "favorite": "b",
+                 "key": "s", "given": "s", "family": "s", "org": "s"}
+# GetContact / SaveContact. A key missing from a saved card leaves that field as it is.
+# photo: path of the current photo (read); photo_data: a new one, JPEG or PNG (write).
 CARD_TYPES = {"uid": "s", "given": "s", "family": "s", "org": "s", "note": "s",
-              "phones": "a(ss)", "emails": "a(ss)"}
+              "phones": "a(ss)", "emails": "a(ss)", "nickname": "s", "title": "s",
+              "birthday": "s", "addresses": "a(ssssss)", "urls": "a(ss)", "dates": "a(ss)",
+              "photo": "s", "photo_data": "ay", "photo_remove": "b"}
+DETAIL_TYPES = dict(CARD_TYPES, name="s", department="s", middle="s", prefix="s", suffix="s")
+IMPORT_PREVIEW_TYPES = {"name": "s", "org": "s", "count": "u", "duplicate": "b"}
+IMPORT_REPORT_TYPES = {"added": "u", "duplicates": "u", "failed": "u", "names": "as"}
 ACTIVE_TYPES = {"path": "o", "state": "s", "number": "s", "name": "s", "duration": "i",
-                "avatar": "s"}
+                "avatar": "s", "multiparty": "b", "actions": "as"}
+CALL_OUTPUT_TYPES = {"name": "s", "description": "s", "default": "b", "current": "b"}
 NOTIFICATION_TYPES = {"uid": "u", "app": "s", "app_name": "s", "title": "s", "body": "s",
                       "time": "x", "category": "u", "icon": "s", "image": "s",
                       "positive": "s", "negative": "s"}
@@ -475,9 +547,12 @@ HEADPHONES_TYPES = {"address": "s", "name": "s", "model": "s", "firmware": "s", 
                     "linked": "b", "left": "i", "right": "i", "case": "i", "left_charging": "b",
                     "right_charging": "b", "case_charging": "b", "ear_left": "s", "ear_right": "s",
                     "mode": "i", "cycle": "i", "conversation": "i", "adaptive": "i", "one_bud": "i",
-                    "features": "as", "auto_pause": "b"}
+                    "features": "as", "auto_pause": "b",
+                    "ear_detection": "i", "hold_right": "i", "hold_left": "i", "hold_interval": "i",
+                    "swipe": "i", "swipe_interval": "i", "battery_alerts": "b"}
 PEER_TYPES = {"id": "s", "alias": "s", "model": "s", "type": "s"}
-CALL_TYPES = {"address": "s", "name": "s", "time": "x", "kind": "s", "avatar": "s"}
+CALL_TYPES = {"address": "s", "name": "s", "time": "x", "kind": "s", "avatar": "s",
+              "duration": "i"}
 
 
 # Actions on the user's behalf: run at once for the Boomerang app, after a confirmation
@@ -491,6 +566,8 @@ def _excerpt(text, size=60):
 GUARDED = {
     "Dial": lambda a: _("appeler le {number}").format(number=_excerpt(a[0], 30)),
     "SendMessage": lambda a: _("envoyer le message « {text} »").format(text=_excerpt(a[1])),
+    "DeclineWithMessage": lambda a: _("refuser l'appel et envoyer le message « {text} »").format(
+        text=_excerpt(a[1])),
     "SendReaction": lambda a: _("envoyer une réaction {emoji}").format(emoji=_excerpt(a[1], 8)),
     "RetryMessage": lambda a: _("renvoyer un message"),
     "SendFiles": lambda a: _("envoyer {count} fichier(s) à un appareil du réseau").format(
@@ -504,11 +581,14 @@ GUARDED = {
     "DeleteConversation": lambda a: _("supprimer une conversation"),
     "SaveContact": lambda a: _("modifier un contact iCloud"),
     "DeleteContact": lambda a: _("supprimer un contact iCloud"),
+    "ImportContacts": lambda a: _("importer {count} fiche(s) de contact dans iCloud").format(
+        count=a[0].upper().count("BEGIN:VCARD")),
 }
 # Only ever from the app: confirming a pairing code is the check itself, and typing on
 # the iPhone key by key cannot be confirmed one notification at a time.
 APP_ONLY = {"ConfirmPairing", "ControlKey", "ControlShortcut", "ControlText", "ControlMove",
-            "ControlButton", "ControlClick", "ControlScroll", "ControlGoto", "ControlRelease"}
+            "ControlButton", "ControlClick", "ControlScroll", "ControlGoto", "ControlRelease",
+            "ControlMedia", "ControlGesture", "MirrorScreenshot"}
 CONFIRM_SECONDS = 60
 
 
@@ -629,7 +709,13 @@ class Service:
 
     def _dispatch(self, method, params, invocation):
         d = self.daemon
-        if method == "SetModuleEnabled":
+        if method == "SetModuleAdded":
+            module, added = params.unpack()
+            if module not in catalog.IDS:
+                invocation.return_dbus_error(f"{INTERFACE}.Error.UnknownModule", module)
+                return
+            d.set_module_added(module, added)
+        elif method == "SetModuleEnabled":
             module, enabled = params.unpack()
             if module not in MODULES:
                 invocation.return_dbus_error(f"{INTERFACE}.Error.UnknownModule", module)
@@ -662,9 +748,19 @@ class Service:
             invocation.return_value(GLib.Variant(
                 "(aa{sv})", (_dicts(d.messages.messages(thread), MESSAGE_TYPES),)))
             return
+        elif method == "GetMessagesPage":
+            thread, before_time, before_id, count = params.unpack()
+            page, more = d.messages.messages_page(thread, before_time, before_id, count)
+            invocation.return_value(GLib.Variant(
+                "(aa{sv}b)", (_dicts(page, MESSAGE_TYPES), more)))
+            return
+        elif method == "ListLinks":
+            invocation.return_value(GLib.Variant(
+                "(aa{sv})", (_dicts(d.messages.links(params.unpack()[0]), LINK_TYPES),)))
+            return
         elif method == "ListContacts":
             invocation.return_value(GLib.Variant(
-                "(aa{sv})", (_dicts(d.contact_cards(), CONTACT_TYPES),)))
+                "(aa{sv})", (_dicts(self._contact_list(), CONTACT_TYPES),)))
             return
         elif method == "OpenConversation":
             thread = d.messages.open_conversation(params.unpack()[0])
@@ -792,8 +888,11 @@ class Service:
             except ValueError:
                 invocation.return_dbus_error(f"{INTERFACE}.Error.InvalidArgs", "bluetooth or icloud")
                 return
-        elif method in ("GetContact", "SaveContact", "DeleteContact"):
+        elif method in ("GetContact", "SaveContact", "DeleteContact", "ImportContacts"):
             self._contact_method(method, params, invocation)
+            return
+        elif method in ("GetContactDetails", "ExportContacts", "PreviewContactsImport"):
+            self._contact_read_method(method, params, invocation)
             return
         elif method == "SetPhoneAudio":
             d.audio.set_receive(params.unpack()[0])
@@ -809,7 +908,7 @@ class Service:
             invocation.return_value(GLib.Variant(
                 "(aa{sv})", (_dicts(d.active_calls(), ACTIVE_TYPES),)))
             return
-        elif method in ("CallAction", "SetCallAudio", "SendTones"):
+        elif method in ("CallAction", "DeclineWithMessage", "SetCallAudio", "SendTones"):
             def finished(error):
                 if error:
                     invocation.return_dbus_error(f"{INTERFACE}.Error.CallFailed", error)
@@ -818,19 +917,28 @@ class Service:
 
             if method == "CallAction":
                 d.calls.call_action(*params.unpack(), finished)
+            elif method == "DeclineWithMessage":
+                d.calls.decline_with_message(*params.unpack(), finished)
             elif method == "SetCallAudio":
                 d.calls.set_audio_on_pc(params.unpack()[0], finished)
             else:
                 d.calls.send_tones(params.unpack()[0], finished)
             return
+        elif method == "ListCallAudioOutputs":
+            invocation.return_value(GLib.Variant(
+                "(aa{sv})", (_dicts(d.calls.call_outputs(), CALL_OUTPUT_TYPES),)))
+            return
+        elif method == "SetCallAudioOutput":
+            d.calls.set_call_output(params.unpack()[0])
         elif method == "SimulateCall":
             kind = params.unpack()[0]
-            d.calls.simulate("incoming" if kind == "incoming" else "outgoing")
+            d.calls.simulate(kind if kind in ("incoming", "waiting") else "outgoing")
         elif method == "SetMuted":
             d.calls.set_muted(params.unpack()[0])
         elif method == "ListCalls":
-            invocation.return_value(GLib.Variant(
-                "(aa{sv})", (_dicts(d.messages.call_history(), CALL_TYPES),)))
+            # Lengths measured here for the calls followed by this PC (-1: unknown).
+            history = d.calls.history_with_durations(d.messages.call_history())
+            invocation.return_value(GLib.Variant("(aa{sv})", (_dicts(history, CALL_TYPES),)))
             return
         elif method == "Dial":
             number = params.unpack()[0].strip()
@@ -884,6 +992,8 @@ class Service:
                 if m:
                     domains = bound_domains(m["body"] or "", code)
                     sender = d.messages.store.display_name(m["sender"], m["sender_name"] or "")
+                else:
+                    sender = d.messages.codes.sender  # a mail: its sender, as the notification said
             invocation.return_value(GLib.Variant("(suass)", (code, age, domains, sender)))
             return
         elif method == "SetOneTimeCodes":
@@ -936,15 +1046,22 @@ class Service:
                 return
         elif method == "StopMirror":
             d.mirror.stop()
+        elif method == "MirrorScreenshot":
+            if not d.mirror.screenshot():
+                invocation.return_dbus_error(f"{INTERFACE}.Error.MirrorFailed",
+                                             _("aucune image de l'iPhone à capturer"))
+                return
         elif method == "SetMirrorOption":
             key, value = params.unpack()
             if not d.mirror.set_option(key, value):
                 invocation.return_dbus_error(f"{INTERFACE}.Error.InvalidOption", key)
                 return
-        elif method.startswith("Control") or method == "SetControlSize":
+        elif method.startswith("Control") or method in ("SetControlSize", "SetControlAutoSize"):
             control = d.control
             if method == "SetControlSize":
                 control.set_size(*params.unpack())
+            elif method == "SetControlAutoSize":
+                control.set_auto_size(params.unpack()[0])
             elif not control.registered:
                 invocation.return_dbus_error(f"{INTERFACE}.Error.ControlOff",
                                              "iPhone control is not published")
@@ -968,6 +1085,13 @@ class Service:
                 control.goto(*params.unpack())
             elif method == "ControlRelease":
                 control.release_all()
+            elif method in ("ControlMedia", "ControlGesture"):
+                name = params.unpack()[0]
+                try:
+                    (control.media if method == "ControlMedia" else control.gesture)(name)
+                except KeyError:
+                    invocation.return_dbus_error(f"{INTERFACE}.Error.InvalidArgs", name)
+                    return
         elif method == "RefreshPhotosUsb":
             d.photos_usb.refresh()
         elif method == "PairPhotosUsb":
@@ -1053,6 +1177,7 @@ class Service:
                 if error:
                     invocation.return_dbus_error(f"{INTERFACE}.Error.SendFailed", error)
                 else:
+                    d.sounds.sent()
                     invocation.return_value(None)
 
             d.messages.send(thread, text, done)
@@ -1074,14 +1199,57 @@ class Service:
                          invocation.return_value(GLib.Variant(
                              "(a{sv})", (_dicts([card], CARD_TYPES)[0],))))
         elif method == "SaveContact":
-            card = {k: v for k, v in arg.items() if k in CARD_TYPES}
-            card["phones"] = [list(p) for p in card.get("phones", [])]
-            card["emails"] = [list(e) for e in card.get("emails", [])]
+            card = {k: v for k, v in arg.items() if k in CARD_TYPES and k not in ("photo",)}
+            for key in ("phones", "emails", "addresses", "urls", "dates"):
+                if key in card:
+                    card[key] = [tuple(item) for item in card[key]]
+            if "photo_data" in card:
+                data = params.get_child_value(0).lookup_value("photo_data", GLib.VariantType("ay"))
+                card["photo_data"] = data.get_data_as_bytes().get_data() if data else b""
+                if len(card["photo_data"]) > 2 * 1024 * 1024:
+                    failed(_("photo trop volumineuse (2 Mo au plus)"))
+                    return
             book.save(card, lambda uid, error: failed(error) if error else
                       invocation.return_value(GLib.Variant("(s)", (uid or "",))))
+        elif method == "ImportContacts":
+            book.import_cards(arg, lambda report, error: failed(error) if error else
+                              invocation.return_value(GLib.Variant(
+                                  "(a{sv})", (_dicts([report], IMPORT_REPORT_TYPES)[0],))))
         else:
             book.delete(arg, lambda _r, error: failed(error) if error else
                         invocation.return_value(None))
+
+    def _contact_list(self):
+        """ListContacts: the cards of the chosen source, with key, names and company."""
+        d = self.daemon
+        return d.contact_book.enrich(d.contact_cards(), d.messages.store)
+
+    def _contact_read_method(self, method, params, invocation):
+        """Contacts methods that read only: both sources."""
+        book = self.daemon.contact_book
+        store = self.daemon.messages.store
+
+        def failed(error):
+            invocation.return_dbus_error(f"{INTERFACE}.Error.Contacts", str(error))
+
+        (arg,) = params.unpack()
+        if method == "GetContactDetails":
+            book.card_details(arg, self._contact_list(), store, lambda card, error:
+                              failed(error) if error else invocation.return_value(GLib.Variant(
+                                  "(a{sv})", (_dicts([card], DETAIL_TYPES)[0],))))
+        elif method == "ExportContacts":
+            book.export(list(arg), self._contact_list(), store, lambda text, error:
+                        failed(error) if error else
+                        invocation.return_value(GLib.Variant("(s)", (text,))))
+        else:
+            from .contacts import preview
+            try:
+                cards = preview(arg, self._contact_list())
+            except ValueError as error:
+                failed(error)
+                return
+            invocation.return_value(GLib.Variant(
+                "(aa{sv})", (_dicts(cards, IMPORT_PREVIEW_TYPES),)))
 
     def headphones_changed(self):
         self.bus.emit_signal(None, PATH, INTERFACE, "HeadphonesChanged", None)

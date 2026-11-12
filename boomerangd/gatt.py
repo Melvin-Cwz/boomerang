@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 MelvinCwz
-"""Minimal BlueZ GATT client helpers shared by ANCS and AMS."""
+"""Minimal GATT client helpers shared by ANCS and AMS.
+
+Characteristics are BlueZ objects (LE link), or ATT handles when `transport` is an
+att.AttLink (GATT over the classic link).
+"""
 
 from gi.repository import GLib
 
@@ -33,11 +37,18 @@ class GattClient:
         self.busy = False
         self.notifying = []
         self.on_link_lost = None  # set by the link: drop this client, attach again later
+        self.transport = None  # att.AttLink: chars are ATT handles, not BlueZ objects
 
     def subscribe(self, uuids, then=None):
         """StartNotify on each; `then` runs once every answer came back."""
         waiting = set(uuids)
         for uuid in uuids:
+            if self.transport:
+                handle = self.chars[uuid]
+                self.transport.start_notify(
+                    handle, lambda value, h=handle: self.on_value(h, value),
+                    lambda error, u=uuid: self._on_subscribed(u, error, waiting, then))
+                continue
             call_async(self.bus, BLUEZ, self.chars[uuid], CHARACTERISTIC, "StartNotify",
                        on_done=lambda _v, error, u=uuid: self._on_subscribed(u, error, waiting,
                                                                               then))
@@ -66,6 +77,9 @@ class GattClient:
 
     def stop(self):
         for uuid in self.notifying:
+            if self.transport:
+                self.transport.stop_notify(self.chars[uuid])
+                continue
             call_async(self.bus, BLUEZ, self.chars[uuid], CHARACTERISTIC, "StopNotify")
         self.notifying = []
         self.queue = []
@@ -105,6 +119,9 @@ class GattClient:
                 # Watchdog: never stay stuck if a response is lost.
                 GLib.timeout_add_seconds(5, lambda: self._expire(serial))
 
+        if self.transport:
+            self.transport.write(self.chars[uuid], data, done)
+            return
         call_async(self.bus, BLUEZ, self.chars[uuid], CHARACTERISTIC, "WriteValue",
                    GLib.Variant("(aya{sv})", (data, {"type": GLib.Variant("s", "request")})),
                    on_done=done)
@@ -115,6 +132,9 @@ class GattClient:
             self.on_request_failed()
             self.response_complete()
         return False
+
+    def on_value(self, path, value):
+        """A notification of one of our characteristics (path or ATT handle)."""
 
     def on_request_failed(self):
         """Hook for subclasses (e.g. drop a partial response buffer)."""
@@ -128,7 +148,11 @@ class GattClient:
             if error:
                 log(f"{self.label} : lecture refusée ({error.message})")
                 return
-            on_value(bytes(value.unpack()[0]))
+            on_value(value if self.transport else bytes(value.unpack()[0]))
+
+        if self.transport:
+            self.transport.read(self.chars[uuid], done)
+            return
 
         call_async(self.bus, BLUEZ, self.chars[uuid], CHARACTERISTIC, "ReadValue",
                    GLib.Variant("(a{sv})", ({},)), on_done=done)

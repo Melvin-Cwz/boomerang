@@ -14,6 +14,13 @@ chosen on the iPhone (Réglages › Général › Clavier › Clavier physique) 
 characters, as with a real keyboard. Text typed in Boomerang's field goes through
 the French PC (AZERTY) layout below.
 
+A third report (id 3) is a Consumer Control, as on keyboards with media keys:
+volume, play/pause, mute and power (HID Usage Tables, Consumer page 0x0C).
+Control Centre and the app switcher have no key a non-Apple keyboard can send (the
+Globe key is an Apple vendor usage): Boomerang performs their gesture with the
+AssistiveTouch pointer instead, a swipe down from the top right corner and a swipe
+up from the bottom held halfway. Both need the pointer size to match the screen.
+
 Off by default ([alpha] iphone_control). Nothing is published while it is off.
 """
 
@@ -27,9 +34,21 @@ ADV_PATH = "/io/github/melvincouwez/Boomerang/hid_advertisement"
 APPEARANCE_HID = 0x03C0
 SEND_INTERVAL_MS = 8  # between two reports: the iPhone drops reports sent too fast
 
-KEYBOARD_ID, MOUSE_ID = 1, 2
+KEYBOARD_ID, MOUSE_ID, CONSUMER_ID = 1, 2, 3
 TYPES = {"enabled": "b", "registered": "b", "connected": "b", "error": "s", "width": "i",
-         "height": "i"}
+         "height": "i", "auto_size": "b", "video_width": "i", "video_height": "i"}
+
+# Consumer page usages (HID Usage Tables 1.4, section 15) for ControlMedia.
+MEDIA = {"volume_up": 0xE9, "volume_down": 0xEA, "play_pause": 0xCD, "mute": 0xE2,
+         "next": 0xB5, "previous": 0xB6, "lock": 0x30}  # 0x30: Power, the side button
+
+# Pointer gestures for ControlGesture: (start, end) as fractions of the screen, and how
+# long to hold at the end before letting go (reports of SEND_INTERVAL_MS each).
+GESTURES = {
+    "control_centre": ((0.92, 0.0), (0.92, 0.45), 0),
+    "app_switcher": ((0.5, 1.0), (0.5, 0.6), 60),
+}
+GESTURE_STEPS = 12  # moves between start and end: the iPhone sees a swipe, not a jump
 
 # Keyboard (id 1): modifiers, reserved, six keys. Mouse (id 2): three buttons, x, y, wheel.
 REPORT_MAP = bytes([
@@ -44,6 +63,11 @@ REPORT_MAP = bytes([
     0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x09, 0x38, 0x15, 0x81, 0x25, 0x7F, 0x75, 0x08, 0x95, 0x03,
     0x81, 0x06,
     0xC0, 0xC0,
+    # Consumer Control (id 3): one 16-bit usage, 0 when released.
+    0x05, 0x0C, 0x09, 0x01, 0xA1, 0x01, 0x85, CONSUMER_ID,
+    0x15, 0x00, 0x26, 0xFF, 0x03, 0x19, 0x00, 0x2A, 0xFF, 0x03, 0x75, 0x10, 0x95, 0x01,
+    0x81, 0x00,
+    0xC0,
 ])
 
 LCTRL, LSHIFT, LALT, LGUI, RCTRL, RSHIFT, RALT, RGUI = (1 << i for i in range(8))
@@ -111,6 +135,10 @@ def mouse_report(buttons=0, dx=0, dy=0, wheel=0):
     return bytes([buttons & 0x07, _clamp(dx) & 0xFF, _clamp(dy) & 0xFF, _clamp(wheel) & 0xFF])
 
 
+def consumer_report(usage=0):
+    return bytes([usage & 0xFF, (usage >> 8) & 0xFF])
+
+
 def split_move(dx, dy, step=127):
     """A move of any size as steps of at most `step` on each axis, same direction."""
     dx, dy = int(round(dx)), int(round(dy))
@@ -133,6 +161,29 @@ def goto_moves(fx, fy, width, height):
     """From anywhere to a point of the screen given as fractions (0..1) of its size."""
     fx, fy = max(0.0, min(1.0, fx)), max(0.0, min(1.0, fy))
     return home_moves(width, height) + split_move(fx * width, fy * height)
+
+
+def gesture_moves(start, end, width, height, steps=GESTURE_STEPS):
+    """(moves to the start point, moves of the swipe itself) for a gesture."""
+    (x0, y0), (x1, y1) = start, end
+    go = goto_moves(x0, y0, width, height)
+    dx, dy = (x1 - x0) * width, (y1 - y0) * height
+    swipe, done_x, done_y = [], 0, 0
+    for i in range(1, steps + 1):
+        target_x, target_y = round(dx * i / steps), round(dy * i / steps)
+        swipe += split_move(target_x - done_x, target_y - done_y)
+        done_x, done_y = target_x, target_y
+    return go, swipe
+
+
+def portrait_size(short_side, video_width, video_height):
+    """Pointer travel for a picture of this shape: the short side as tuned by the user
+    (it depends on AssistiveTouch's tracking speed, not on pixels), the long one from
+    the picture's proportions; landscape when the picture is wider than high."""
+    if video_width <= 0 or video_height <= 0:
+        return None
+    long_side = round(short_side * max(video_width, video_height) / min(video_width, video_height))
+    return (long_side, short_side) if video_width > video_height else (short_side, long_side)
 
 
 def text_reports(text):
@@ -230,6 +281,12 @@ def gatt_objects():
         hid + "/mouse/ref": ("org.bluez.GattDescriptor1",
                              {"UUID": _uuid16(0x2908), "Characteristic": hid + "/mouse",
                               "Flags": ["read"]}, bytes([MOUSE_ID, 1])),
+        hid + "/consumer": ("org.bluez.GattCharacteristic1",
+                            {"UUID": _uuid16(0x2A4D), "Service": hid,
+                             "Flags": ["read", "notify", "encrypt-read"]}, consumer_report()),
+        hid + "/consumer/ref": ("org.bluez.GattDescriptor1",
+                                {"UUID": _uuid16(0x2908), "Characteristic": hid + "/consumer",
+                                 "Flags": ["read"]}, bytes([CONSUMER_ID, 1])),
         # Device Information › PnP ID: USB vendor source, generic ids.
         info: ("org.bluez.GattService1", {"UUID": _uuid16(0x180A), "Primary": True}, None),
         info + "/pnp": ("org.bluez.GattCharacteristic1",
@@ -276,6 +333,7 @@ class Control:
         self.modifiers = 0
         self.buttons = 0
         self.error = ""
+        self.video = (0, 0)  # size of the mirrored picture, while the screen is mirrored
 
     # --- state ----------------------------------------------------------------------------
 
@@ -283,11 +341,13 @@ class Control:
         return self.config.alpha("iphone_control")
 
     def state(self):
+        width, height = self.size()
         return {"enabled": self.enabled(), "registered": self.registered,
                 "connected": bool(self.notifying), "error": self.error,
-                "width": self.size()[0], "height": self.size()[1]}
+                "width": width, "height": height, "auto_size": self.auto_size(),
+                "video_width": self.video[0], "video_height": self.video[1]}
 
-    def size(self):
+    def manual_size(self):
         """Pointer travel of the whole iPhone screen, in mouse units (tuned by the user)."""
         try:
             width = self.config.keyfile.get_integer("control", "width")
@@ -296,11 +356,38 @@ class Control:
             width, height = 400, 870
         return max(50, width), max(50, height)
 
+    def auto_size(self):
+        try:
+            return self.config.keyfile.get_boolean("control", "auto_size")
+        except GLib.Error:
+            return True
+
+    def size(self):
+        """The travel in use: while the screen is mirrored and the automatic size is on, the
+        tuned short side and the picture's proportions (rotation included)."""
+        width, height = self.manual_size()
+        if self.auto_size():
+            fitted = portrait_size(min(width, height), *self.video)
+            if fitted:
+                return fitted
+        return width, height
+
     def set_size(self, width, height):
         self.config.keyfile.set_integer("control", "width", int(width))
         self.config.keyfile.set_integer("control", "height", int(height))
         self.config.save()
         self.changed()
+
+    def set_auto_size(self, enabled):
+        self.config.keyfile.set_boolean("control", "auto_size", bool(enabled))
+        self.config.save()
+        self.changed()
+
+    def set_video_size(self, width, height):
+        """From the mirroring (mirror.py): the picture's size, (0, 0) once it stops."""
+        if (width, height) != self.video:
+            self.video = (int(width), int(height))
+            self.changed()
 
     # --- publication --------------------------------------------------------------------------
 
@@ -484,7 +571,33 @@ class Control:
     def release_all(self):
         self.keys, self.modifiers, self.buttons = [], 0, 0
         self._queue("keyboard", keyboard_report())
+        self._queue("consumer", consumer_report())
         return self._queue("mouse", mouse_report())
+
+    def media(self, name):
+        """A media key (MEDIA), pressed and released."""
+        usage = MEDIA.get(name)
+        if usage is None:
+            raise KeyError(name)
+        self._queue("consumer", consumer_report(usage))
+        return self._queue("consumer", consumer_report())
+
+    def gesture(self, name):
+        """A swipe of the AssistiveTouch pointer (GESTURES): go to the start, press, move,
+        hold if needed, release."""
+        start, end, hold = GESTURES[name]
+        width, height = self.size()
+        go, swipe = gesture_moves(start, end, width, height)
+        self.buttons = 0
+        for sx, sy in go:
+            if not self._queue("mouse", mouse_report(0, sx, sy)):
+                return False
+        self._queue("mouse", mouse_report(BUTTON_LEFT))
+        for sx, sy in swipe:
+            self._queue("mouse", mouse_report(BUTTON_LEFT, sx, sy))
+        for _ in range(hold):
+            self._queue("mouse", mouse_report(BUTTON_LEFT))
+        return self._queue("mouse", mouse_report(0))
 
     def text(self, text):
         reports, skipped = text_reports(text)

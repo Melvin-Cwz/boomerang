@@ -7,10 +7,20 @@ the iPhone's Hands-Free Audio Gateway profile is connected: one object per
 audio gateway (AudioGateway1, oFono-compatible VoiceCallManager) and one per
 call (Call1: Answer, Hangup, State, LineIdentification, Name).
 
-This module never dials: it only follows calls, and answers or hangs up on
-the user's request from the notification buttons.
+This module dials only on an explicit click in the app; otherwise it follows calls,
+and answers or hangs up on the user's request from the notification buttons.
+
+Two calls at once (checked against PipeWire 1.6's libspa-bluez5, AT+CHLD 0 to 3):
+the gateway offers HoldAndAnswer and ReleaseAndAnswer (an active call and a waiting
+one), SwapCalls (needs a held call: it also resumes a lone held call), ReleaseAndSwap
+and CreateMultiparty (an active call and a held one, nothing waiting) and HangupAll.
+Call1.Answer only answers an "incoming" call, never a "waiting" one. Call1.Hangup on
+the active call while another is held sends AT+CHLD=1: the held call comes back.
+PipeWire has no Hold for a lone call, no PrivateChat, no HangupMultiparty and no
+transfer: Boomerang offers none of them. available_actions() mirrors these rules.
 """
 
+import json
 import os
 import time
 
@@ -30,10 +40,111 @@ HFP_AG_UUID = "0000111f-0000-1000-8000-00805f9b34fb"
 MUTE_MARK = os.path.join(GLib.get_user_state_dir(), "boomerang", "microphone-muted")
 
 STATE_LABELS = {
-    "incoming": N_("Appel entrant"), "waiting": N_("Appel en attente"),
+    "incoming": N_("Appel entrant"), "waiting": N_("Double appel"),
     "dialing": N_("Appel sortant"), "alerting": N_("Appel sortant"),
     "active": N_("Appel en cours"), "held": N_("Appel en attente"),
 }
+# Local record of the calls followed here: their length (the iPhone's history has none)
+# and the output chosen for call audio. Numbers stay on this PC, never in the journal.
+STATE_FILE = os.path.join(GLib.get_user_state_dir(), "boomerang", "calls.json")
+LOG_SIZE = 500
+MATCH_SECONDS = 180  # a call of the iPhone's history and a local record of the same call
+
+# Actions on the audio gateway (AudioGateway1), as named by the app.
+GATEWAY_METHODS = {
+    "hold-and-answer": "HoldAndAnswer", "release-and-answer": "ReleaseAndAnswer",
+    "swap": "SwapCalls", "resume": "SwapCalls", "release-and-swap": "ReleaseAndSwap",
+    "merge": "CreateMultiparty", "hangup-all": "HangupAll",
+}
+CALL_METHODS = {"answer": "Answer", "hangup": "Hangup"}
+
+
+def available_actions(states, path=None):
+    """What PipeWire accepts now, from {call path: state}: the gateway's actions,
+    plus answer / hangup for the call at path. Same checks as libspa-bluez5."""
+    live = [s for s in states.values() if s in STATE_LABELS]
+    active, held, waiting = "active" in live, "held" in live, "waiting" in live
+    actions = set()
+    if active and waiting:
+        actions |= {"hold-and-answer", "release-and-answer"}
+    if active and held and not waiting:
+        actions |= {"swap", "merge", "release-and-swap"}
+    if held and not active and not waiting:
+        actions.add("resume")
+    if len(live) > 1:
+        actions.add("hangup-all")
+    state = states.get(path)
+    if state == "incoming":
+        actions.add("answer")
+    if state in STATE_LABELS:
+        actions.add("hangup")
+    return sorted(actions)
+
+
+def demo_transition(states, action, path=None, multiparty=()):
+    """The iPhone's answer to an action, for demonstrations and tests: the new
+    {path: state} (ended calls left out) and the paths in a conference."""
+    states, multiparty = dict(states), set(multiparty)
+
+    def drop(state):
+        for p in [p for p, s in states.items() if s == state]:
+            del states[p]
+
+    def turn(old, new):
+        for p, s in list(states.items()):
+            if s == old:
+                states[p] = new
+
+    held = "held" in states.values()
+    if action == "answer" and states.get(path) == "incoming":
+        states[path] = "active"
+    elif action == "hangup" and path in states:
+        state = states[path]
+        if state == "held":
+            drop("held")  # AT+CHLD=0: every held call
+        elif state == "waiting":
+            del states[path]
+        else:
+            for p in (multiparty if path in multiparty else {path}):
+                states.pop(p, None)
+            if held and state == "active":
+                turn("held", "active")  # AT+CHLD=1: the held call comes back
+    elif action == "hold-and-answer":
+        turn("active", "held")
+        turn("waiting", "active")
+    elif action == "release-and-answer":
+        drop("active")
+        turn("waiting", "active")
+    elif action in ("swap", "resume"):
+        states = {p: {"active": "held", "held": "active"}.get(s, s) for p, s in states.items()}
+    elif action == "release-and-swap":
+        drop("active")
+        turn("held", "active")
+    elif action == "merge":
+        turn("held", "active")
+        multiparty = {p for p, s in states.items() if s == "active"}
+    elif action == "hangup-all":
+        states = {}
+    multiparty &= set(states)
+    return states, (multiparty if len(multiparty) > 1 else set())
+
+
+def with_durations(history, records):
+    """The iPhone's call history with "duration" (seconds, -1 when unknown) from the
+    local records: same number, started within MATCH_SECONDS of each other."""
+    used = set()
+    result = []
+    for call in history:
+        duration = -1
+        for i, record in enumerate(records):
+            if i in used or not call.get("address") or record.get("address") != call["address"]:
+                continue
+            if abs(int(record.get("time", 0)) - int(call.get("time", 0))) <= MATCH_SECONDS:
+                used.add(i)
+                duration = int(record.get("duration", -1))
+                break
+        result.append(dict(call, duration=duration))
+    return result
 
 
 class Calls:
@@ -59,7 +170,13 @@ class Calls:
         self.rung = set()  # incoming call paths already passed to on_ringing
         self.ringer = None  # sounds.Sounds: the ringtone chosen in Réglages
         self.quiet = lambda: False  # callable() -> True: no ring, popup or audio taken on this PC
+        self.can_text = lambda: False  # callable() -> True: MAP is linked, an SMS can go out
+        self.decline_text = lambda: ""  # callable() -> the default text of « Refuser avec un message »
+        self.send_sms = None  # callable(number, text, on_done(error | None)), set by the daemon
         self.started = {}  # call path -> monotonic time it became active
+        self.first_seen = {}  # call path -> wall-clock time it appeared (matches the history)
+        self.recorded = set()  # call paths whose length is already in the local record
+        self.state_file = STATE_FILE
         self.transport = {}  # gateway path -> {"State", "RejectSCO"}
         # org.pipewire.Telephony first shipped in PipeWire 1.4;
         # with an older PipeWire, calls are shown as unavailable.
@@ -179,6 +296,8 @@ class Calls:
             state = self.calls[path].get("State", "?")
             if not known:
                 log(f"appels : nouvel appel ({state})")
+                self.first_seen.setdefault(path, time.time())
+                self.recorded.discard(path)
             self._refresh(path)
             self._state_entered(path, state)
             self._changed()
@@ -267,8 +386,16 @@ class Calls:
             self.rung.add(path)
             if self.on_ringing:
                 self.on_ringing(path)
-        if state in ("incoming", "waiting"):
+        if state == "waiting":
+            # Call1.Answer refuses a waiting call: answering puts the other call on hold.
+            actions = [("hold-and-answer", pgettext("call", "Répondre")), ("hangup", _("Refuser"))]
+            body = _("Répondre met l'appel en cours en attente · sur {device}").format(
+                device=self.device_name)
+        elif state == "incoming":
             actions = [("answer", pgettext("call", "Répondre")), ("hangup", _("Refuser"))]
+        if state in ("incoming", "waiting") and self._number(props) and self.can_text():
+            actions.append(("decline-text", _("Refuser avec un message")))
+        if state in ("incoming", "waiting"):
             hints = {"urgency": GLib.Variant("y", 2),
                      "category": GLib.Variant("s", "call.incoming"),
                      "resident": GLib.Variant("b", True),
@@ -282,8 +409,8 @@ class Calls:
             timeout = 0
         self._update_ring()
         self.notifications[path] = self.notifier.notify(
-            f"Boomerang ({self.device_name})", "io.github.melvincouwez.Boomerang.Phone", summary, body, actions, hints,
-            replaces=self.notifications.get(path, 0), timeout=timeout,
+            f"Boomerang ({self.device_name})", "io.github.melvincouwez.Boomerang", summary, body, actions, hints,
+            replaces=self.notifications.get(path, 0), timeout=timeout, own=True,
             on_action=lambda key, p=path: self._on_action(p, key))
 
     def _update_ring(self):
@@ -301,22 +428,48 @@ class Calls:
         else:
             self.ringer.stop_ring()
 
+    @staticmethod
+    def _number(props):
+        return props.get("LineIdentification") or ""
+
+    def decline_with_message(self, path, text, on_done):
+        """Hang up a ringing call, then send an SMS to its number through MAP (the text
+        defaults to the one in boomerangd.conf). Nothing is sent when the number is hidden."""
+        props = self.calls.get(path) or {}
+        number = self._number(props)
+        if props.get("State") not in ("incoming", "waiting") or not number:
+            on_done("no ringing call with a known number")
+            return
+        if not self.send_sms or not self.can_text():
+            on_done("messages are not linked")
+            return
+        text = (text or "").strip() or self.decline_text()
+
+        def hung_up(error):
+            if error:
+                on_done(error)
+            else:
+                self.send_sms(number, text, on_done)
+
+        self.call_action(path, "hangup", hung_up)
+
     def _on_action(self, path, key):
+        if key == "decline-text":
+            self.decline_with_message(path, "", lambda error: error and log(
+                f"appels : refus avec message impossible ({error})"))
+            return
         if key in ("show", "default"):
             if self.on_show:
                 self.on_show()
             return
-        method = {"answer": "Answer", "hangup": "Hangup"}.get(key)
-        if not method or path not in self.calls or not self.owner:
-            return
-        log(f"appels : {'réponse' if method == 'Answer' else 'raccrochage'} demandé")
-        call_async(self.session, self.owner, path, CALL, method,
-                   what=f"appels : {method} refusé")
+        if key in CALL_METHODS or key in GATEWAY_METHODS:
+            self.call_action(path, key, lambda error: error and log(f"appels : {key} refusé ({error})"))
 
     def _state_entered(self, path, state):
         if state == "active" and path not in self.started:
             self.started[path] = time.monotonic()
-        if state in ("active", "dialing", "alerting") and self.on_started:
+        # A second call during a call opens the call window too: its banner offers the choices.
+        if state in ("active", "dialing", "alerting", "waiting") and self.on_started:
             self.on_started(path)
 
     def _log_audio_graph(self):
@@ -337,6 +490,7 @@ class Calls:
             log(f"appels : audio {'sur ce PC' if changed['State'] == 'active' else 'hors du PC'}")
             if changed["State"] == "active":
                 GLib.timeout_add_seconds(2, self._log_audio_graph)
+                self._schedule_output_route()
             self._update_ring()
         self._changed()
 
@@ -346,6 +500,106 @@ class Calls:
 
     # --- in-call controls (always on an explicit request from the app) -----------
 
+    # --- local record: call lengths and the call audio output ------------------------
+
+    def _load_state(self):
+        try:
+            with open(self.state_file, encoding="utf-8") as f:
+                state = json.load(f)
+            return state if isinstance(state, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    def _save_state(self, state):
+        try:
+            os.makedirs(os.path.dirname(self.state_file), mode=0o700, exist_ok=True)
+            temporary = self.state_file + ".tmp"
+            with open(os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w",
+                      encoding="utf-8") as f:
+                json.dump(state, f)
+            os.replace(temporary, self.state_file)
+        except OSError as error:
+            log(f"appels : relevé local non enregistré ({error.strerror})")
+
+    def _record_length(self, path):
+        """Once a call that was answered is over: its number, start and length, kept locally."""
+        if path in self.recorded or path in self.demo or path not in self.started:
+            return
+        self.recorded.add(path)
+        from .bmsg import normalize_address
+        address = normalize_address(self.calls.get(path, {}).get("LineIdentification") or "")
+        if not address:
+            return  # hidden number: nothing to match in the history
+        state = self._load_state()
+        records = [r for r in state.get("log", []) if isinstance(r, dict)]
+        records.insert(0, {"address": address,
+                           "time": int(self.first_seen.get(path, time.time())),
+                           "duration": int(time.monotonic() - self.started[path])})
+        state["log"] = records[:LOG_SIZE]
+        self._save_state(state)
+
+    def history_with_durations(self, history):
+        return with_durations(history, self._load_state().get("log", []))
+
+    @property
+    def call_output(self):
+        """PipeWire sink for call audio on this PC, "" for the system's default output."""
+        return str(self._load_state().get("output", ""))
+
+    def call_outputs(self):
+        """This PC's outputs (not Bluetooth ones), each with "current" when chosen for calls."""
+        from .audio import _sinks, default_sink_name, pw_nodes
+        default, chosen = default_sink_name(), self.call_output
+        sinks = _sinks(pw_nodes())
+        if chosen not in (name for name, _d in sinks):
+            chosen = ""  # unplugged: the default output plays the call
+        result = [{"name": name, "description": description, "default": name == default,
+                   "current": name == chosen} for name, description in sinks]
+        result.sort(key=lambda s: (not s["default"], s["description"]))
+        return result
+
+    def set_call_output(self, name):
+        state = self._load_state()
+        state["output"] = name
+        self._save_state(state)
+        log(f"appels : sortie audio {'choisie' if name else 'par défaut'}")
+        if not self._only_demo():
+            self._route_output()
+        self._changed()
+
+    def _schedule_output_route(self):
+        # The node of the call audio shows up a moment after the SCO link.
+        for delay in (1, 3):
+            GLib.timeout_add_seconds(delay, lambda: self._route_output() and False)
+
+    def _route_output(self):
+        """Point the call audio (the iPhone's stream on this PC) at the chosen output,
+        through PipeWire's "default" metadata, as audio.py does for the iPhone's music."""
+        from .audio import _nodes, _sinks, run_async
+        addresses = {a.replace(":", "_").upper() for a in self.gateways.values() if a}
+        if not addresses:
+            return
+
+        def dumped(out):
+            nodes = _nodes(out)
+            output = self.call_output
+            if output and output not in (name for name, _d in _sinks(nodes)):
+                output = ""
+            for node in nodes:
+                props = node.get("info", {}).get("props", {})
+                name = props.get("node.name", "")
+                if "a2dp" in str(props.get("api.bluez5.profile", "")):
+                    continue  # the iPhone's music: Réglages › Son de l'iPhone
+                if not any(name.upper().startswith("BLUEZ_INPUT." + a) for a in addresses):
+                    continue
+                if output:
+                    args = ["pw-metadata", "-n", "default", str(node["id"]), "target.object", output]
+                else:
+                    args = ["pw-metadata", "-n", "default", "-d", str(node["id"]), "target.object"]
+                run_async(args, lambda result: result is None and log("appels : sortie audio non appliquée"))
+
+        run_async(["pw-dump"], dumped)
+
     # --- demonstration ---------------------------------------------------------------
 
     DEMO_PATH = "/io/github/melvincouwez/Boomerang/demo/call"
@@ -353,11 +607,18 @@ class Calls:
     def simulate(self, kind="outgoing", number="+33600000000", name=None):
         """Fake call for trying the interface: no number is dialled."""
         name = name or _("Appel de démonstration")
+        if kind == "waiting" and not self._only_demo():
+            # A second call needs a first one: a demonstration call, answered at once.
+            if any(c.get("State") in STATE_LABELS for c in self.calls.values()):
+                return None  # a real call is going on: never mix a demonstration into it
+            first_path = self.simulate("incoming")
+            self._demo_state(first_path, "active")
         self.demo_counter += 1
         path = f"{self.DEMO_PATH}{self.demo_counter}"
         self.demo.add(path)
-        self.demo_audio_on_pc = True
-        first = "dialing" if kind == "outgoing" else "incoming"
+        if kind != "waiting":
+            self.demo_audio_on_pc = True
+        first = {"outgoing": "dialing", "waiting": "waiting"}.get(kind, "incoming")
         log(f"appels : simulation d'un appel {'sortant' if kind == 'outgoing' else 'entrant'} "
             "(aucun numéro composé)")
         self._add(path, {CALL: {"State": first, "LineIdentification": number, "Name": name}})
@@ -386,14 +647,35 @@ class Calls:
             self._refresh(path)  # unknown state: closes the notification, keeps the record
             self.calls.pop(path, None)
             self._call_gone(path, keep_record=True)
+        self.first_seen.pop(path, None)
         self.demo.discard(path)
 
     def _only_demo(self):
         live = [p for p, c in self.calls.items() if c.get("State") in STATE_LABELS]
         return bool(live) and all(p in self.demo for p in live)
 
+    def _demo_action(self, path, action):
+        """A demonstration call answers like the iPhone would (demo_transition)."""
+        states = {p: c.get("State") for p, c in self.calls.items()
+                  if p in self.demo and c.get("State") in STATE_LABELS}
+        multiparty = {p for p in states if self.calls[p].get("Multiparty")}
+        after, conference = demo_transition(states, action, path, multiparty)
+        for p in states:
+            if p in self.calls:
+                self.calls[p]["Multiparty"] = p in conference
+        for p in states:
+            if p not in after:
+                self._demo_end(p)
+            else:
+                self._demo_state(p, after[p])
+        self._changed()
+
+    def _states(self):
+        return {p: c.get("State", "") for p, c in self.calls.items()}
+
     def active_calls(self):
         now = time.monotonic()
+        states = self._states()
         result = []
         for path, props in self.calls.items():
             state = props.get("State", "")
@@ -404,6 +686,8 @@ class Calls:
                 "number": props.get("LineIdentification") or "",
                 "name": props.get("Name") or "",
                 "duration": int(now - self.started[path]) if path in self.started else -1,
+                "multiparty": bool(props.get("Multiparty")),
+                "actions": available_actions(states, path),
             })
         return result
 
@@ -413,20 +697,43 @@ class Calls:
         return any(t.get("State") == "active" for t in self.transport.values())
 
     def call_action(self, path, action, on_done):
-        if path in self.demo:
-            if action == "answer":
-                self._demo_state(path, "active")
-            elif action == "hangup":
-                self._demo_end(path)
-            on_done(None)
+        """answer / hangup on the call at path, or an action on two calls (GATEWAY_METHODS);
+        refused here, with a clear reason, when PipeWire would refuse it."""
+        if action not in CALL_METHODS and action not in GATEWAY_METHODS:
+            on_done(f"unknown action {action}")
             return
-        method = {"answer": "Answer", "hangup": "Hangup"}.get(action)
-        if not method or path not in self.calls or not self.owner:
+        if path not in self.calls:
             on_done("no such call")
             return
-        log(f"appels : {'réponse' if method == 'Answer' else 'raccrochage'} demandé")
-        call_async(self.session, self.owner, path, CALL, method,
-                   on_done=lambda _v, e: on_done(e.message if e else None))
+        if action not in available_actions(self._states(), path):
+            on_done(f"{action} is not possible with the calls going on now")
+            return
+        if path in self.demo:
+            self._demo_action(path, action)
+            on_done(None)
+            return
+        if not self.owner:
+            on_done("PipeWire telephony unavailable")
+            return
+        done = lambda _v, e: on_done(e.message if e else None)  # noqa: E731
+        if action in CALL_METHODS:
+            log(f"appels : {'réponse' if action == 'answer' else 'raccrochage'} demandé")
+            call_async(self.session, self.owner, path, CALL, CALL_METHODS[action], on_done=done)
+            return
+        gateway = self._gateway_of(path)
+        if not gateway:
+            on_done("hands-free link to the iPhone not connected")
+            return
+        log(f"appels : {GATEWAY_METHODS[action]} demandé")
+        call_async(self.session, self.owner, gateway, GATEWAY, GATEWAY_METHODS[action],
+                   on_done=done, timeout=30000)
+
+    def _gateway_of(self, path):
+        """The audio gateway a call belongs to (calls are its children: .../ag0/call1)."""
+        for gateway in self.gateways:
+            if path.startswith(gateway.rstrip("/") + "/"):
+                return gateway
+        return next(iter(self.gateways), None)
 
     def set_audio_on_pc(self, on_pc, on_done):
         """Audio of the call on this PC (SCO link up) or on the iPhone (SCO refused)."""
@@ -529,6 +836,7 @@ class Calls:
         if self.ringer is not None and not any(
                 p != path and c.get("State") == "incoming" for p, c in self.calls.items()):
             self.ringer.stop_ring()
+        self._record_length(path)
         self.started.pop(path, None)
         if not any(p != path and c.get("State") in STATE_LABELS for p, c in self.calls.items()):
             if path in self.demo:
@@ -537,6 +845,8 @@ class Calls:
                 self._restore_microphone()
         GLib.idle_add(lambda: self._changed() and False)
         if not keep_record:
+            self.first_seen.pop(path, None)
+            self.recorded.discard(path)
             if self.calls.pop(path, None) is not None:
                 log("appels : appel terminé")
                 if self.on_ended and path not in self.demo:

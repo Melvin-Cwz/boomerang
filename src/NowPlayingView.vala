@@ -383,25 +383,15 @@ namespace Boomerang {
             toggle.add_css_class ("flat");
             toggle.add_css_class ("circular");
             toggle.clicked.connect (() => command ("toggle"));
-            var next = new Gtk.Button.from_icon_name ("media-skip-forward-symbolic") {
-                valign = Gtk.Align.CENTER,
-                tooltip_text = _("Suivant")
-            };
-            next.add_css_class ("flat");
-            next.add_css_class ("circular");
-            next.update_property (Gtk.AccessibleProperty.LABEL, _("Suivant"), -1);
-            next.clicked.connect (() => command ("next"));
 
             append (art_stack);
             append (text);
             append (toggle);
-            append (next);
 
             var click = new Gtk.GestureClick ();
             click.released.connect ((n, x, y) => {
                 var target = pick (x, y, Gtk.PickFlags.DEFAULT);
-                if (target != null && (target == toggle || target.is_ancestor (toggle)
-                                       || target == next || target.is_ancestor (next))) {
+                if (target != null && (target == toggle || target.is_ancestor (toggle))) {
                     return;
                 }
                 open_requested ();

@@ -27,7 +27,7 @@ import threading
 from gi.repository import Gio, GLib
 
 from .i18n import _, ngettext
-from .util import log
+from .util import launch, log
 
 BUS_NAME = "io.github.melvincouwez.Boomerang.Daemon"
 ROOT = "/io/github/melvincouwez/Boomerang/CloudProviders"
@@ -44,7 +44,7 @@ INVALID, IDLE, SYNCING, ERROR = 0, 1, 2, 3
 
 POLL_ACTIVE = 5     # seconds, while files go up, fail or the mount connects
 POLL_SETTLED = 15   # seconds, mount up to date
-POLL_IDLE = 30      # seconds, no mount
+POLL_IDLE = 300     # seconds, no mount: a safety net, the unit's own signal comes first
 
 XML = """
 <node>
@@ -142,6 +142,7 @@ class DriveProvider:
         self.menu_id = self.actions_id = 0
         self.timer = 0
         self.busy = False
+        self.unit_watch = 0  # PropertiesChanged of the unit: wakes us when the mount starts
 
     # --- lifecycle -------------------------------------------------------------------------
 
@@ -152,12 +153,19 @@ class DriveProvider:
             ROOT, self.info.lookup_interface(MANAGER_IFACE), self._call, self._get, None))
         self.registrations.append(self.bus.register_object(
             PROVIDER, self.info.lookup_interface(PROVIDER_IFACE), self._call, self._get, None))
+        # systemd sends unit signals only to clients that subscribed.
+        self.bus.call("org.freedesktop.systemd1", "/org/freedesktop/systemd1",
+                      "org.freedesktop.systemd1.Manager", "Subscribe", None, None,
+                      Gio.DBusCallFlags.NONE, 3000, None, None)
         self._schedule(1)
 
     def stop(self):
         if self.timer:
             GLib.source_remove(self.timer)
             self.timer = 0
+        if self.unit_watch:
+            self.bus.signal_unsubscribe(self.unit_watch)
+            self.unit_watch = 0
         self._set_account(None)
         for reg in self.registrations:
             self.bus.unregister_object(reg)
@@ -249,7 +257,7 @@ class DriveProvider:
     def _manage(self, _action, _param):
         # Options and disconnection are asked and confirmed in Boomerang itself.
         try:
-            Gio.Subprocess.new([APP, "--page", "services"], Gio.SubprocessFlags.NONE)
+            launch([APP, "--page", "services"])
         except GLib.Error as error:
             log(f"iCloud Drive : Boomerang non lancé ({error.message})")
 
@@ -276,6 +284,11 @@ class DriveProvider:
             path = bus.call_finish(result).unpack()[0]
         except GLib.Error:
             return self._update("", "", None)
+        if not self.unit_watch:
+            self.unit_watch = bus.signal_subscribe(
+                "org.freedesktop.systemd1", "org.freedesktop.DBus.Properties", "PropertiesChanged",
+                path, "org.freedesktop.systemd1.Unit", Gio.DBusSignalFlags.NONE,
+                lambda *_args: self._unit_changed())
         bus.call("org.freedesktop.systemd1", path, "org.freedesktop.DBus.Properties", "GetAll",
                  GLib.Variant("(s)", ("org.freedesktop.systemd1.Unit",)),
                  GLib.VariantType("(a{sv})"), Gio.DBusCallFlags.NONE, 3000, None, self._on_props)
@@ -297,6 +310,11 @@ class DriveProvider:
             GLib.idle_add(lambda: self._update(active, file_state, stats) and False)
 
         threading.Thread(target=job, name="boomerang-drive-stats", daemon=True).start()
+
+    def _unit_changed(self):
+        """The mount started, stopped or failed: look now rather than at the next poll."""
+        if not self.busy:
+            self._schedule(1)
 
     def _update(self, active, file_state, stats):
         self.busy = False

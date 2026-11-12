@@ -182,3 +182,158 @@ public class Boomerang.MessagesOptionsCard : Gtk.Box {
         return new Gtk.ListBoxRow () { child = box, activatable = false };
     }
 }
+
+/* Réglages › Messages, in the hub's Réglages and in the Messages app's own window. */
+public class Boomerang.MessagesSettings : Gtk.Box {
+    public delegate void LookChanged ();
+
+    public MessagesSettings (Daemon daemon, owned LookChanged look_changed) {
+        Object (orientation: Gtk.Orientation.VERTICAL, spacing: 12);
+        append (new Granite.HeaderLabel (_("Lecture")));
+        append (build_read_full_card (daemon));
+        append (new Granite.HeaderLabel (_("Codes SMS")));
+        append (new CodesCard (daemon));
+        append (new Granite.HeaderLabel (_("Liens")));
+        append (new MessagesOptionsCard (daemon));
+        append (new Granite.HeaderLabel (_("Apparence des conversations")) {
+            secondary_text = _("Pour toutes les conversations. Chacune peut garder la sienne : "
+                               + "cliquez sur son nom en haut de la conversation.")
+        });
+        append (default_look_card (daemon, (owned) look_changed));
+    }
+
+    /* A window of its own, for the Messages app (Réglages in its menu). */
+    public static void present (Gtk.Window parent, Daemon daemon, owned LookChanged look_changed) {
+        var settings = new MessagesSettings (daemon, (owned) look_changed) {
+            margin_top = 6,
+            margin_bottom = 24,
+            margin_start = 24,
+            margin_end = 24
+        };
+        var header = new Gtk.HeaderBar ();
+        header.add_css_class ("flat");
+        var window = new Gtk.Window () {
+            title = _("Réglages de Messages"),
+            transient_for = parent,
+            modal = true,
+            titlebar = header,
+            default_width = 600,
+            default_height = 640,
+            child = new Gtk.ScrolledWindow () { child = settings, hscrollbar_policy = Gtk.PolicyType.NEVER }
+        };
+        window.present ();
+    }
+
+    /* The default look of conversations: the same editor as a conversation's palette. */
+    private static Gtk.Widget default_look_card (Daemon daemon, owned LookChanged look_changed) {
+        var editor = new ThreadStyleEditor (ThreadStyle.DEFAULTS, ThreadStyle.load_raw (ThreadStyle.DEFAULTS),
+                                            null, daemon) {
+            margin_top = 12,
+            margin_bottom = 12,
+            margin_start = 12,
+            margin_end = 12,
+            halign = Gtk.Align.START
+        };
+        editor.changed.connect (() => look_changed ());
+        var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        card.add_css_class (Granite.CssClass.CARD);
+        card.append (editor);
+        return card;
+    }
+
+    private static Gtk.Widget build_read_full_card (Daemon daemon) {
+        var title_label = new Gtk.Label (_("Toujours lire les messages en entier")) { xalign = 0 };
+        var subtitle_label = new Gtk.Label (
+            _("Boomerang récupère dès leur arrivée le texte complet des messages de plus de "
+              + "120 caractères. Ces messages sont alors marqués comme lus sur l'iPhone.")
+        ) { xalign = 0, wrap = true };
+        subtitle_label.add_css_class (Granite.CssClass.DIM);
+        subtitle_label.add_css_class (Granite.CssClass.SMALL);
+        var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { hexpand = true, valign = Gtk.Align.CENTER };
+        text.append (title_label);
+        text.append (subtitle_label);
+        var sw = new Gtk.Switch () { valign = Gtk.Align.CENTER, active = daemon.get_bool ("FetchUnread") };
+        sw.update_property (Gtk.AccessibleProperty.LABEL, title_label.label, -1);
+        bool updating = false;
+        sw.state_set.connect ((wanted) => {
+            if (updating) {
+                return false;
+            }
+            if (!wanted) {
+                daemon.call.begin ("SetFetchUnread", new Variant ("(b)", false));
+                return false;
+            }
+            var dialog = new Granite.MessageDialog.with_image_from_icon_name (
+                _("Toujours lire les messages en entier ?"),
+                _("Pour obtenir le texte complet d'un message non lu, Boomerang doit le télécharger "
+                  + ": le message sera marqué comme lu sur l'iPhone dès son arrivée, même si vous ne "
+                  + "l'avez pas ouvert."),
+                Config.APP_ID + ".Messages", Gtk.ButtonsType.CANCEL) {
+                transient_for = sw.get_root () as Gtk.Window,
+                modal = true
+            };
+            var go = dialog.add_button (_("Activer"), Gtk.ResponseType.ACCEPT);
+            go.add_css_class (Granite.CssClass.SUGGESTED);
+            dialog.response.connect ((response) => {
+                dialog.destroy ();
+                if (response == Gtk.ResponseType.ACCEPT) {
+                    daemon.call.begin ("SetFetchUnread", new Variant ("(b)", true));
+                } else {
+                    updating = true;
+                    sw.active = false;
+                    updating = false;
+                }
+            });
+            dialog.present ();
+            return false;
+        });
+        daemon.changed.connect (() => {
+            if (!daemon.touched ({ "FetchUnread" })) {
+                return;
+            }
+            var wanted = daemon.get_bool ("FetchUnread");
+            if (sw.active != wanted) {
+                updating = true;
+                sw.active = wanted;
+                updating = false;
+            }
+        });
+        var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) {
+            margin_top = 9,
+            margin_bottom = 9,
+            margin_start = 12,
+            margin_end = 12
+        };
+        box.append (text);
+        box.append (sw);
+        var list = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE, show_separators = true };
+        list.add_css_class (Granite.CssClass.CARD);
+        list.append (new Gtk.ListBoxRow () { child = box, activatable = false });
+        list.append (auto_emoji_row ());
+        return list;
+    }
+
+    /* ":)" becomes 🙂 while typing (kept by the app in apps.conf, see ComposeField). */
+    private static Gtk.Widget auto_emoji_row () {
+        var title_label = new Gtk.Label (_("Emojis automatiques")) { xalign = 0 };
+        var subtitle_label = new Gtk.Label (
+            _("« :) » devient 🙂, « :D » devient 😃, « <3 » devient ❤️… La touche Retour arrière annule la conversion.")
+        ) { xalign = 0, wrap = true };
+        subtitle_label.add_css_class (Granite.CssClass.DIM);
+        subtitle_label.add_css_class (Granite.CssClass.SMALL);
+        var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { hexpand = true, valign = Gtk.Align.CENTER };
+        text.append (title_label);
+        text.append (subtitle_label);
+        var sw = new Gtk.Switch () { valign = Gtk.Align.CENTER, active = ComposeField.auto_emoji_enabled () };
+        sw.update_property (Gtk.AccessibleProperty.LABEL, title_label.label, -1);
+        sw.notify["active"].connect (() => ComposeField.set_auto_emoji (sw.active));
+        var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) {
+            margin_top = 9,
+            margin_bottom = 9,
+            margin_start = 12,
+            margin_end = 12
+        };
+        box.append (text);
+        box.append (sw);
+        return new Gtk.ListBoxRow () { child = box, activatable = false };
+    }}

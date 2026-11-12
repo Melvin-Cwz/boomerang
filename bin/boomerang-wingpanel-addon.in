@@ -1,0 +1,73 @@
+#!@PYTHON@ -I
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 MelvinCwz
+"""Add or remove the Boomerang indicator in Wingpanel, as root (started by pkexec from Réglages).
+
+Usage: boomerang-wingpanel-addon install | remove
+
+The indicator is an optional add-on: its library ships with Boomerang, under the
+application data, and « install » copies it into Wingpanel's indicators directory,
+« remove » deletes that copy. No package and no repository: the library is built
+against the same Wingpanel as the one it is copied into. Only these two actions
+exist, and the paths are fixed at build time, so a caller cannot choose a file to
+copy or a place to write. Self-contained (python3 -I, standard library only).
+"""
+
+import os
+import shutil
+import stat
+import sys
+
+SHIPPED = os.path.join("@PKGDATADIR@", "wingpanel", "libboomerang-indicator.so")
+TARGET_DIR = "@WINGPANEL_DIR@"
+NAME = "libboomerang-indicator.so"
+
+
+def fail(message, code=1):
+    print(f"boomerang-wingpanel-addon: {message}", file=sys.stderr)
+    return code
+
+
+def main(argv):
+    if len(argv) != 2 or argv[1] not in ("install", "remove"):
+        return fail("usage: boomerang-wingpanel-addon install | remove", 2)
+    if os.geteuid() != 0:
+        return fail("must run as root (through pkexec)", 2)
+    if not TARGET_DIR or os.path.islink(TARGET_DIR) or not os.path.isdir(TARGET_DIR):
+        return fail("Wingpanel is not installed on this system")
+
+    target = os.path.join(TARGET_DIR, NAME)
+    if argv[1] == "remove":
+        try:
+            os.remove(target)
+        except FileNotFoundError:
+            pass
+        except OSError as error:
+            return fail(f"cannot remove the indicator ({error.strerror})")
+        return 0
+
+    try:
+        status = os.lstat(SHIPPED)
+    except OSError as error:
+        return fail(f"the indicator is missing from Boomerang ({error.strerror})")
+    if not stat.S_ISREG(status.st_mode):
+        return fail("the indicator shipped with Boomerang is not a regular file")
+
+    # Copy under a temporary name, then rename: Wingpanel never loads a half-written file.
+    # Hidden name without a .so suffix: Wingpanel never tries to load it.
+    temporary = os.path.join(TARGET_DIR, ".boomerang-indicator.tmp")
+    try:
+        shutil.copyfile(SHIPPED, temporary, follow_symlinks=False)
+        os.chmod(temporary, 0o644)
+        os.replace(temporary, target)
+    except OSError as error:
+        try:
+            os.remove(temporary)
+        except OSError:
+            pass
+        return fail(f"cannot install the indicator ({error.strerror})")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

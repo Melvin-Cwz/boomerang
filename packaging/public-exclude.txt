@@ -5,3 +5,6 @@ traces/
 prototypes/__pycache__/
 prototypes/*.log
 data/icon-proposals
+.impeccable
+PRODUCT.md
+DESIGN.md

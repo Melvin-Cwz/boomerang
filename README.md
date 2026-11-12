@@ -7,7 +7,7 @@
 **Votre iPhone et votre compte Apple, chez eux sur elementary OS.**
 
 [![Licence : GPL-3.0-or-later](https://img.shields.io/badge/licence-GPL--3.0--or--later-blue)](LICENSE)
-![Version 0.8.3 alpha](https://img.shields.io/badge/version-0.8.3%20alpha-orange)
+![Version 2.0 alpha](https://img.shields.io/badge/version-2.0%20alpha-orange)
 ![elementary OS 8+](https://img.shields.io/badge/elementary%20OS-8%2B-64baff)
 
 [Site](https://melvin-cwz.github.io/boomerang/fr/) ·
@@ -26,9 +26,15 @@ par Internet, et aucune donnée ne transite par un serveur autre que ceux d'Appl
 *Boomerang s'appelait Covalence jusqu'à la version 0.6. La mise à jour vers Boomerang conserve
 vos réglages, vos messages et vos comptes iCloud.*
 
-> **Alpha.** La version 0.8 est un aperçu public. Son auteur l'utilise tous les
+> **Alpha.** La version 2.0 est un aperçu public. Son auteur l'utilise tous les
 > jours sur son ordinateur, mais des anomalies restent possibles. L'interface est en français ;
 > la traduction anglaise est en bêta.
+
+Boomerang 2 garde un cœur fixe (Messages, Téléphone, Contacts, Notifications, Lecture en cours
+et la page iPhone) et propose le reste en **modules** que vous ajoutez depuis l'app : AirPods,
+son de l'iPhone, services iCloud, iCloud Drive et Photos, envoi de fichiers, partage de
+connexion, verrouillage de proximité, recopie de l'écran, codes à usage unique. Un module
+installe ses dépendances quand vous l'ajoutez, et s'arrête entièrement quand vous le retirez.
 
 ## Deux connexions
 
@@ -36,13 +42,13 @@ vos réglages, vos messages et vos comptes iCloud.*
 
 | | |
 |---|---|
-| **Notifications** | Toutes les notifications de l'iPhone sur le bureau, avec leurs actions et l'icône de l'app qui les envoie. Vous choisissez les apps dont les notifications s'affichent. |
+| **Notifications** | Toutes les notifications de l'iPhone sur le bureau, avec leurs actions et l'icône de l'app qui les envoie. Une notification effacée sur l'iPhone disparaît aussi du PC, même pendant une coupure, et une notification fermée sur le PC ne revient pas. Vous choisissez les apps dont les notifications s'affichent. |
 | **Lecture en cours** | Ce que joue l'iPhone, avec pochette, progression et volume, dans sa page et dans un mini-lecteur au-dessus de Réglages. Le bouton Lecture relance la musique de l'iPhone, même lorsqu'elle est arrêtée. |
 | **Batterie** | Niveau de batterie de l'iPhone dans le panneau, alertes à 20 % et à 10 %. |
-| **Messages** | Lire vos conversations SMS, répondre à un seul destinataire, enregistrer des brouillons, rechercher. Supprimer un message ou une conversation dans Boomerang (l'élément reste sur l'iPhone). |
-| **Téléphone** | Répondre, refuser et passer des appels avec le micro et les haut-parleurs de l'ordinateur, clavier, journal d'appels. Nécessite PipeWire 1.4 ou une version plus récente. |
-| **Contacts** | Les contacts de l'iPhone en Bluetooth (lecture seule), ou vos contacts iCloud, modifiables. |
-| **AirPods** | Batterie de chaque écouteur et du boîtier, contrôle du bruit, détection de conversation, détection des oreilles, renommage, d'après le protocole documenté par LibrePods. Expérimental : hocher la tête pour répondre à un appel, la secouer pour le refuser. |
+| **Messages** | Lire vos conversations SMS, tout l'historique compris, répondre à un seul destinataire, enregistrer des brouillons, rechercher. Filtres Non lus et Inconnus, liens échangés dans les détails, raccourcis clavier façon Mac (Ctrl+? pour les voir), pièces jointes signalées. Un message supprimé sur l'iPhone disparaît de Boomerang ; une suppression faite dans Boomerang ne touche pas l'iPhone. |
+| **Téléphone** | Répondre, refuser et passer des appels avec le micro et les haut-parleurs de l'ordinateur, double appel (mettre en attente et répondre, permuter, fusionner selon l'opérateur), choix de la sortie audio pendant l'appel, favoris, messagerie vocale, recherche et durée des appels dans les récents. Nécessite PipeWire 1.4 ou une version plus récente. |
+| **Contacts** | Les contacts de l'iPhone en Bluetooth (lecture seule), ou vos contacts iCloud, modifiables. Fiches complètes (entreprise, adresses, anniversaire, sites, notes, photo), index alphabétique, export et import vCard. |
+| **AirPods** | Batterie de chaque écouteur et du boîtier (aussi dans le panneau), alerte de batterie faible, contrôle du bruit, détection de conversation et du port, appui long par écouteur, volume par glissement sur la tige, renommage, d'après le protocole documenté par LibrePods. Expérimental : hocher la tête pour répondre à un appel, la secouer pour le refuser. |
 | **Son de l'iPhone** | Recevoir sur l'ordinateur le son que l'iPhone envoie depuis le bouton AirPlay, ou refuser cette diffusion. |
 
 <p align="center">
@@ -75,10 +81,10 @@ vos réglages, vos messages et vos comptes iCloud.*
 
 ### Depuis le paquet (conseillé)
 
-1. Téléchargez `boomerang_0.8.3-1_amd64.deb` depuis la
+1. Téléchargez le paquet `boomerang_…_amd64.deb` depuis la
    [dernière version](https://github.com/Melvin-Cwz/boomerang/releases/latest).
 2. Installez-le dans un terminal, depuis le dossier du téléchargement :
-   `sudo apt install ./boomerang_0.8.3-1_amd64.deb`. apt installe également les dépendances
+   `sudo apt install ./boomerang_*_amd64.deb`. apt installe également les dépendances
    nécessaires. Sur Ubuntu, un double-clic sur le fichier l'ouvre aussi dans l'App Center.
 3. Fermez puis rouvrez votre session (ou lancez `systemctl --user start boomerangd`), puis
    ouvrez Boomerang. L'assistant vous guide pour appairer l'iPhone et vous connecter à iCloud.
@@ -96,7 +102,8 @@ Désinstallation : `sudo apt remove boomerang`. Vos données restent dans
 
 | Système | État |
 |---|---|
-| elementary OS 8 ou plus récent | Tout fonctionne. Les appels demandent PipeWire 1.4 ou plus récent : avec un PipeWire plus ancien, Boomerang désactive les appels et en indique la raison. |
+| elementary OS 9 | Tout fonctionne, avec Granite 9. Les appels demandent PipeWire 1.4 ou plus récent. |
+| elementary OS 8 | Tout fonctionne, avec Granite 7. Avec un PipeWire antérieur à 1.4, Boomerang désactive les appels et en indique la raison. |
 | Ubuntu 24.04 ou plus récent | Le paquet demande Granite 7.7 ou plus récent. Les appels demandent PipeWire 1.4 ou plus récent. Ubuntu 24.04 fournit rclone 1.60, trop ancien pour iCloud : utilisez le bouton « Télécharger rclone ». |
 
 Matériel : un adaptateur Bluetooth compatible Bluetooth Low Energy (c'est le cas de presque
@@ -110,9 +117,10 @@ ninja -C build && meson install -C build
 systemctl --user daemon-reload && systemctl --user enable --now boomerangd
 ```
 
-Dépendances de construction : `valac`, `meson`, `libgranite-7-dev` (7.7 ou plus récent),
-`libgtk-4-dev`. Les dépendances d'exécution sont listées dans `debian/control`. Tests hors
-ligne : `python3 -m unittest tests.test_offline`. Paquet : `packaging/build-deb.sh`.
+Dépendances de construction : `valac`, `meson`, `libgranite-9-dev` (ou `libgranite-7-dev` 7.7
+ou plus récent, utilisé si Granite 9 est absent), `libgtk-4-dev`. Les dépendances d'exécution
+sont listées dans `debian/control`. Tests hors ligne (démon et interface) :
+`meson test -C build`. Paquet : `packaging/build-deb.sh`.
 
 ## Ce que Boomerang ne sait pas faire
 
@@ -122,35 +130,32 @@ Ces limites viennent surtout de ce qu'un iPhone accepte d'un ordinateur non Appl
   l'iPhone permet seulement d'envoyer un SMS à une seule personne.
 - Pas de presse-papiers universel, de Handoff, d'AirDrop ni de Caméra de continuité : ces
   fonctions exigent le chiffrement et la pile Wi-Fi propres à Apple.
-- Supprimer un message ne le retire que de Boomerang. iOS ignore les suppressions
-  demandées par Bluetooth.
-- L'iPhone ne se reconnecte pas toujours automatiquement à un accessoire Bluetooth LE. Le
-  [guide](data/guide/fr/12-troubleshooting.md) décrit la procédure à suivre.
+- Supprimer un message dans Boomerang ne le retire pas de l'iPhone : iOS ignore les
+  suppressions demandées par Bluetooth.
+- Pas de FaceTime ni de messagerie vocale visuelle, pas de modification des favoris de
+  l'iPhone, pas de mise en attente d'un appel seul (le profil mains libres de PipeWire ne
+  le propose pas).
+- L'iPhone ne rouvre pas toujours seul la connexion Bluetooth LE. Boomerang passe alors par la
+  liaison classique ; si les notifications restent interrompues, « Appairer à nouveau » guide
+  une réparation propre (voir le [guide](data/guide/fr/12-troubleshooting.md)).
 - Le déverrouillage de l'ordinateur avec l'iPhone est volontairement exclu : la force du signal
   Bluetooth peut être falsifiée.
 
-## Nouveautés de la 0.8
+## Nouveautés de la 2.0
 
-Depuis la 0.7.0 :
-
-- Messages : chaque conversation s'ouvre sur le dernier message. Vous pouvez la personnaliser
-  (surnom, emoji, couleur des bulles, fond, taille du texte) et régler ses notifications
-  (prioritaires, silencieuses, son personnalisé). Recherche dans la conversation (Ctrl+F), bouton
-  pour revenir aux nouveaux messages, ligne « Non lus », réponses rapides personnalisées,
-  aperçus de liens (désactivés par défaut), export en PDF ou en texte.
-- Notifications : réglage par application de l'iPhone (normales, prioritaires ou discrètes),
-  son personnalisé et, si vous le souhaitez, contenu masqué dans la bannière.
-- Recopie de l'écran dans une fenêtre Boomerang à la taille de l'image, avec plein écran (F11),
-  enregistrement MP4 facultatif et, en expérimental, une balise Bluetooth pour que l'iPhone
-  trouve l'ordinateur.
-- AirPods, en expérimental : hocher la tête pour répondre à un appel, la secouer pour le
-  refuser.
-- Page Contributeurs, sous Réglages : tous les projets dont Boomerang dépend, avec leurs
-  auteurs, leurs licences et leurs liens.
-- Fenêtre principale avec une seule barre d'en-tête aux couleurs de Boomerang, colonne de
-  gauche repliable en icônes (F9).
-- Service et application moins actifs en arrière-plan, nouvelle icône dans le style
-  d'elementary.
+- Liaison : état explicite dans la barre d'en-tête, reconnexion plus rapide et plus économe,
+  service d'arrière-plan surveillé (watchdog) qui tient bon quand le Bluetooth est occupé ou
+  que le cache des messages est abîmé.
+- Notifications fiables après une veille ou un redémarrage, sans fantômes ni doublons ;
+  réparation guidée quand elles s'arrêtent.
+- Messages : historique complet par pages, filtres, raccourcis, liens échangés, pièces jointes
+  signalées, menus accessibles au clavier, suppressions faites sur l'iPhone reportées.
+- Téléphone : double appel, sortie audio pendant l'appel, favoris, messagerie vocale, durées.
+- Contacts : fiches complètes, éditeur iCloud avec photo, index alphabétique, vCard.
+- AirPods et Recopie : alertes de batterie, réglages des tiges, touches et gestes de l'iPhone
+  depuis la recopie, capture d'écran, dépôt de fichiers vers LocalSend.
+- Modules ajoutés à la demande autour d'un cœur fixe.
+- elementary OS 9 : construit avec Granite 9 (repli sur Granite 7 pour elementary OS 8).
 
 ## Aide
 
@@ -176,8 +181,8 @@ MelvinCwz
   conserve les secrets. Il communique avec l'iPhone par BlueZ (ANCS et AMS en Bluetooth LE, MAP et PBAP par obexd,
   HFP par `org.pipewire.Telephony` de PipeWire), à iCloud par Evolution Data Server et
   libsecret, et lance rclone pour Drive et Photos.
-- **L'application** (Vala, GTK 4, Granite) : une fenêtre, plus des apps séparées Messages,
-  Téléphone, Contacts et Écouteurs pour le dock. Elle communique avec le service par D-Bus
+- **L'application** (Vala, GTK 4, Granite) : une seule appli (Messages, Téléphone,
+  Contacts, etc. en sont des pages), plus Écouteurs et Recopie en apps séparées. Elle communique avec le service par D-Bus
   (`io.github.melvincouwez.Boomerang.Daemon`).
 - Les journaux ne contiennent jamais le texte des notifications ou des messages, ni les noms ni
   les numéros.

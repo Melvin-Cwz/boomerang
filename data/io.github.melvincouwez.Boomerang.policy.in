@@ -19,4 +19,17 @@
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">@LIBEXECDIR@/boomerang-install-update</annotate>
   </action>
+  <action id="io.github.melvincouwez.Boomerang.wingpanel-addon">
+    <description>Add or remove the Boomerang indicator in Wingpanel</description>
+    <description xml:lang="fr">Ajouter ou retirer l'indicateur Boomerang dans Wingpanel</description>
+    <message>Authentication is required to change the Wingpanel indicator</message>
+    <message xml:lang="fr">Une authentification est nécessaire pour modifier l'indicateur de Wingpanel</message>
+    <icon_name>io.github.melvincouwez.Boomerang</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">@LIBEXECDIR@/boomerang-wingpanel-addon</annotate>
+  </action>
 </policyconfig>

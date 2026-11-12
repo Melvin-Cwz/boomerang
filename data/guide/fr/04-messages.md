@@ -17,7 +17,7 @@ summary: Lire vos SMS et y répondre depuis l'ordinateur.
 - L'envoi fonctionne seulement dans les conversations avec **une seule personne**. Vous pouvez lire les conversations de groupe dans Boomerang, mais vous devez y répondre depuis l'iPhone.
 - Un message dont l'envoi a échoué reste dans la conversation avec les boutons **Réessayer** et **Supprimer**. Boomerang ne renvoie jamais un message sans votre confirmation, pour éviter les doublons.
 - Pour écrire à un nouveau correspondant, cliquez sur **Nouveau message** en haut de la liste, puis choisissez un contact ou saisissez un numéro.
-- Dans une notification, **Répondre** ouvre une petite fenêtre de réponse rapide.
+- Cliquez sur la notification d'un message : elle se déplie sur place avec les derniers messages, **Tout lire** pour un message tronqué et un champ pour répondre. Le bouton **…** ouvre la conversation. Sans cette fonction dans le serveur de notifications, le clic ouvre une petite fenêtre de réponse rapide.
 
 ## Réactions
 - Quand quelqu'un réagit à un message (❤️, 👍, 😂…), la réaction apparaît sous forme de petite pastille sur la bulle concernée ; son auteur s'affiche au survol. Si la personne retire sa réaction, la pastille disparaît.
@@ -33,4 +33,7 @@ summary: Lire vos SMS et y répondre depuis l'ordinateur.
 
 ## Autres fonctions
 - Boomerang conserve un brouillon par conversation et propose la recherche, des liens et des numéros cliquables, ainsi que des réponses prédéfinies.
+- Cliquez sur le nom en haut de la conversation (ou sur **ⓘ**) pour ouvrir ses détails, comme sur l'iPhone : photo, coordonnées, appel, surnom, couleurs, fond et alertes.
+- Dans l'app Messages, le bouton de menu en haut de la liste ouvre les réglages de Messages.
+- Raccourcis : Ctrl+F cherche dans la conversation ouverte, Ctrl+Maj+F dans toutes, Ctrl+N écrit un nouveau message, Ctrl+R synchronise avec l'iPhone, F1 ouvre ce guide.
 - Le nombre de messages non lus s'affiche sur l'icône de l'app Messages.

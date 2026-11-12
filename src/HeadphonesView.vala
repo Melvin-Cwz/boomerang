@@ -44,10 +44,26 @@ namespace Boomerang {
         private Gtk.Switch one_bud;
         private Gtk.ListBoxRow one_bud_row;
         private Gtk.Switch auto_pause;
+        private Gtk.ListBoxRow auto_pause_row;
+        private Gtk.Switch ear_detection;
+        private Gtk.ListBoxRow ear_detection_row;
+        private Gtk.Switch battery_alerts;
         private Gtk.Box cycle_box;
+        private Gtk.ListBox hold_list;
+        private Gtk.DropDown hold_left;
+        private Gtk.DropDown hold_right;
+        private Gtk.Box cycle_part;
         private Gtk.CheckButton[] cycle_checks = {};
         private Gtk.Label cycle_hint;
+        private Gtk.Box swipe_box;
+        private Gtk.Switch swipe;
+        private Gtk.DropDown swipe_interval;
+        private Gtk.ListBoxRow swipe_interval_row;
         private uint adaptive_timer = 0;
+
+        // Press and hold on the stem, per bud (LibrePods, docs/control_commands.md, 0x16).
+        private const int HOLD_NOISE = 1;
+        private const int HOLD_SIRI = 5;
 
         public HeadphonesView (Daemon daemon) {
             Object (daemon: daemon, orientation: Gtk.Orientation.VERTICAL, spacing: 0);
@@ -85,6 +101,7 @@ namespace Boomerang {
                 vexpand = true
             };
             append (scroll);
+            Snapshots.scroll_to_end (scroll);
 
             if (demo) {
                 pairs = { demo_pair () };
@@ -223,12 +240,41 @@ namespace Boomerang {
                     send ("auto_pause", new Variant.boolean (auto_pause.active));
                 }
             });
+            ear_detection = new Gtk.Switch () { valign = Gtk.Align.CENTER };
+            ear_detection.notify["active"].connect (() => {
+                if (!updating) {
+                    send ("ear_detection", new Variant.boolean (ear_detection.active));
+                    auto_pause_row.sensitive = ear_detection.active;
+                }
+            });
+            ear_detection_row = switch_row (_("Détection automatique du port"),
+                _("Le son passe aux écouteurs quand vous les mettez, et s'arrête quand vous les retirez."),
+                ear_detection);
+            auto_pause_row = switch_row (_("Pause quand vous retirez un écouteur"),
+                _("La lecture reprend quand vous le remettez."), auto_pause);
+            battery_alerts = new Gtk.Switch () { valign = Gtk.Align.CENTER };
+            battery_alerts.notify["active"].connect (() => {
+                if (!updating) {
+                    send ("battery_alerts", new Variant.boolean (battery_alerts.active));
+                }
+            });
             options.append (conversation_row);
             options.append (one_bud_row);
-            options.append (switch_row (_("Pause quand vous retirez un écouteur"),
-                _("La lecture reprend quand vous le remettez."), auto_pause));
+            options.append (ear_detection_row);
+            options.append (auto_pause_row);
+            options.append (switch_row (_("Alerte de batterie faible"),
+                // xgettext:no-c-format
+                _("Une notification à 20 % puis à 10 % pour chaque écouteur, à 10 % pour le boîtier."),
+                battery_alerts));
 
-            // Long press cycle
+            // Press and hold: what each stem does, and the modes it switches between.
+            hold_list = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE, show_separators = true };
+            hold_list.add_css_class (Granite.CssClass.CARD);
+            hold_left = hold_dropdown ("hold_left");
+            hold_right = hold_dropdown ("hold_right");
+            hold_list.append (control_row (_("Écouteur gauche"), hold_left));
+            hold_list.append (control_row (_("Écouteur droit"), hold_right));
+
             var checks = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) { halign = Gtk.Align.START };
             for (int i = 0; i < CYCLE_BITS.length; i++) {
                 var check = new Gtk.CheckButton.with_label (_(MODE_LABELS[i]));
@@ -238,10 +284,38 @@ namespace Boomerang {
             }
             cycle_hint = small (_("Un appui long sur la tige alterne entre les modes cochés (deux au minimum)."));
             cycle_hint.xalign = 0;
+            cycle_part = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) { margin_top = 6 };
+            cycle_part.append (new Gtk.Label (_("Modes du contrôle du bruit")) { xalign = 0 });
+            cycle_part.append (checks);
+            cycle_part.append (cycle_hint);
             cycle_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
             cycle_box.append (new Granite.HeaderLabel (_("Appui long")));
-            cycle_box.append (checks);
-            cycle_box.append (cycle_hint);
+            cycle_box.append (hold_list);
+            cycle_box.append (cycle_part);
+
+            // Volume swipe on the stem (AirPods Pro 2 and later).
+            swipe = new Gtk.Switch () { valign = Gtk.Align.CENTER };
+            swipe.notify["active"].connect (() => {
+                if (!updating) {
+                    send ("swipe", new Variant.boolean (swipe.active));
+                    swipe_interval_row.sensitive = swipe.active;
+                }
+            });
+            swipe_interval = new Gtk.DropDown.from_strings ({ _("Par défaut"), _("Plus long"), _("Le plus long") });
+            swipe_interval.notify["selected"].connect (() => {
+                if (!updating) {
+                    send ("swipe_interval", new Variant.int32 ((int) swipe_interval.selected));
+                }
+            });
+            var swipe_list = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE, show_separators = true };
+            swipe_list.add_css_class (Granite.CssClass.CARD);
+            swipe_list.append (switch_row (_("Régler le volume en glissant sur la tige"),
+                _("Glissez vers le haut ou vers le bas sur le capteur tactile de la tige."), swipe));
+            swipe_interval_row = control_row (_("Délai entre deux glissements"), swipe_interval);
+            swipe_list.append (swipe_interval_row);
+            swipe_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+            swipe_box.append (new Granite.HeaderLabel (_("Glissement sur la tige")));
+            swipe_box.append (swipe_list);
 
             var notice = small (_("Compatible avec les AirPods. Boomerang n'est pas affilié à Apple. "
                                 + "Protocole documenté par le projet LibrePods, merci à ses contributeurs."));
@@ -249,14 +323,7 @@ namespace Boomerang {
             notice.max_width_chars = 60;
             notice.margin_top = 12;
 
-            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
-                margin_top = 18,
-                margin_bottom = 24,
-                margin_start = 24,
-                margin_end = 24,
-                width_request = 520,
-                halign = Gtk.Align.CENTER
-            };
+            var content = new PageColumn ();  // the column of Réglages and Le Fil
             content.append (picker);
             content.append (icon);
             content.append (name_box);
@@ -267,8 +334,40 @@ namespace Boomerang {
             content.append (new Granite.HeaderLabel (_("Réglages")));
             content.append (options);
             content.append (cycle_box);
+            content.append (swipe_box);
             content.append (notice);
             return content;
+        }
+
+        private Gtk.DropDown hold_dropdown (string key) {
+            var dropdown = new Gtk.DropDown.from_strings ({ _("Contrôle du bruit"), _("Siri") });
+            dropdown.notify["selected"].connect (() => {
+                if (!updating) {
+                    send (key, new Variant.int32 (dropdown.selected == 1 ? HOLD_SIRI : HOLD_NOISE));
+                    update_cycle_part ();
+                }
+            });
+            return dropdown;
+        }
+
+        private static Gtk.ListBoxRow control_row (string title, Gtk.Widget control) {
+            control.valign = Gtk.Align.CENTER;
+            control.update_property (Gtk.AccessibleProperty.LABEL, title, -1);
+            var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) {
+                margin_top = 9,
+                margin_bottom = 9,
+                margin_start = 12,
+                margin_end = 12
+            };
+            box.append (new Gtk.Label (title) { xalign = 0, hexpand = true });
+            box.append (control);
+            return new Gtk.ListBoxRow () { child = box, activatable = false };
+        }
+
+        /* The noise modes only matter when a stem switches noise control. */
+        private void update_cycle_part () {
+            var noise = !hold_list.visible || hold_left.selected == 0 || hold_right.selected == 0;
+            cycle_part.sensitive = noise;
         }
 
         private static Gtk.Label small (string text) {
@@ -404,8 +503,24 @@ namespace Boomerang {
             one_bud_row.visible = has_feature (p, "one_bud");
             one_bud.active = Props.integer (p, "one_bud", 0) == 1;
             auto_pause.active = Props.flag (p, "auto_pause");
+            // Not reported yet (0): the AirPods' own default, on.
+            ear_detection_row.visible = has_feature (p, "ear");
+            ear_detection.active = Props.integer (p, "ear_detection", 0) != 2;
+            auto_pause_row.sensitive = !ear_detection_row.visible || ear_detection.active;
+            battery_alerts.active = Props.flag (p, "battery_alerts", true);
 
-            cycle_box.visible = has_feature (p, "anc");
+            hold_list.visible = has_feature (p, "hold");
+            hold_left.selected = Props.integer (p, "hold_left", 0) == HOLD_SIRI ? 1 : 0;
+            hold_right.selected = Props.integer (p, "hold_right", 0) == HOLD_SIRI ? 1 : 0;
+            cycle_part.visible = has_feature (p, "anc");
+            cycle_box.visible = hold_list.visible || cycle_part.visible;
+            update_cycle_part ();
+
+            swipe_box.visible = has_feature (p, "swipe");
+            swipe.active = Props.integer (p, "swipe", 0) != 2;
+            swipe_interval.selected = (uint) Props.integer (p, "swipe_interval", 0).clamp (0, 2);
+            swipe_interval_row.sensitive = swipe.active;
+
             var cycle = Props.integer (p, "cycle", 0);
             for (int i = 0; i < cycle_checks.length; i++) {
                 cycle_checks[i].visible = has_feature (p, MODE_FEATURES[i]);
@@ -509,8 +624,15 @@ namespace Boomerang {
             b.add ("{sv}", "conversation", new Variant.int32 (1));
             b.add ("{sv}", "adaptive", new Variant.int32 (50));
             b.add ("{sv}", "one_bud", new Variant.int32 (2));
-            b.add ("{sv}", "features", new Variant.strv ({ "anc", "adaptive", "conversation", "ear", "one_bud" }));
+            b.add ("{sv}", "features", new Variant.strv ({ "anc", "adaptive", "conversation", "ear", "one_bud",
+                                                           "hold", "swipe" }));
             b.add ("{sv}", "auto_pause", new Variant.boolean (true));
+            b.add ("{sv}", "battery_alerts", new Variant.boolean (true));
+            b.add ("{sv}", "ear_detection", new Variant.int32 (1));
+            b.add ("{sv}", "hold_left", new Variant.int32 (HOLD_NOISE));
+            b.add ("{sv}", "hold_right", new Variant.int32 (HOLD_SIRI));
+            b.add ("{sv}", "swipe", new Variant.int32 (1));
+            b.add ("{sv}", "swipe_interval", new Variant.int32 (0));
             return b.end ();
         }
     }
@@ -598,6 +720,23 @@ namespace Boomerang {
                 cr.close_path ();
                 cr.fill ();
             }
+        }
+    }
+
+    /* Development (screenshots): BOOMERANG_SNAPSHOT_SCROLL=end shows the bottom of a long page,
+       which the off-screen display (1024 × 768 at most) would otherwise cut. */
+    namespace Snapshots {
+        public void scroll_to_end (Gtk.ScrolledWindow scroll) {
+            if (Environment.get_variable ("BOOMERANG_SNAPSHOT_SCROLL") != "end") {
+                return;
+            }
+            scroll.map.connect (() => {
+                Timeout.add (1500, () => {
+                    var adjustment = scroll.vadjustment;
+                    adjustment.value = adjustment.upper - adjustment.page_size;
+                    return Source.REMOVE;
+                });
+            });
         }
     }
 }

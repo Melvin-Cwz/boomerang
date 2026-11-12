@@ -14,6 +14,7 @@ src/ContactEditor.vala
 src/ContactsView.vala
 src/ContributorsView.vala
 src/DriveOptions.vala
+src/FeedView.vala
 src/Guide.vala
 src/HeadphonesView.vala
 src/Language.vala
@@ -84,5 +85,10 @@ boomerangd/proximity.py
 src/OptionalAppRow.vala
 src/ConversationExport.vala
 src/MessagesOptions.vala
+src/ConversationDetails.vala
 boomerangd/linkpreview.py
 boomerangd/mirror_viewer.py
+boomerangd/catalog.py
+src/LinkStatus.vala
+src/LinkText.vala
+src/ModulesView.vala

@@ -23,6 +23,7 @@ from gi.repository import GLib
 
 from .bmsg import thread_id
 from .i18n import _
+from .util import log
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS messages(
@@ -62,6 +63,8 @@ CREATE TABLE IF NOT EXISTS reactions(key TEXT PRIMARY KEY, target TEXT NOT NULL,
 CREATE INDEX IF NOT EXISTS reactions_target ON reactions(target);
 CREATE TABLE IF NOT EXISTS calls(pos INTEGER PRIMARY KEY, address TEXT, name TEXT,
                                  time INTEGER, kind TEXT);
+-- Messages with an attachment (photo, video, file): MAP carries their text only.
+CREATE TABLE IF NOT EXISTS attachments(key TEXT PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS thread_flags(thread TEXT PRIMARY KEY,
                                         pinned INTEGER NOT NULL DEFAULT 0,
                                         marked_unread INTEGER NOT NULL DEFAULT 0);
@@ -141,15 +144,23 @@ class Store:
                                                          "messages"))
         self.tmp = private_dir(os.path.join(self.dir, "tmp"))
         self.path = os.path.join(self.dir, "messages.db")
-        old_umask = os.umask(0o077)  # database and its journal files: 0600
+        self.recovered = None  # path of a damaged database put aside at this start
         try:
-            self.db = sqlite3.connect(self.path)
-        finally:
-            os.umask(old_umask)
-        os.chmod(self.path, 0o600)
-        self.db.row_factory = sqlite3.Row
-        self.db.create_function("fold", 1, fold, deterministic=True)
-        self.db.executescript(SCHEMA)
+            self._open()
+        except sqlite3.DatabaseError as e:
+            if isinstance(e, sqlite3.OperationalError) and "locked" in str(e):
+                raise
+            # A damaged cache must never keep the whole daemon (calls, notifications)
+            # in a restart loop: put it aside and start again from the iPhone.
+            if getattr(self, "db", None) is not None:
+                self.db.close()
+            stamp = time.strftime("%Y%m%d-%H%M%S")
+            self.recovered = f"{self.path}.endommagee-{stamp}"
+            for suffix in ("", "-wal", "-shm", "-journal"):
+                if os.path.exists(self.path + suffix):
+                    os.replace(self.path + suffix, self.recovered + suffix)
+            log(f"cache des messages endommagé ({e}) : mis de côté, nouveau cache")
+            self._open()
         columns = [r[1] for r in self.db.execute("PRAGMA table_info(contacts)")]
         if "photo" not in columns:
             self.db.execute("ALTER TABLE contacts ADD COLUMN photo TEXT")
@@ -157,6 +168,23 @@ class Store:
         self._upgrade_after_rename()
         self.db.commit()
         self._contacts = None
+
+    def _open(self):
+        old_umask = os.umask(0o077)  # database and its journal files: 0600
+        try:
+            self.db = sqlite3.connect(self.path)
+            self.db.row_factory = sqlite3.Row
+            check = self.db.execute("PRAGMA quick_check").fetchone()[0]
+            if check != "ok":
+                raise sqlite3.DatabaseError(check)
+            # WAL: a power cut during a write leaves the database whole.
+            self.db.execute("PRAGMA journal_mode=WAL")
+            self.db.execute("PRAGMA synchronous=NORMAL")
+        finally:
+            os.umask(old_umask)
+        os.chmod(self.path, 0o600)
+        self.db.create_function("fold", 1, fold, deterministic=True)
+        self.db.executescript(SCHEMA)
 
     def _upgrade_after_rename(self):
         """The app was called Tandem until 2026-09-27, then Covalence until 2026-10-04: its own
@@ -393,7 +421,7 @@ class Store:
             os.umask(old_umask)
         os.chmod(archive, 0o600)
         for table in ("messages", "threads", "contacts", "drafts", "hidden", "reactions",
-                      "calls", "thread_flags", "meta"):
+                      "calls", "thread_flags", "meta", "attachments"):
             self.db.execute(f"DELETE FROM {table}")
         if os.path.isdir(self.photos):
             os.replace(self.photos, os.path.join(self.dir, f"photos-{tag}-{stamp}"))
@@ -423,7 +451,7 @@ class Store:
     def threads(self):
         """Pinned threads first (in the order they were pinned), then the newest."""
         rows = self.db.execute("""
-            SELECT t.*, m.body AS body, m.time AS time, m.outgoing AS outgoing,
+            SELECT t.*, m.key AS last_key, m.body AS body, m.time AS time, m.outgoing AS outgoing,
                    (SELECT COUNT(*) FROM messages u WHERE u.thread=t.id AND u.outgoing=0
                     AND u.seen=0) AS unread,
                    COALESCE(f.pinned, 0) AS pinned, COALESCE(f.marked_unread, 0) AS marked
@@ -438,6 +466,8 @@ class Store:
                       "title": row["title"] or "", "is_group": bool(row["is_group"])}
             marked = bool(row["marked"]) and row["unread"] == 0
             thread.update(name=self.thread_title(thread), snippet=row["body"] or "",
+                          last_key=row["last_key"],
+                          known=any(self.contact_name(p) for p in thread["participants"]),
                           time=row["time"], unread=row["unread"] or (1 if marked else 0),
                           last_outgoing=bool(row["outgoing"]), pinned=bool(row["pinned"]),
                           marked_unread=marked)
@@ -536,6 +566,7 @@ class Store:
         self.db.execute("UPDATE reactions SET target=? WHERE target=?", (new_key, old_key))
         self.db.execute("UPDATE reactions SET key=? WHERE key=?", (new_key, old_key))
         self.db.execute("UPDATE hidden SET key=? WHERE key=?", (new_key, old_key))
+        self.db.execute("UPDATE OR IGNORE attachments SET key=? WHERE key=?", (new_key, old_key))
 
     def find_pending_outgoing(self, thread, body, when, window=900):
         """A message sent from Boomerang that the phone now lists (subject may be cut at 120).
@@ -557,6 +588,30 @@ class Store:
     def delete(self, key):
         self.db.execute("DELETE FROM messages WHERE key=?", (key,))
         self.db.execute("DELETE FROM reactions WHERE key=? OR target=?", (key, key))
+        self.db.execute("DELETE FROM attachments WHERE key=?", (key,))
+
+    # --- attachments (shown as a line: the file itself stays on the iPhone) -------------------
+
+    def mark_attachment(self, key):
+        if self.message(key) is not None:
+            self.db.execute("INSERT OR IGNORE INTO attachments VALUES(?)", (key,))
+
+    def attachment_keys(self, keys):
+        keys = list(keys)
+        found = set()
+        for start in range(0, len(keys), 500):
+            chunk = keys[start:start + 500]
+            found.update(r[0] for r in self.db.execute(
+                f"SELECT key FROM attachments WHERE key IN ({','.join('?' * len(chunk))})", chunk))
+        return found
+
+    def links(self, tid, limit=400):
+        """Messages of the thread that may hold a web link, newest first."""
+        return [dict(r) for r in self.db.execute(
+            "SELECT key, body, time, outgoing FROM messages WHERE thread=? "
+            "AND COALESCE(kind, '') NOT IN ('reaction', 'reaction-note') "
+            "AND (body LIKE '%http%' OR body LIKE '%www.%') ORDER BY time DESC LIMIT ?",
+            (tid, limit))]
 
     # --- reactions (tapbacks received or sent as SMS text) --------------------------------------
 
@@ -627,6 +682,8 @@ class Store:
         """Delete a conversation: everything up to now stays hidden, new messages show."""
         last = self.db.execute("SELECT MAX(time) FROM messages WHERE thread=?", (tid,)).fetchone()[0]
         self.set_meta("cleared:" + tid, max(int(last or 0), int(time.time())))
+        self.db.execute("DELETE FROM attachments WHERE key IN "
+                        "(SELECT key FROM messages WHERE thread=?)", (tid,))
         self.db.execute("DELETE FROM messages WHERE thread=?", (tid,))
         self.db.execute("DELETE FROM reactions WHERE thread=?", (tid,))
         self.db.execute("DELETE FROM drafts WHERE thread=?", (tid,))
@@ -649,11 +706,32 @@ class Store:
         return False
 
     def messages(self, tid, limit=500):
+        return self.messages_page(tid, limit=limit)[0]
+
+    def messages_page(self, tid, before_time=0, before_key="", limit=200):
+        """The newest `limit` messages of the thread older than (before_time, before_key), in
+        the order shown (oldest first), and whether older ones remain. before_time 0: from the
+        newest. Order is time then insertion (rowid), so a page boundary inside one second
+        neither repeats nor skips a message; a cursor whose message was deleted meanwhile
+        falls back to its time alone."""
+        limit = max(1, min(int(limit), 2000))
+        where = "thread=? AND COALESCE(kind, '')<>'reaction'"
+        args = [tid]
+        if before_time:
+            row = self.db.execute("SELECT rowid FROM messages WHERE key=? AND thread=? AND time=?",
+                                  (before_key, tid, int(before_time))).fetchone() \
+                if before_key else None
+            if row is not None:
+                where += " AND (time<? OR (time=? AND rowid<?))"
+                args += [int(before_time), int(before_time), row[0]]
+            else:
+                where += " AND time<?"
+                args.append(int(before_time))
         rows = self.db.execute(
-            "SELECT * FROM (SELECT * FROM messages WHERE thread=? AND COALESCE(kind, '')<>'reaction'"
-            " ORDER BY time DESC LIMIT ?)"
-            " ORDER BY time", (tid, limit)).fetchall()
-        return [dict(r) for r in rows]
+            f"SELECT * FROM messages WHERE {where} ORDER BY time DESC, rowid DESC LIMIT ?",
+            (*args, limit + 1)).fetchall()
+        more = len(rows) > limit
+        return [dict(r) for r in reversed(rows[:limit])], more
 
     # --- drafts, search, unread ---------------------------------------------------------------
 

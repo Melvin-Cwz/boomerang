@@ -1,21 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
- * Messages and Contacts as apps of their own: same program, launched as
- * io.github.melvincouwez.Boomerang.Messages or .Contacts (symlinks), so each has
- * its own dock icon, launcher entry and window. Boomerang itself keeps the iPhone
- * settings and the call history.
+ * Écouteurs and Recopie as apps of their own: same program, launched as
+ * io.github.melvincouwez.Boomerang.Headphones or .Mirror (symlinks), so each has its own
+ * dock icon, launcher entry and window. Messages, calls and contacts live in Boomerang's
+ * main window (Personnes, Pavé).
  */
 
 namespace Boomerang {
     public enum Mode {
-        HUB, MESSAGES, CONTACTS, PHONE, HEADPHONES, MIRROR;
+        HUB, HEADPHONES, MIRROR;
 
         public string suffix () {
             switch (this) {
-                case MESSAGES: return ".Messages";
-                case CONTACTS: return ".Contacts";
-                case PHONE: return ".Phone";
                 case HEADPHONES: return ".Headphones";
                 case MIRROR: return ".Mirror";
                 default: return "";
@@ -33,9 +30,6 @@ namespace Boomerang {
 
         public string title () {
             switch (this) {
-                case MESSAGES: return _("Messages");
-                case CONTACTS: return _("Contacts");
-                case PHONE: return _("Téléphone");
                 case HEADPHONES: return _("Écouteurs");
                 case MIRROR: return _("Recopie");
                 default: return "Boomerang";
@@ -44,9 +38,6 @@ namespace Boomerang {
 
         public string guide_topic () {
             switch (this) {
-                case MESSAGES: return "messages";
-                case CONTACTS: return "contacts";
-                case PHONE: return "phone";
                 case HEADPHONES: return "headphones";
                 case MIRROR: return "mirror";
                 default: return "welcome";
@@ -55,15 +46,6 @@ namespace Boomerang {
 
         public static Mode from_program (string program) {
             var name = Path.get_basename (program);
-            if (name.has_suffix (".Messages")) {
-                return MESSAGES;
-            }
-            if (name.has_suffix (".Contacts")) {
-                return CONTACTS;
-            }
-            if (name.has_suffix (".Phone")) {
-                return PHONE;
-            }
             if (name.has_suffix (".Headphones")) {
                 return HEADPHONES;
             }
@@ -74,7 +56,7 @@ namespace Boomerang {
         }
     }
 
-    /* Start (or reach) one of the three apps with the given arguments. */
+    /* Start (or reach) Boomerang or one of its apps with the given arguments. */
     public void launch (Mode mode, string[] args = {}) {
         string[] argv = { Path.build_filename (Config.BINDIR, Config.APP_ID + mode.suffix ()) };
         foreach (var a in args) {
@@ -91,55 +73,18 @@ namespace Boomerang {
         public Mode mode { get; construct; }
 
         private Daemon daemon;
-        private MessagesView? messages = null;
 
         public AppWindow (Gtk.Application app, Mode mode) {
             Object (application: app, mode: mode,
                     title: mode.title (),
-                    default_width: mode == Mode.CONTACTS ? 760 : mode == Mode.HEADPHONES ? 620
-                                   : mode == Mode.MIRROR ? 640 : 900,
+                    default_width: mode == Mode.HEADPHONES ? 620 : 640,
                     default_height: 640);
         }
 
         construct {
             daemon = new Daemon ();
-            Gtk.Widget content;
-            if (mode == Mode.MESSAGES) {
-                // Messages carries its own header bars, one per pane, like elementary's Mail.
-                titlebar = new Gtk.Grid () { visible = false };
-                messages = new MessagesView (daemon, true);
-                messages.add_header_end (Guide.help_button (mode.guide_topic (), _("Guide (F1)")));
-                content = messages;
-                notify["is-active"].connect (() => {
-                    if (is_active) {
-                        messages.window_activated ();
-                    } else {
-                        messages.update_viewing ();
-                    }
-                });
-            } else if (mode == Mode.PHONE) {
-                titlebar = plain_header ();
-                var phone = new PhoneView (daemon);
-                phone.history.message_requested.connect ((address) => launch (Mode.MESSAGES, { "--to", address }));
-                content = phone;
-                // Looking at the call history clears the missed-calls badge.
-                notify["is-active"].connect (() => {
-                    if (is_active) {
-                        daemon.call.begin ("MarkCallsSeen");
-                    }
-                });
-            } else if (mode == Mode.HEADPHONES) {
-                titlebar = plain_header ();
-                content = new HeadphonesView (daemon);
-            } else if (mode == Mode.MIRROR) {
-                titlebar = plain_header ();
-                content = new MirrorView (daemon);
-            } else {
-                titlebar = plain_header ();
-                var contacts = new ContactsView (daemon);
-                contacts.message_requested.connect ((address) => launch (Mode.MESSAGES, { "--to", address }));
-                content = contacts;
-            }
+            titlebar = plain_header ();
+            Gtk.Widget content = mode == Mode.MIRROR ? (Gtk.Widget) new MirrorView (daemon) : new HeadphonesView (daemon);
             // The ongoing call is shown at the top of every Boomerang window.
             var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
             box.append (new CallBar (daemon));
@@ -152,23 +97,10 @@ namespace Boomerang {
         private Gtk.HeaderBar plain_header () {
             var header = new Gtk.HeaderBar ();
             header.add_css_class ("flat");
-            header.add_css_class ("brand");
             header.title_widget = new Gtk.Label (title);
             ((Gtk.Label) header.title_widget).add_css_class ("title");
             header.pack_end (Guide.help_button (mode.guide_topic (), _("Guide (F1)")));
             return header;
-        }
-
-        public void open_thread (string thread) {
-            if (messages != null) {
-                messages.open_thread (thread, false);
-            }
-        }
-
-        public void write_to (string address) {
-            if (messages != null) {
-                messages.start_conversation (address);
-            }
         }
     }
 }

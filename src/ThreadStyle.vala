@@ -30,8 +30,10 @@ namespace Boomerang {
         public string shape { get; set; default = ""; }       // "", "soft", "square"
         public string nickname { get; set; default = ""; }
         public string emoji { get; set; default = ""; }
+        public string photo { get; set; default = ""; }       // "": the contact's picture
 
-        private const string[] KEYS = { "bubble", "incoming", "background", "text-size", "shape", "nickname", "emoji" };
+
+        private const string[] KEYS = { "bubble", "incoming", "background", "text-size", "shape", "nickname", "emoji", "photo" };
         private const string[] LOOK_KEYS = { "bubble", "incoming", "background", "text-size", "shape" };
         // The look every conversation takes unless it has its own (Réglages › Messages).
         public const string DEFAULTS = "*defaults*";
@@ -97,7 +99,7 @@ namespace Boomerang {
         }
 
         public bool is_default () {
-            return is_default_look () && nickname == "" && emoji == "";
+            return is_default_look () && nickname == "" && emoji == "" && photo == "";
         }
 
         public bool is_default_look () {
@@ -108,6 +110,29 @@ namespace Boomerang {
         public string shown_name (string name) {
             var shown = nickname != "" ? nickname : name;
             return emoji != "" ? "%s %s".printf (emoji, shown) : shown;
+        }
+
+        /* The picture to show: the one chosen in Boomerang, else the contact's. */
+        public string picture (string contact_photo) {
+            return photo != "" && FileUtils.test (photo, FileTest.EXISTS) ? photo : contact_photo;
+        }
+
+        /* A picture chosen for the conversation, copied as the backgrounds are. */
+        public void take_photo (string thread, File source) throws Error {
+            var folder = Path.build_filename (Environment.get_user_data_dir (), "boomerang", "photos");
+            DirUtils.create_with_parents (folder, 0700);
+            var target = File.new_for_path (Path.build_filename (
+                folder, "%s-%s".printf (group (thread), get_real_time ().to_string ())));
+            source.copy (target, FileCopyFlags.OVERWRITE);
+            drop_photo ();
+            photo = target.get_path ();
+        }
+
+        public void drop_photo () {
+            if (photo != "") {
+                FileUtils.unlink (photo);
+                photo = "";
+            }
         }
 
         public void save (string thread) {
@@ -208,16 +233,16 @@ namespace Boomerang {
                 css.append_printf ("headerbar.thread-bar.tinted { background: linear-gradient(mix(%s, black, 0.18), mix(%s, black, 0.32));"
                                    + " box-shadow: inset 0 1px alpha(white, 0.18), inset 0 -1px mix(%s, black, 0.5); }\n",
                                    bubble, bubble, bubble);
-                css.append_printf (".thread-styled .bubble.outgoing { background-color: %s; color: %s; }\n",
+                css.append_printf (".thread-styled .bubble.outgoing { background-color: %s; background-image: none; color: %s; }\n",
                                    bubble, text_on (bubble));
                 css.append_printf (".thread-styled .bubble.outgoing link { color: %s; }\n", text_on (bubble));
             }
             // Solid colours: received bubbles must stay visible on a background.
             if (incoming != "") {
-                css.append_printf (".thread-styled .bubble.incoming { background-color: mix(@base_color, %s, 0.3); }\n",
+                css.append_printf (".thread-styled .bubble.incoming { background-color: mix(@base_color, %s, 0.3); background-image: none; }\n",
                                    incoming);
             } else if (background != "") {
-                css.append (".thread-styled .bubble.incoming { background-color: alpha(@base_color, 0.94); }\n");
+                css.append (".thread-styled .bubble.incoming { background-color: alpha(@base_color, 0.94); background-image: none; }\n");
             }
             var radius = shape == "soft" ? 10 : shape == "square" ? 4 : 18;
             var size = text_size == "small" ? "0.9em" : text_size == "large" ? "1.15em"
@@ -277,15 +302,8 @@ namespace Boomerang {
             margin_start = margin_end = 9;
             alerts = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
             var stack = new Gtk.Stack () { vhomogeneous = false };
-            // Scrolls in a short window: a popover taller than the window does not open.
-            var look = new Gtk.ScrolledWindow () {
-                child = page,
-                hscrollbar_policy = Gtk.PolicyType.NEVER,
-                propagate_natural_height = true,
-                max_content_height = 360
-            };
-            stack.add_titled (look, "look", _("Apparence"));
-            stack.add_titled (alerts, "alerts", _("Notifications"));
+            stack.add_titled (page, "look", _("Apparence"));
+            stack.add_titled (alerts, "alerts", _("Alertes"));
             append (new Gtk.StackSwitcher () { stack = stack, halign = Gtk.Align.CENTER });
             append (stack);
             build ();
@@ -358,7 +376,7 @@ namespace Boomerang {
         private void build_look () {
             heading (_("Mes bulles"));
             var mine = swatches ();
-            mine.append (swatch ("", _("Couleur du système"), style.bubble == "", () => style.bubble = ""));
+            mine.append (swatch ("", _("Bleu"), style.bubble == "", () => style.bubble = ""));
             foreach (var colour in STYLE_COLOURS) {
                 mine.append (swatch (colour, null, style.bubble == colour, () => style.bubble = colour));
             }
@@ -713,21 +731,40 @@ namespace Boomerang {
         }
 
         private void choose_image () {
+            open_image (_("Image de fond"), (file) => style.set_image (thread, file));
+        }
+
+        /* The conversation's own picture: the details panel shows the buttons. */
+        public bool has_photo () {
+            return style.photo != "";
+        }
+
+        public void choose_photo () {
+            open_image (_("Photo de la conversation"), (file) => style.take_photo (thread, file));
+        }
+
+        public void remove_photo () {
+            style.drop_photo ();
+            apply (false);
+        }
+
+        private delegate void ImagePicked (File file) throws Error;
+
+        private void open_image (string title, owned ImagePicked picked) {
             var filter = new Gtk.FileFilter () { name = _("Images") };
             filter.add_mime_type ("image/png");
             filter.add_mime_type ("image/jpeg");
             filter.add_mime_type ("image/webp");
             var filters = new ListStore (typeof (Gtk.FileFilter));
             filters.append (filter);
-            var dialog = new Gtk.FileDialog () { title = _("Image de fond"), filters = filters };
+            var dialog = new Gtk.FileDialog () { title = title, filters = filters };
             var pictures = Environment.get_user_special_dir (UserDirectory.PICTURES);
             if (pictures != null) {
                 dialog.initial_folder = File.new_for_path (pictures);
             }
-            dialog.open.begin (window, null, (obj, res) => {
+            dialog.open.begin (window ?? get_root () as Gtk.Window, null, (obj, res) => {
                 try {
-                    var file = dialog.open.end (res);
-                    style.set_image (thread, file);
+                    picked (dialog.open.end (res));
                     apply ();
                 } catch (Error e) {
                     // cancelled, or the copy failed: nothing changes

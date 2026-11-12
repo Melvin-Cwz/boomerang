@@ -65,7 +65,10 @@ def _reason(failure):
 
 
 def _installed(package):
-    return Gio.DesktopAppInfo.new(CATALOG[package] + ".desktop") is not None
+    try:
+        return Gio.DesktopAppInfo.new(CATALOG[package] + ".desktop") is not None
+    except TypeError:  # PyGObject raises when Gio returns NULL: the app is absent
+        return False
 
 
 class OptionalApps:

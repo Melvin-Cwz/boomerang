@@ -7,7 +7,7 @@ GenericName=Phone Link
 GenericName[fr]=Lien avec le téléphone
 Comment=Use your iPhone and iCloud from elementary OS
 Comment[fr]=Utiliser un iPhone et iCloud depuis elementary OS
-Exec=@BINDIR@/@APP_ID@
+Exec=@BINDIR@/@APP_ID@ %u
 Icon=@APP_ID@
 Terminal=false
 Categories=Utility;Settings;GTK;
@@ -15,3 +15,20 @@ Keywords=iPhone;Bluetooth;iCloud;notifications;calls;phone;
 Keywords[fr]=iPhone;Bluetooth;iCloud;notifications;appels;téléphone;
 StartupNotify=true
 X-GNOME-UsesNotifications=true
+MimeType=x-scheme-handler/tel;x-scheme-handler/sms;
+Actions=NewMessage;DialNumber;MirrorScreen;
+
+[Desktop Action NewMessage]
+Name=New Message
+Name[fr]=Nouveau message
+Exec=@BINDIR@/@APP_ID@ --page messages
+
+[Desktop Action DialNumber]
+Name=Dial a Number
+Name[fr]=Composer un numéro
+Exec=@BINDIR@/@APP_ID@ --page phone
+
+[Desktop Action MirrorScreen]
+Name=Mirror the Screen
+Name[fr]=Recopier l'écran
+Exec=@BINDIR@/@APP_ID@.Mirror

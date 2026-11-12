@@ -11,6 +11,7 @@ import tempfile
 
 from boomerangd import ams, ancs, bmsg, calls, messages, notifications, store
 from boomerangd.config import Config
+from gi.repository import GLib as GLibForTests
 
 
 class FakeNotifier:
@@ -423,7 +424,7 @@ class MessagesTest(unittest.TestCase):
             Timestamp="20260926T110000", Subject="quatre", Size=6, Read=False)])}, initial=False)
         self.assertEqual(len(self.hooks.received), 1)
         self.assertEqual(self.notifier.shown[-1]["summary"], "Alice")
-        self.assertEqual([k for k, _ in self.notifier.shown[-1]["actions"]], ["default", "reply", "quick:0", "quick:1"])  # default quick replies
+        self.assertEqual([k for k, _ in self.notifier.shown[-1]["actions"]], ["default", "quick:0", "quick:1"])  # default quick replies
         self.assertEqual(self.m.threads()[0]["unread"], 1)
         self.m.mark_seen(self.m.threads()[0]["id"])
         self.assertEqual(self.m.threads()[0]["unread"], 0)
@@ -778,7 +779,7 @@ class RcloneFetchTest(unittest.TestCase):
         pages = {"https://downloads.rclone.org/version.txt": b"rclone v1.71.0\n",
                  "https://downloads.rclone.org/v1.71.0/SHA256SUMS": self.sums.encode(),
                  f"https://downloads.rclone.org/v1.71.0/{self.name}.zip": archive or self.archive}
-        return lambda url, timeout=0: Response(pages[url])
+        return lambda url, timeout=0: Response(pages[getattr(url, "full_url", url)])
 
     def test_download_verified_and_installed(self):
         steps = []
@@ -997,6 +998,183 @@ class MigrationTest(unittest.TestCase):
         calls.clear()
         dock[0] = "['io.elementary.files.desktop']"
         self.assertEqual(migrate(home=home, run=run, log=lambda m: None), [])
+
+
+class LeMissingTest(unittest.TestCase):
+    """Classic link up but no ANCS after the grace period: the « le-missing » problem."""
+
+    def test_problem(self):
+        from boomerangd import link
+        l = link.Link.__new__(link.Link)
+        l.device, l.bond_lost, l.ancs = "/dev", False, None
+        l.props = {"Connected": True}
+        l.config = mock.Mock(module_enabled=lambda name: True)
+        with mock.patch.object(link.GLib, "get_monotonic_time", return_value=0):
+            l.connected_since = 0
+            self.assertEqual(l.problem, "")  # still within the grace period
+        late = (link.LE_GRACE_SECONDS + 1) * 1_000_000
+        with mock.patch.object(link.GLib, "get_monotonic_time", return_value=late):
+            self.assertEqual(l.problem, "le-missing")
+            l.ancs = object()
+            self.assertEqual(l.problem, "")
+            l.ancs, l.props = None, {"Connected": False}
+            self.assertEqual(l.problem, "")
+            l.bond_lost = True
+            self.assertEqual(l.problem, "bond-lost")
+
+
+class LinkStateTest(unittest.TestCase):
+    def test_states(self):
+        from boomerangd.link import link_state
+        base = dict(adapter="/a", device="/d", paired=True, bond_lost=False,
+                    connected=False, seen=False, notifications_ok=False)
+        cases = [({"adapter": None}, "off"), ({"paired": False}, "unpaired"),
+                 ({"bond_lost": True, "connected": True}, "bond-lost"), ({}, "absent"),
+                 ({"seen": True}, "seen"), ({"connected": True}, "classic"),
+                 ({"connected": True, "notifications_ok": True}, "complete")]
+        for change, expected in cases:
+            self.assertEqual(link_state(**{**base, **change}), expected, change)
+
+
+class PresenceTest(unittest.TestCase):
+    """The iPhone heard nearby: reconnect at once; linked: stop scanning."""
+
+    def _link(self):
+        from boomerangd import link
+        l = link.Link.__new__(link.Link)
+        l.adapter, l.device, l.bond_lost, l.pairing, l.le_connected = "/a", "/a/dev_X", False, False, False
+        l.connecting, l.seen, l.reconnect_failures, l.nudged = False, False, 3, None
+        l.props = {"Paired": True, "Connected": False}
+        l.owner = mock.Mock()
+        l.presence = mock.Mock()
+        l._is_shadow = lambda path: False
+        l._should_reconnect = lambda: True
+        l._schedule_reconnect = mock.Mock()
+        return l
+
+    def test_ours_reconnects_now(self):
+        l = self._link()
+        l._changed()
+        l.presence.start.assert_called_with("/a")
+        l._on_seen("/a/dev_X")
+        l._schedule_reconnect.assert_called_once_with(0)
+        self.assertTrue(l.seen)
+
+    def test_other_apple_device_nudges_once_a_minute(self):
+        from boomerangd import link
+        l = self._link()
+        with mock.patch.object(link.GLib, "get_monotonic_time", return_value=0):
+            l._on_seen("/a/dev_OTHER")
+            l._on_seen("/a/dev_OTHER2")
+        self.assertEqual(l._schedule_reconnect.call_count, 1)
+        self.assertFalse(l.seen)  # only a hint: the state stays « absent »
+        with mock.patch.object(link.GLib, "get_monotonic_time",
+                               return_value=(link.NUDGE_SECONDS + 1) * 1_000_000):
+            l._on_seen("/a/dev_OTHER")
+        self.assertEqual(l._schedule_reconnect.call_count, 2)
+
+    def test_connected_stops_scanning(self):
+        l = self._link()
+        l.seen = True
+        l.props["Connected"] = True
+        l._changed()
+        l.presence.stop.assert_called_once()
+        self.assertFalse(l.seen)
+
+
+class PresenceRegistrationTest(unittest.TestCase):
+    """bluetoothd restarts: a second RegisterMonitor answers AlreadyExists, which means
+    registered, not refused (otherwise every state change tries again)."""
+
+    def _answer(self, message):
+        from boomerangd import presence
+        p = presence.Presence(None, lambda path: None, lambda path: None)
+        replies = []
+        with mock.patch.object(presence, "supported", return_value=True), \
+                mock.patch.object(p, "_export"), \
+                mock.patch.object(presence, "call_async",
+                                  side_effect=lambda *a, on_done=None, **k: replies.append(on_done)):
+            p.start("/org/bluez/hci0")
+            replies[0](None, None if message is None else GLibForTests.Error(message))
+            p.start("/org/bluez/hci0")
+        return p, len(replies)
+
+    def test_already_exists_counts_as_registered(self):
+        p, calls = self._answer("GDBus.Error:org.bluez.Error.AlreadyExists: Already Exists")
+        self.assertTrue(p.active)
+        self.assertEqual(calls, 1)
+
+    def test_real_refusal_tries_again_later(self):
+        p, calls = self._answer("GDBus.Error:org.bluez.Error.Failed: Adv Monitor app destroyed")
+        self.assertEqual(calls, 2)
+
+
+class WatchdogTest(unittest.TestCase):
+    def test_sd_notify_reaches_the_socket(self):
+        import socket
+        from boomerangd import util
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "notify")
+            server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+            server.bind(path)
+            with mock.patch.dict(os.environ, {"NOTIFY_SOCKET": path}):
+                self.assertTrue(util.sd_notify("WATCHDOG=1"))
+            self.assertEqual(server.recv(64), b"WATCHDOG=1")
+            server.close()
+
+    def test_no_watchdog_outside_systemd(self):
+        from boomerangd import util
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(util.sd_notify("READY=1"))
+            self.assertEqual(util.start_watchdog(), 0)
+
+
+class CatalogTest(unittest.TestCase):
+    def _config(self, tmp):
+        with mock.patch.object(GLibForTests, "get_user_config_dir", return_value=tmp):
+            return Config()
+
+    def test_migration_keeps_what_was_in_use_once(self):
+        from boomerangd import catalog
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._config(tmp)
+            kept = catalog.migrate(config, {"files": True, "airpods": True, "mirror": False})
+            self.assertEqual(sorted(kept), ["airpods", "files"])
+            self.assertTrue(catalog.added(config, "files"))
+            self.assertFalse(catalog.added(config, "mirror"))
+            # A second run never touches the user's later choices.
+            config.set_boolean(catalog.GROUP, "files", False)
+            self.assertEqual(catalog.migrate(config, {"files": True}), [])
+            self.assertFalse(catalog.added(config, "files"))
+
+    def test_entries_list_missing_packages_of_each_module(self):
+        from boomerangd import catalog
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._config(tmp)
+            entries = {e["id"]: e for e in catalog.entries(config, ["libsecret-tools", "bluez"])}
+            self.assertEqual(set(entries), set(catalog.IDS))
+            self.assertEqual(entries["icloud"]["missing"], ["libsecret-tools"])
+            self.assertEqual(entries["airpods"]["missing"], [])
+            self.assertFalse(any(e["added"] for e in entries.values()))
+
+    def test_removed_module_turns_its_feature_off(self):
+        from boomerangd import catalog, messages
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._config(tmp)
+            config.set_boolean("audio", "receive", True)
+            from boomerangd.audio import PhoneAudio
+            audio = PhoneAudio.__new__(PhoneAudio)
+            audio.config = config
+            self.assertFalse(audio.receive)
+            config.set_boolean(catalog.GROUP, "audio", True)
+            self.assertTrue(audio.receive)
+            config.set_string("messages", "one_time_codes", "browser")
+            hooks = mock.Mock(config=config)
+            m = messages.Messages.__new__(messages.Messages)
+            m.hooks = hooks
+            self.assertEqual(m.code_mode(), "copy")
+            config.set_boolean(catalog.GROUP, "codes", True)
+            self.assertEqual(m.code_mode(), "browser")
 
 
 if __name__ == "__main__":

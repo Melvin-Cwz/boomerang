@@ -12,10 +12,17 @@ the Mirroring launcher), full screen with F11.
 Started and stopped by boomerangd (mirror.py) with:
     python3 -m boomerangd.mirror_viewer --socket PATH --name NAME [--fullscreen]
 Closing the window stops the mirroring.
+
+Screenshots: the header bar button, or SIGUSR1 from boomerangd (the Recopie page's
+button), saves the current picture at its own size as a PNG in the Pictures folder.
+What boomerangd reads on this window's output (one line each, see mirror.py):
+    boomerang-viewer: video WIDTHxHEIGHT     (each new stream format)
+    boomerang-viewer: screenshot PATH
 """
 
 import argparse
 import os
+import signal
 import sys
 
 import gi
@@ -68,6 +75,8 @@ class Viewer(Gtk.Application):
         self.sink = None
         self.sized = False
         self.closing = False
+        self.window = None
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGUSR1, self.on_capture_signal)
 
     def do_activate(self):
         Gtk.Application.do_activate(self)
@@ -89,6 +98,11 @@ class Viewer(Gtk.Application):
         self.full_button = Gtk.Button(icon_name="view-fullscreen-symbolic", tooltip_text=_("Plein écran (F11)"))
         self.full_button.connect("clicked", lambda b: self.toggle_fullscreen())
         header.pack_end(self.full_button)
+        self.capture_button = Gtk.Button(icon_name="camera-photo-symbolic",
+                                         tooltip_text=_("Capture d'écran dans le dossier Images"),
+                                         sensitive=False)
+        self.capture_button.connect("clicked", lambda b: self.capture())
+        header.pack_end(self.capture_button)
         win.set_titlebar(header)
 
         self.picture = Gtk.Picture(content_fit=Gtk.ContentFit.CONTAIN, hexpand=True, vexpand=True)
@@ -141,6 +155,7 @@ class Viewer(Gtk.Application):
         # UxPlay stopped sending (iPhone stopped mirroring, rotation): wait for the next stream.
         self.drop_pipeline()
         self.waiting.set_visible(True)
+        self.capture_button.set_sensitive(False)
         GLib.timeout_add(RETRY_MS, self.connect_stream)
 
     def drop_pipeline(self):
@@ -160,6 +175,9 @@ class Viewer(Gtk.Application):
 
     def on_first_frame(self, width, height):
         self.waiting.set_visible(False)
+        self.capture_button.set_sensitive(True)
+        if width and height:
+            print(f"boomerang-viewer: video {width}x{height}", flush=True)
         win = self.window
         if not win.get_visible():
             if width and height:
@@ -192,6 +210,33 @@ class Viewer(Gtk.Application):
         self.quit()
         return False
 
+    # --- screenshot ---
+
+    def on_capture_signal(self):
+        self.capture()
+        return GLib.SOURCE_CONTINUE
+
+    def capture(self):
+        """The current picture of the stream (not the window around it) as a PNG."""
+        if self.sink is None or self.window is None or self.window.get_native() is None:
+            return False
+        paintable = self.sink.get_property("paintable")
+        width, height = paintable.get_intrinsic_width(), paintable.get_intrinsic_height()
+        renderer = self.window.get_native().get_renderer()
+        if width <= 0 or height <= 0 or renderer is None:
+            return False
+        snap = Gtk.Snapshot()
+        paintable.snapshot(snap, width, height)
+        node = snap.to_node()
+        if node is None:
+            return False
+        path = screenshot_path()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if not renderer.render_texture(node, None).save_to_png(path):
+            return False
+        print(f"boomerang-viewer: screenshot {path}", flush=True)
+        return True
+
     # --- window ---
 
     def toggle_fullscreen(self):
@@ -219,6 +264,18 @@ class Viewer(Gtk.Application):
         except GLib.Error:
             pass
         return False
+
+
+def screenshot_path(now=None, pictures=None):
+    """Pictures/Recopie iPhone 2026-11-02 21-30-05.png, numbered if taken twice in a second."""
+    now = now or GLib.DateTime.new_now_local()
+    pictures = pictures or GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES) \
+        or os.path.join(GLib.get_home_dir(), "Pictures")
+    base = os.path.join(pictures, now.format(_("Recopie iPhone %Y-%m-%d %H-%M-%S")))
+    path, n = base + ".png", 2
+    while os.path.exists(path):
+        path, n = f"{base} ({n}).png", n + 1
+    return path
 
 
 def main(argv=None):

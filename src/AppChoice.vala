@@ -6,9 +6,8 @@
  * through Evolution Data Server.
  *
  * The choice is kept in apps.conf [default-apps]. For the calendar it also
- * makes the chosen app the handler of text/calendar. For the contacts it
- * decides which launcher shows in the Applications menu (Boomerang's Contacts
- * is hidden when elementary's is chosen).
+ * makes the chosen app the handler of text/calendar; Boomerang's contacts are its
+ * main window (Personnes).
  */
 
 namespace Boomerang {
@@ -28,7 +27,7 @@ namespace Boomerang {
 
         public static AppChoice contacts () {
             return new AppChoice ("contacts", _("Contacts"), Config.APP_ID + ".Contacts",
-                                  { Config.APP_ID + ".Contacts", "io.elementary.contacts" },
+                                  { Config.APP_ID, "io.elementary.contacts" },
                                   { _("Contacts (Boomerang)"), _("Contacts (elementary)") }, null);
         }
 
@@ -88,9 +87,6 @@ namespace Boomerang {
                 } catch (Error e) {
                     warning ("cannot set %s as default for %s: %s", id, content_type, e.message);
                 }
-            }
-            if (key == "contacts") {
-                Launchers.set_visible (Mode.CONTACTS, chosen () == 0);
             }
         }
 

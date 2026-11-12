@@ -32,7 +32,7 @@ class ReportMapTest(unittest.TestCase):
         closed = sum(1 for tag, _ in tags if tag == 0xC0)
         self.assertEqual(opened, closed)
         ids = [data[0] for tag, data in tags if tag == 0x84]
-        self.assertEqual(ids, [hid.KEYBOARD_ID, hid.MOUSE_ID])
+        self.assertEqual(ids, [hid.KEYBOARD_ID, hid.MOUSE_ID, hid.CONSUMER_ID])
 
     def test_input_sizes_match_reports(self):
         # Sum report size x count of each Input item, per report id, in bits.

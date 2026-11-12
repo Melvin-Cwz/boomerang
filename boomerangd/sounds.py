@@ -230,6 +230,12 @@ class Sounds:
         self.last_alert = now
         return self._spawn(self._file(kind, value))
 
+    def sent(self):
+        """A message left: the theme's short "sent" sound, as Messages does on a Mac. Played
+        under Do Not Disturb too (the user's own action), never over a ringing call."""
+        if not self.ringing and self.value("messages") != "none":
+            self._spawn(resolve("message-sent-instant"))
+
     def preview(self, kind, value):
         """The ▶ button in Réglages: plays even under Do Not Disturb, once."""
         if kind not in KINDS:

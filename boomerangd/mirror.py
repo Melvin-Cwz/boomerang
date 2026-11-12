@@ -32,12 +32,22 @@ it only runs while UxPlay does.
 The H.264 decoder is chosen once: NVIDIA (nvh264dec, needs libcuda), then VA-API
 (vah264dec, needs a render node), then software (libav). If UxPlay stops with an
 error on a hardware decoder, it is restarted once in software.
+
+While it runs, the outputs of UxPlay and of the mirroring window are read every
+second (they go to files, see LOG): the size of the picture, for the iPhone control
+pointer (hid.py), and the screenshots the window saves. UxPlay prints the picture's
+size by default in recent versions ("geometry is (w,h)=(…) (source)"), only in debug
+output in 1.68 ("begin video stream wxh = …; source …"); the mirroring window prints
+it from the stream's format, whatever UxPlay's version. Screenshots need that window
+(SIGUSR1: it saves the current picture in the Pictures folder).
 """
 
 import glob
 import os
+import re
 import secrets
 import shutil
+import signal
 import socket
 import sys
 
@@ -55,7 +65,52 @@ ROTATIONS = ("", "R", "L")
 
 TYPES = {"available": "b", "running": "b", "name": "s", "error": "s", "missing": "as",
          "profile": "s", "rotation": "s", "fullscreen": "b", "decoder": "s", "pin": "s",
-         "record": "b", "recording": "s", "beacon": "b"}
+         "record": "b", "recording": "s", "beacon": "b", "can_capture": "b",
+         "screenshot": "s"}
+
+# The picture's size in the outputs, (width, height) from the first two groups.
+SIZE_LINES = (
+    re.compile(r"geometry is \(w,h\)=\((\d+),(\d+)\) \(source\)"),        # UxPlay, recent
+    re.compile(r"begin video stream wxh = \d+x\d+; source (\d+)x(\d+)"),  # UxPlay 1.68, debug
+    re.compile(r"^boomerang-viewer: video (\d+)x(\d+)"),                  # mirror_viewer.py
+)
+SCREENSHOT_LINE = re.compile(r"^boomerang-viewer: screenshot (.+)$")
+TAIL_SECONDS = 1
+
+
+def video_size(line):
+    """(width, height) of the mirrored picture if this output line gives it."""
+    for pattern in SIZE_LINES:
+        found = pattern.search(line)
+        if found:
+            width, height = int(found.group(1)), int(found.group(2))
+            if width > 0 and height > 0:
+                return width, height
+    return None
+
+
+class Tail:
+    """The lines added to a file since the last read (the file restarts empty at each run)."""
+
+    def __init__(self, path):
+        self.path = path
+        self.offset = 0
+        self.rest = b""
+
+    def lines(self):
+        try:
+            with open(self.path, "rb") as f:
+                f.seek(0, os.SEEK_END)
+                if f.tell() < self.offset:  # written anew
+                    self.offset, self.rest = 0, b""
+                f.seek(self.offset)
+                data = f.read(1 << 20)
+                self.offset = f.tell()
+        except OSError:
+            return []
+        data = self.rest + data
+        *complete, self.rest = data.split(b"\n")
+        return [line.decode("utf-8", "replace").rstrip("\r") for line in complete]
 BLE_FILE = os.path.join(GLib.get_user_cache_dir(), "boomerang", "uxplay.ble")
 # Decoded frames from UxPlay to Boomerang's mirroring window.
 VIEWER_SOCKET = os.path.join(GLib.get_user_runtime_dir(), "boomerang-mirror.shm")
@@ -171,6 +226,12 @@ class Mirror:
         self.beacon = None    # uxplay-beacon process, while UxPlay runs with mirror_ble
         self.viewer = None    # Boomerang's mirroring window (mirror_viewer.py), while UxPlay runs
         self._viewer_ok = None
+        self.viewer_ready = False  # the window has shown a picture: it answers SIGUSR1
+        self.screenshot_path = ""  # last screenshot the window saved
+        self.video = (0, 0)
+        self.on_video_size = None  # callable(width, height): the iPhone control pointer
+        self.tails = []
+        self.tail_timer = 0
         self.name = "Boomerang (%s)" % (socket.gethostname().split(".")[0] or "PC")
 
     @staticmethod
@@ -231,7 +292,60 @@ class Mirror:
                 "decoder": self.decoder or decoder,
                 "pin": self.pin if self.process is not None else "",
                 "record": self.option("record"), "recording": self.recording,
-                "beacon": self.beacon is not None}
+                "beacon": self.beacon is not None,
+                "can_capture": self.viewer is not None and self.viewer_ready,
+                "screenshot": self.screenshot_path}
+
+    # --- what UxPlay and the window print ---------------------------------------------------------
+
+    def _start_tail(self):
+        self.tails = [Tail(LOG), Tail(LOG + ".viewer")]
+        if not self.tail_timer:
+            self.tail_timer = GLib.timeout_add_seconds(TAIL_SECONDS, self._read_outputs)
+
+    def _stop_tail(self):
+        if self.tail_timer:
+            GLib.source_remove(self.tail_timer)
+            self.tail_timer = 0
+        self.tails = []
+        self.viewer_ready = False
+        self._set_video((0, 0))
+
+    def _read_outputs(self):
+        for tail in self.tails:
+            for line in tail.lines():
+                self.output_line(line)
+        return GLib.SOURCE_CONTINUE
+
+    def output_line(self, line):
+        size = video_size(line)
+        if size:
+            if line.startswith("boomerang-viewer:") and not self.viewer_ready:
+                self.viewer_ready = True
+                self.changed()
+            self._set_video(size)
+            return
+        shot = SCREENSHOT_LINE.match(line)
+        if shot:
+            self.screenshot_path = shot.group(1)
+            log("recopie : capture d'écran enregistrée (dossier Images)")
+            self.changed()
+
+    def _set_video(self, size):
+        if size == self.video:
+            return
+        self.video = size
+        if size != (0, 0):
+            log(f"recopie : image de {size[0]} × {size[1]}")
+        if self.on_video_size is not None:
+            self.on_video_size(*size)
+
+    def screenshot(self):
+        """Ask the mirroring window for a PNG of the current picture (Pictures folder)."""
+        if self.viewer is None or not self.viewer_ready:
+            return False
+        self.viewer.send_signal(signal.SIGUSR1)
+        return True
 
     # --- process ------------------------------------------------------------------------------
 
@@ -275,6 +389,7 @@ class Mirror:
         self.process.wait_async(None, self._ended)
         if socket_path:
             self._start_viewer(socket_path)
+        self._start_tail()
         if ble:
             self._start_beacon()
         log(f"recopie : récepteur AirPlay démarré (décodage {self.decoder}, "
@@ -293,6 +408,7 @@ class Mirror:
         self.process = None
         self._stop_beacon()
         self._stop_viewer()
+        self._stop_tail()
         if self.recording:
             log("recopie : enregistrement terminé (dossier Vidéos)")
             self.recording = ""
@@ -339,7 +455,7 @@ class Mirror:
 
     def _start_viewer(self, socket_path):
         package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        args = [sys.executable, "-m", "boomerangd.mirror_viewer", "--socket", socket_path,
+        args = [sys.executable, "-u", "-m", "boomerangd.mirror_viewer", "--socket", socket_path,
                 "--name", self.name]
         if self.option("fullscreen"):
             args.append("--fullscreen")
@@ -364,6 +480,7 @@ class Mirror:
             return
         # The window is gone (closed, or crashed): UxPlay would wait for it forever.
         self.viewer = None
+        self.viewer_ready = False
         if self.process is not None:
             log("recopie : fenêtre fermée, recopie arrêtée")
             self.stop()

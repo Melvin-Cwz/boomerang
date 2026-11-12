@@ -18,6 +18,7 @@ import time
 
 from gi.repository import Gio, GLib
 
+from . import catalog
 from .util import log
 
 # dBm under which the iPhone counts as away, and the margin to count as back.
@@ -50,7 +51,8 @@ class Proximity:
 
     @property
     def enabled(self):
-        return self.config.boolean("proximity", "enabled", False)
+        return self.config.boolean("proximity", "enabled", False) \
+            and catalog.added(self.config, "proximity")
 
     @property
     def distance(self):

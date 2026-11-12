@@ -206,12 +206,56 @@ public class Boomerang.Daemon : Object {
         return items;
     }
 
+    /* GetMessagesPage: count messages of a thread older than (before_time, before_id), oldest
+       first (before_time 0: the newest); more tells that older ones remain. A daemon older than
+       the method answers with its GetMessages (the latest 500), more being false. */
+    public async Variant[] get_messages_page (string thread, int64 before_time, string before_id,
+                                              uint count, out bool ok, out bool more) {
+        Variant[] items = {};
+        ok = false;
+        more = false;
+        if (proxy == null) {
+            return items;
+        }
+        try {
+            var reply = yield proxy.call ("GetMessagesPage",
+                                          new Variant ("(sxsu)", thread, before_time, before_id, count),
+                                          DBusCallFlags.NONE, 15000, null);
+            var array = reply.get_child_value (0);
+            for (size_t i = 0; i < array.n_children (); i++) {
+                items += array.get_child_value (i);
+            }
+            more = reply.get_child_value (1).get_boolean ();
+            ok = true;
+        } catch (Error e) {
+            if (e is DBusError.UNKNOWN_METHOD) {
+                if (before_time == 0) {
+                    items = yield try_list ("GetMessages", new Variant ("(s)", thread), out ok);
+                } else {
+                    ok = true;  // nothing older to give
+                }
+            } else {
+                warning ("GetMessagesPage failed: %s", e.message);
+            }
+        }
+        return items;
+    }
+
     /* Any method, errors passed on to the caller (contact editing shows them). */
     public async Variant call_checked (string method, Variant? args = null) throws Error {
         if (proxy == null) {
             throw new IOError.NOT_CONNECTED ("Boomerang ne répond pas");
         }
         return yield proxy.call (method, args, DBusCallFlags.NONE, 60000, null);
+    }
+
+    /* Same, for the long ones (vCard import and export of a whole address book: iCloud
+       takes its time for hundreds of cards). */
+    public async Variant call_slow (string method, Variant? args = null) throws Error {
+        if (proxy == null) {
+            throw new IOError.NOT_CONNECTED ("Boomerang ne répond pas");
+        }
+        return yield proxy.call (method, args, DBusCallFlags.NONE, 600000, null);
     }
 
     /* Methods returning one a{sv} (OpenConversation). */

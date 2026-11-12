@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 MelvinCwz
 /*
- * Quick reply, opened by "Répondre" in a message notification. elementary's
+ * Quick reply, opened by a click on a message notification. elementary's
  * notification server has no inline reply (its capabilities are actions, body
  * and markup only), and on gala's Wayland session an app cannot place a window
  * under the notification bubble (no layer-shell; pantheon panels only anchor at
@@ -18,6 +18,7 @@ public class Boomerang.QuickReply : Gtk.Window {
     private Avatar avatar;
     private Gtk.Label title_label;
     private Gtk.Box recent;
+    private Gtk.ScrolledWindow recent_scroll;
     private ComposeField field;
     private Gtk.ProgressBar bar;
     private Gtk.Label status;
@@ -53,6 +54,16 @@ public class Boomerang.QuickReply : Gtk.Window {
         close_button.add_css_class ("circular");
         close_button.add_css_class ("flat");
         close_button.clicked.connect (() => close ());
+        var open_button = new Gtk.Button.from_icon_name ("go-next-symbolic") {
+            valign = Gtk.Align.START,
+            tooltip_text = _("Ouvrir dans Messages")
+        };
+        open_button.add_css_class ("circular");
+        open_button.add_css_class ("flat");
+        open_button.clicked.connect (() => {
+            application.activate_action ("open-thread", new Variant ("(sb)", thread_id, false));
+            close ();
+        });
         var header = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10) {
             margin_top = 12,
             margin_start = 12,
@@ -60,12 +71,21 @@ public class Boomerang.QuickReply : Gtk.Window {
         };
         header.append (avatar);
         header.append (names);
+        header.append (open_button);
         header.append (close_button);
 
+        // The last messages, as the notification unfolded; older ones by scrolling up.
         recent = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) {
-            margin_top = 6,
             margin_start = 12,
-            margin_end = 12
+            margin_end = 12,
+            valign = Gtk.Align.END
+        };
+        recent_scroll = new Gtk.ScrolledWindow () {
+            child = recent,
+            hscrollbar_policy = Gtk.PolicyType.NEVER,
+            propagate_natural_height = true,
+            max_content_height = 300,
+            margin_top = 6
         };
 
         bar = new Gtk.ProgressBar () { visible = false };
@@ -98,7 +118,7 @@ public class Boomerang.QuickReply : Gtk.Window {
         var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) { margin_bottom = 12 };
         content.append (header);
         content.append (bar);
-        content.append (recent);
+        content.append (recent_scroll);
         content.append (status);
         content.append (canned);
         var bottom_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) {
@@ -133,6 +153,8 @@ public class Boomerang.QuickReply : Gtk.Window {
                 bar.fraction = fraction.clamp (0.0, 1.0);
             }
         });
+        // A full text fetched by « Tout lire », or a new message: the bubbles follow.
+        daemon.threads_changed.connect (() => show_recent.begin ());
         load.begin ();
     }
 
@@ -175,12 +197,26 @@ public class Boomerang.QuickReply : Gtk.Window {
                 bottom.visible_child_name = "limit";
             }
         }
+        yield show_recent ();
+        field.grab_focus ();
+    }
+
+    private async void show_recent () {
         var messages = yield daemon.call_list ("GetMessages", new Variant ("(s)", thread_id));
-        int first = int.max (0, messages.length - 3);
+        Gtk.Widget? old;
+        while ((old = recent.get_first_child ()) != null) {
+            recent.remove (old);
+        }
+        int first = int.max (0, messages.length - 8);
         for (int i = first; i < messages.length; i++) {
             var d = new VariantDict (messages[i]);
+            if (dict_string (d, "note") != "") {
+                continue;
+            }
             var outgoing = dict_bool (d, "outgoing");
-            var bubble = new Gtk.Label (dict_string (d, "body")) {
+            var complete = dict_bool (d, "complete");
+            var body = dict_string (d, "body");
+            var bubble = new Gtk.Label (complete ? body : body + "…") {
                 wrap = true,
                 wrap_mode = Pango.WrapMode.WORD_CHAR,
                 xalign = 0,
@@ -191,8 +227,37 @@ public class Boomerang.QuickReply : Gtk.Window {
             bubble.add_css_class ("bubble");
             bubble.add_css_class (outgoing ? "outgoing" : "incoming");
             recent.append (bubble);
+            if (!outgoing && !complete && dict_string (d, "source") == "map") {
+                // Asked from here, the click is the request: no confirmation dialog, which
+                // would also take the focus and dismiss the card.
+                var id = dict_string (d, "id");
+                var more = new Gtk.Button.with_label (_("Tout lire")) {
+                    halign = Gtk.Align.START,
+                    tooltip_text = _("Récupérer le texte complet (le message sera marqué comme lu sur l'iPhone)")
+                };
+                more.add_css_class ("flat");
+                more.add_css_class (Granite.CssClass.SMALL);
+                more.clicked.connect (() => read_full.begin (id, more));
+                recent.append (more);
+            }
         }
-        field.grab_focus ();
+        // Open on the newest message once laid out.
+        Idle.add (() => {
+            var adj = recent_scroll.vadjustment;
+            adj.value = adj.upper - adj.page_size;
+            return Source.REMOVE;
+        });
+    }
+
+    private async void read_full (string id, Gtk.Button button) {
+        button.sensitive = false;
+        button.label = _("Récupération…");
+        if (!yield daemon.call ("ReadFullText", new Variant ("(s)", id))) {
+            button.sensitive = true;
+            button.label = _("Tout lire");
+            status.label = _("Texte complet indisponible pour l'instant");
+            status.visible = true;
+        }
     }
 
     private void send () {

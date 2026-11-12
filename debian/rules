@@ -10,8 +10,10 @@
 override_dh_installsystemduser:
 	dh_installsystemduser --no-enable
 
+# The Wingpanel indicator is an add-on copied into Wingpanel's directory on request
+# (bin/boomerang-wingpanel-addon.in): its libraries come with Wingpanel, not with Boomerang.
 # The symbols file of elementary's daily Granite dates secondary_text 7.8.0; the newest
 # API Boomerang uses is HeaderLabel.size (7.7.0). Same fix as packaging/build-deb.sh.
 override_dh_shlibdeps:
-	dh_shlibdeps
+	dh_shlibdeps -X libboomerang-indicator.so
 	sed -i 's/libgranite7 ([^)]*)/libgranite7 (>= 7.7.0)/' debian/boomerang.substvars

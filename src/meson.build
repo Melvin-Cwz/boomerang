@@ -2,6 +2,14 @@
 # SPDX-FileCopyrightText: 2026 MelvinCwz
 config_vala = configure_file(input: 'Config.vala.in', output: 'Config.vala', configuration: conf)
 
+# Granite 9 (elementary OS 9) when present, else Granite 7 (elementary OS 8).
+granite_dep = dependency('granite-9', required: false)
+if granite_dep.found()
+  add_project_arguments('--define=GRANITE9', language: 'vala')
+else
+  granite_dep = dependency('granite-7', version: '>= 7.7')
+endif
+
 executable(app_id,
   config_vala,
   'About.vala',
@@ -18,8 +26,11 @@ executable(app_id,
   'ContactsView.vala',
   'ContributorsView.vala',
   'Daemon.vala',
+  'FeedView.vala',
   'MainWindow.vala',
+  'PageColumn.vala',
   'MessagesView.vala',
+  'ConversationDetails.vala',
   'MessagesOptions.vala',
   'ConversationExport.vala',
   'NotificationsView.vala',
@@ -46,16 +57,21 @@ executable(app_id,
   'Onboarding.vala',
   'ServicesView.vala',
   'Sidebar.vala',
+  'LinkText.vala',
+  'LinkStatus.vala',
+  'ModulesView.vala',
   'ThreadStyle.vala',
   'PhoneGuide.vala',
   'Guide.vala',
   'Language.vala',
+  'Style.vala',
   dependencies: [
     dependency('gio-2.0'),
     dependency('gtk4'),
     dependency('pangocairo'),
     dependency('cairo'),
-    dependency('granite-7', version: '>= 7.7'),
+    granite_dep,
+    meson.get_compiler('c').find_library('m', required: false),
   ],
   install: true,
 )

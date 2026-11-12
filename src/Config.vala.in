@@ -5,6 +5,7 @@ namespace Boomerang.Config {
     public const string VERSION = "@VERSION@";
     public const string PKGDATADIR = "@PKGDATADIR@";
     public const string BINDIR = "@BINDIR@";
+    public const string LIBEXECDIR = "@LIBEXECDIR@";
     public const string GETTEXT_PACKAGE = "@GETTEXT_PACKAGE@";
     public const string LOCALEDIR = "@LOCALEDIR@";
 }

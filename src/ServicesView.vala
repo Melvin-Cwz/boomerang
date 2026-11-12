@@ -32,7 +32,7 @@ public class Boomerang.ServicesView : Gtk.Box {
     }
 
     construct {
-        var head = page_header ("preferences-desktop-online-accounts", _("Services Apple"),
+        var head = page_header ("preferences-desktop-online-accounts", _("Services iCloud"),
             _("Votre compte Apple par Internet : courriel, agendas, rappels, contacts, fichiers "
             + "iCloud et Apple Music dans les apps d'elementary. Indépendant de l'iPhone."));
 
@@ -113,14 +113,7 @@ public class Boomerang.ServicesView : Gtk.Box {
         var expander = new Gtk.Expander (_("Guide de connexion")) { child = guide };
         guide.margin_top = 12;
 
-        var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
-            margin_top = 18,
-            margin_bottom = 24,
-            margin_start = 24,
-            margin_end = 24,
-            width_request = 560,
-            halign = Gtk.Align.CENTER
-        };
+        var content = new PageColumn ();  // the column of Réglages and Le Fil
         content.append (head);
         content.append (new Granite.HeaderLabel (_("Connexions")));
         content.append (services);
