@@ -52,8 +52,8 @@ public class Boomerang.PhotosView : Gtk.Box {
         device_box.append (device_label);
 
         pair_hint = new Gtk.Label (
-            _("Cet iPhone ne fait pas encore confiance à ce PC. Cliquez sur « Faire confiance », "
-              + "puis touchez « Se fier » sur l'iPhone et saisissez son code.")
+            _("Cet iPhone ne fait pas encore confiance à ce PC. Cliquez sur « Faire confiance », "
+              + "puis touchez « Se fier » sur l'iPhone et saisissez son code.")
         ) { xalign = 0, wrap = true };
         pair_button = new Gtk.Button.with_label (_("Faire confiance")) { halign = Gtk.Align.START };
         pair_button.add_css_class (Granite.CssClass.SUGGESTED);

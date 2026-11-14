@@ -138,8 +138,8 @@ public class Boomerang.CallsView : Gtk.Box {
             vexpand = true
         };
         var empty = new Granite.Placeholder (_("Aucun appel")) {
-            description = _("Le journal d'appels vient de l'iPhone. Activez « Synchroniser les "
-                          + "contacts » pour ce PC dans les réglages Bluetooth de l'iPhone."),
+            description = _("Le journal d'appels vient de l'iPhone. Activez « Synchroniser les "
+                          + "contacts » pour ce PC dans les réglages Bluetooth de l'iPhone."),
             icon = new ThemedIcon (Config.APP_ID + ".Phone")
         };
         var no_missed = new Granite.Placeholder (_("Aucun appel manqué")) {
@@ -226,7 +226,7 @@ public class Boomerang.CallsView : Gtk.Box {
             shown++;
         }
         if (query.strip () != "") {
-            no_match.description = _("Aucun appel ne correspond à « %s ».").printf (query.strip ());
+            no_match.description = _("Aucun appel ne correspond à « %s ».").printf (query.strip ());
             empty_kind.visible_child_name = "search";
         } else {
             empty_kind.visible_child_name = missed_only ? "missed" : "all";
@@ -411,11 +411,11 @@ public class Boomerang.FavoritesView : Gtk.Box {
         }
         if (query.strip () != "") {
             empty.title = _("Aucun résultat");
-            empty.description = _("Aucun favori ne correspond à « %s ».").printf (query.strip ());
+            empty.description = _("Aucun favori ne correspond à « %s ».").printf (query.strip ());
         } else if (!daemon.alpha_enabled ("pbap_favorites")) {
             empty.title = _("Favoris non lus");
-            empty.description = _("La lecture des favoris de l'iPhone est expérimentale : activez "
-                                  + "« Favoris de l'iPhone » dans Réglages avancés › Expérimental. "
+            empty.description = _("La lecture des favoris de l'iPhone est expérimentale : activez "
+                                  + "« Favoris de l'iPhone » dans Réglages › Avancés › Expérimental. "
                                   + "Ils apparaissent à la synchronisation suivante.");
         } else {
             empty.title = _("Aucun favori");
@@ -486,7 +486,7 @@ public class Boomerang.CallButton : Gtk.Button {
                 if (ok) {
                     dialled ();
                 } else if (toast != null) {
-                    toast.title = _("Appel impossible : le profil mains libres de l'iPhone n'est pas connecté");
+                    toast.title = _("Appel impossible : le profil mains libres de l'iPhone n'est pas connecté");
                     toast.send_notification ();
                 }
                 update ();
@@ -507,7 +507,7 @@ public class Boomerang.CallButton : Gtk.Button {
         sensitive = ready;
         tooltip_text = ready ? _("Appeler depuis l'iPhone")
                      : calls_unavailable (daemon) ? _(CALLS_UNAVAILABLE)
-                     : _("Appel indisponible : le profil mains libres de l'iPhone n'est pas connecté");
+                     : _("Appel indisponible : le profil mains libres de l'iPhone n'est pas connecté");
     }
 }
 
@@ -516,22 +516,27 @@ namespace Boomerang {
 
     /* Right click, Shift+F10 or the Menu key on a call: Envoyer un message, out of the way. */
     public void message_menu (Gtk.Widget row, owned RowWrite write) {
+        var actions = new SimpleActionGroup ();
+        var action = new SimpleAction ("write", null);
+        action.activate.connect (() => write ());
+        actions.add_action (action);
+        row.insert_action_group ("call", actions);
         var click = new Gtk.GestureClick () { button = Gdk.BUTTON_SECONDARY };
-        click.pressed.connect ((n, x, y) => show_message_menu (row, write, { (int) x, (int) y, 1, 1 }));
+        click.pressed.connect ((n, x, y) => show_message_menu (row, { (int) x, (int) y, 1, 1 }));
         row.add_controller (click);
         var keys = new Gtk.ShortcutController ();
         keys.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string ("<Shift>F10|Menu"),
                                              new Gtk.CallbackAction (() => {
-            show_message_menu (row, write, null);
+            show_message_menu (row, null);
             return true;
         })));
         row.add_controller (keys);
     }
 
-    private void show_message_menu (Gtk.Widget row, RowWrite write, Gdk.Rectangle? at) {
-        var item = new Gtk.Button.with_label (_("Envoyer un message"));
-        item.add_css_class ("flat");
-        var popover = new Gtk.Popover () { child = item };
+    private void show_message_menu (Gtk.Widget row, Gdk.Rectangle? at) {
+        var menu = new GLib.Menu ();
+        menu.append (_("Envoyer un message"), "call.write");
+        var popover = new Gtk.PopoverMenu.from_model (menu) { has_arrow = false };
         if (at != null) {
             popover.pointing_to = at;
         }
@@ -541,10 +546,6 @@ namespace Boomerang {
             popover.unparent ();
             return Source.REMOVE;
         }));
-        item.clicked.connect (() => {
-            popover.popdown ();
-            write ();
-        });
         popover.popup ();
     }
 }

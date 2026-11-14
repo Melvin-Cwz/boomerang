@@ -32,6 +32,6 @@ for page in $PAGES; do
         BOOMERANG_DAEMON_NAME=$BUS BOOMERANG_SNAPSHOT="$PWD/$OUT/$page$suffix.png" \
         BOOMERANG_SNAPSHOT_SIZE=${SNAP_SIZE:-1080x740} GSETTINGS_BACKEND=memory \
         XDG_DATA_DIRS="$TMP/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}" \
-        timeout 12 "$BUILD/src/io.github.melvincouwez.Boomerang" --page "$page" >/dev/null 2>&1 || true
+        timeout 12 "${BIN:-$BUILD/src/io.github.melvincouwez.Boomerang}" --page "$page" >/dev/null 2>&1 || true
     [ -f "$OUT/$page$suffix.png" ] && echo "$OUT/$page$suffix.png"
 done

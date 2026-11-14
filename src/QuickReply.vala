@@ -99,7 +99,7 @@ public class Boomerang.QuickReply : Gtk.Window {
         // Ready-made answers (Réglages › Messages): one click puts them in the field, Enter sends.
         chips = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
         fill_chips ({
-            _("J'arrive"), _("Je te rappelle"), _("OK 👍"), _("Merci !"), _("Je suis occupé, je te réponds vite")
+            _("J'arrive"), _("Je te rappelle"), _("OK 👍"), _("Merci !"), _("Pas disponible pour l'instant, je te réponds vite")
         });
         canned = new Gtk.ScrolledWindow () {
             child = chips,
@@ -193,7 +193,7 @@ public class Boomerang.QuickReply : Gtk.Window {
             if (group || !dict_bool (d, "can_send")) {
                 canned.visible = false;
                 limit.label = group ? _("Répondez aux groupes depuis l'iPhone.")
-                                    : _("Pas de numéro de téléphone : répondez depuis l'iPhone.");
+                                    : _("Pas de numéro de téléphone : répondez depuis l'iPhone.");
                 bottom.visible_child_name = "limit";
             }
         }
@@ -231,7 +231,7 @@ public class Boomerang.QuickReply : Gtk.Window {
                 // Asked from here, the click is the request: no confirmation dialog, which
                 // would also take the focus and dismiss the card.
                 var id = dict_string (d, "id");
-                var more = new Gtk.Button.with_label (_("Tout lire")) {
+                var more = new Gtk.Button.with_label (_("Lire la suite")) {
                     halign = Gtk.Align.START,
                     tooltip_text = _("Récupérer le texte complet (le message sera marqué comme lu sur l'iPhone)")
                 };
@@ -254,7 +254,7 @@ public class Boomerang.QuickReply : Gtk.Window {
         button.label = _("Récupération…");
         if (!yield daemon.call ("ReadFullText", new Variant ("(s)", id))) {
             button.sensitive = true;
-            button.label = _("Tout lire");
+            button.label = _("Lire la suite");
             status.label = _("Texte complet indisponible pour l'instant");
             status.visible = true;
         }
@@ -279,7 +279,7 @@ public class Boomerang.QuickReply : Gtk.Window {
             field.buffer.text = "";
             field.sensitive = true;
             bar.visible = false;
-            status.label = _("Non envoyé : le message est gardé dans la conversation, "
+            status.label = _("Non envoyé : le message est gardé dans la conversation, "
                            + "où vous pourrez le renvoyer.");
             status.add_css_class (Granite.CssClass.ERROR);
             status.visible = true;

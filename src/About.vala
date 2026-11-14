@@ -12,13 +12,13 @@ namespace Boomerang {
         + "marques d'Apple Inc., déposées aux États-Unis et dans d'autres pays et régions. elementary "
         + "est une marque d'elementary, Inc. Ces noms ne sont employés que pour décrire la "
         + "compatibilité.\n\n"
-        + "Boomerang utilise des protocoles publiés : Bluetooth HFP, MAP et PBAP ; ANCS et AMS, "
-        + "spécifiés par Apple ; CalDAV, CardDAV et IMAP. Deux fonctions reposent sur des interfaces "
-        + "non documentées : les écouteurs (protocole AAP décrit par LibrePods) et iCloud Drive et "
+        + "Boomerang utilise des protocoles publiés : Bluetooth HFP, MAP et PBAP ; ANCS et AMS, "
+        + "spécifiés par Apple ; CalDAV, CardDAV et IMAP. Deux fonctions reposent sur des interfaces "
+        + "non documentées : les écouteurs (protocole AAP décrit par LibrePods) et iCloud Drive et "
         + "Photos (via rclone). Elles peuvent cesser de fonctionner sans préavis. Boomerang n'a "
         + "décompilé aucun logiciel Apple.\n\n"
-        + "Aucune donnée ne passe par un serveur de Boomerang : il n'y en a pas.\n\n"
-        + "Ce programme est distribué sans aucune garantie. Utilisez-le à vos propres risques ; "
+        + "Aucune donnée ne passe par un serveur de Boomerang : il n'y en a pas.\n\n"
+        + "Ce programme est distribué sans aucune garantie. Utilisez-le à vos propres risques ; "
         + "l'usage d'iCloud reste soumis aux conditions d'Apple.");
 
     public void show_about (Gtk.Window? parent) {
@@ -37,7 +37,7 @@ namespace Boomerang {
         };
         // The legal notice is long prose: in the wrapped licence page, not in a credit line.
         about.license = _(LEGAL_NOTICE) + "\n\n"
-            + _("Boomerang est distribué sous licence GNU GPL, version 3 ou ultérieure : "
+            + _("Boomerang est distribué sous licence GNU GPL, version 3 ou ultérieure : "
                 + "https://www.gnu.org/licenses/gpl-3.0.html");
         about.wrap_license = true;
         // Short entries: "Name https://…" shows Name as a link, and keeps the window narrow.

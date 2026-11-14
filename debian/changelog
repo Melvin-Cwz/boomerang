@@ -1,3 +1,25 @@
+boomerang (2.0.1-1) unstable; urgency=medium
+
+  * Menu of the iPhone tab in three groups (My iPhone, Modules, Réglages) with
+    the current page clearly marked; new Overview page with the shortcuts.
+  * Réglages in two tabs, Essentiels and Avancés.
+  * Tabs renamed: Contacts, Composer, iPhone.
+  * New Wingpanel popover: shortcuts, what to catch up on, call views
+    (ringing, in progress) and an out-of-reach state.
+  * French text review, non-breaking spaces, guide and README updated.
+  * Fix: the app is recognised by the daemon under its Granite 9 and Granite 7
+    names, so messages and calls no longer ask for a permission each time.
+
+ -- MelvinCwz <301110918+Melvin-Cwz@users.noreply.github.com>  Sat, 14 Nov 2026 09:00:00 +0100
+
+boomerang (2.0.0~beta2-1) unstable; urgency=medium
+
+  * One package for elementary OS 9 and elementary OS 8: the application is
+    built with Granite 9 and with Granite 7, and starts the build whose
+    library is on the system. No setting to change.
+
+ -- MelvinCwz <301110918+Melvin-Cwz@users.noreply.github.com>  Thu, 12 Nov 2026 21:00:00 +0100
+
 boomerang (2.0.0~beta1-1) unstable; urgency=medium
 
   * Boomerang 2, first beta.

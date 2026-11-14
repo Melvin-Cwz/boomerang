@@ -74,18 +74,18 @@ namespace Boomerang {
             button.sensitive = state != "connecting";
             switch (state) {
                 case "on":
-                    status.label = _("Connecté : ce PC utilise la connexion de l'iPhone.");
+                    status.label = _("Connecté : ce PC utilise la connexion de l'iPhone.");
                     break;
                 case "connecting":
                     status.label = _("Connexion en cours…");
                     break;
                 case "unavailable":
-                    status.label = _("Indisponible : iPhone non connecté, ou partage de connexion "
+                    status.label = _("Indisponible : iPhone non connecté, ou partage de connexion "
                                      + "Bluetooth non proposé par l'iPhone.");
                     break;
                 default:
-                    status.label = _("Partage de connexion de l'iPhone, en Bluetooth. Sur l'iPhone : "
-                                     + "Réglages › Partage de connexion › « Autoriser d'autres "
+                    status.label = _("Partage de connexion de l'iPhone, en Bluetooth. Sur l'iPhone : "
+                                     + "Réglages › Partage de connexion › « Autoriser d'autres "
                                      + "utilisateurs ».");
                     break;
             }
@@ -119,12 +119,12 @@ namespace Boomerang {
                          _("Boomerang verrouille le PC mais ne le déverrouille jamais. Aucun "
                            + "verrouillage pendant un appel, ni tant que Boomerang n'a pas détecté "
                            + "l'iPhone depuis l'ouverture de session."), toggle));
-            distance = new Gtk.DropDown.from_strings ({ _("Proche (même bureau)"), _("Moyenne (même pièce)"),
+            distance = new Gtk.DropDown.from_strings ({ _("Proche (à portée de main)"), _("Moyenne (même pièce)"),
                                                         _("Loin (portée Bluetooth)") }) {
                 valign = Gtk.Align.CENTER
             };
             list.append (row (_("Distance"),
-                         _("Mesurée d'après la force du signal quand le Bluetooth la fournit ; sinon, "
+                         _("Mesurée d'après la force du signal quand le Bluetooth la fournit ; sinon, "
                            + "Boomerang attend la perte de la liaison (une dizaine de mètres)."), distance));
             delay = new Gtk.DropDown.from_strings ({ _("10 secondes"), _("30 secondes"), _("1 minute"),
                                                      _("2 minutes") }) {

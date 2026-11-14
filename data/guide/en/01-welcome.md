@@ -10,9 +10,15 @@ Boomerang connects your iPhone and your Apple Account to elementary OS. There is
 
 Use one, the other or both. The [first-run setup](app:setup) walks you through it step by step.
 
-## The Boomerang apps
-- **Boomerang** gathers everything in a sidebar: Overview, Messages, Phone, Contacts, Notifications, Headphones, Apple Services, Settings.
-- **Messages**, **Phone**, **Contacts** and **Headphones** also exist as separate apps, with their own window and dock icon. Choose which ones to show in [Settings](app:settings).
+## The three tabs of Boomerang
+The Boomerang window has three tabs, at the top:
+- **People**: the list of your conversations. Each person's messages and calls follow one another in a single thread, with their card on the right.
+- **Keypad**: dial a number, find recent, missed or favourite calls, call your voicemail.
+- **iPhone**: a column on the left leads to **The Feed** (everything the iPhone received today), **Notifications**, **Now Playing**, the modules you added and **Settings**.
+
+Ctrl+1, Ctrl+2 and Ctrl+3 open the People, Keypad and iPhone tabs.
+
+The **Headphones** and **Screen mirroring** pages can also open as separate apps, in their own window and with their own dock icon.
 
 !tip Press F1 in any Boomerang window to open this guide again. The small "?" buttons open the right page directly.
 

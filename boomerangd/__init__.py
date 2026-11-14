@@ -2,4 +2,4 @@
 # SPDX-FileCopyrightText: 2026 MelvinCwz
 """Boomerang daemon package."""
 
-__version__ = "2.0.0~beta1"
+__version__ = "2.0.1"

@@ -158,6 +158,16 @@ class CallersTest(unittest.TestCase):
         self.assertTrue(callers.is_app_executable(app, prefix=prefix))
         self.assertFalse(callers.is_app_executable(app, prefix=os.path.join(self.tmp, "other")))
 
+    def test_granite_builds_started_by_the_launcher(self):
+        # Regression of 2.0.0~beta2: the app runs as boomerang-granite9 and every
+        # message or call asked the user as if another program had sent it.
+        prefix = os.path.join(self.tmp, "prefix")
+        for name in callers.APP_VARIANTS:
+            app = self.binary(os.path.join(prefix, "libexec", "boomerang"), name)
+            self.assertTrue(callers.is_app_executable(app, prefix=prefix))
+        fake = self.binary(os.path.join(prefix, "libexec", "boomerang"), "boomerang-granite8")
+        self.assertFalse(callers.is_app_executable(fake, prefix=prefix))
+
     def test_other_programs(self):
         prefix = os.path.join(self.tmp, "prefix")
         fake = self.binary(os.path.join(prefix, "bin"), "python3")

@@ -98,21 +98,21 @@ public class Boomerang.DriveOptions : Gtk.Window {
         network.add_css_class (Granite.CssClass.CARD);
         refresh = drop (REFRESH_LABELS, REFRESH_VALUES, values["RCLONE_DIR_CACHE_TIME"] ?? (photos ? "15m" : "5m"));
         if (photos) {
-            network.append (row (_("Voir les nouvelles photos"),
+            network.append (row (_("Recherche des nouvelles photos"),
                                  sub (_("Délai avant qu'une photo prise sur l'iPhone apparaisse dans les albums.")),
                                  refresh));
         } else {
-            network.append (row (_("Voir les changements d'iCloud"),
+            network.append (row (_("Recherche des modifications d'iCloud"),
                                  sub (_("Délai avant qu'un fichier ajouté depuis un autre appareil apparaisse.")), refresh));
         }
         bandwidth = drop (BW_LABELS, BW_VALUES, values["RCLONE_BWLIMIT"] ?? "off");
         network.append (row (_("Débit maximal"), sub (_("Utile quand ce PC utilise le partage de connexion de l'iPhone.")), bandwidth));
 
         var note = new Gtk.Label (photos
-            ? _("iCloud Photos est en lecture seule : rien ne peut être modifié ni supprimé depuis ce PC. "
-              + "Chaque album est un dossier ; « All Photos » contient toute la photothèque. Les photos "
-              + "que vous ouvrez sont gardées hors ligne ; pour en garder une copie, copiez-la ailleurs.")
-            : _("Boomerang ne propose pas de synchronisation complète dans les deux sens : un conflit ou "
+            ? _("iCloud Photos est en lecture seule : rien ne peut être modifié ni supprimé depuis ce PC. "
+              + "Chaque album est un dossier ; « All Photos » contient toute la photothèque. Les photos "
+              + "que vous ouvrez sont gardées hors ligne ; pour en garder une copie, copiez-la ailleurs.")
+            : _("Boomerang ne propose pas de synchronisation complète dans les deux sens : un conflit ou "
               + "une suppression massive pourrait faire perdre des fichiers. Les fichiers que vous "
               + "ouvrez sont gardés hors ligne, et vos modifications sont envoyées à iCloud en quelques "
               + "secondes.")

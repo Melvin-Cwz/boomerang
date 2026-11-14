@@ -1,0 +1,16 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 MelvinCwz
+# Boomerang is built twice: with Granite 9 (elementary OS 9) and with Granite 7
+# (elementary OS 8). This starts the build whose library is on the system.
+# BOOMERANG_GRANITE=7 forces the elementary OS 8 build where both can run.
+here=$(dirname "$(readlink -f "$0")")
+[ -x "$here/boomerang-granite9" ] || [ -x "$here/boomerang-granite7" ] || here=@LIBEXECDIR@
+build=granite7
+if [ ! -x "$here/boomerang-granite7" ] ||
+   { [ "${BOOMERANG_GRANITE:-}" != 7 ] && [ -x "$here/boomerang-granite9" ] &&
+     /sbin/ldconfig -p | grep -q 'libgranite-9\.so'; }; then
+    build=granite9
+fi
+# The name the program was called by selects the app (…Boomerang.Headphones, .Mirror).
+exec -a "$0" "$here/boomerang-$build" "$@"

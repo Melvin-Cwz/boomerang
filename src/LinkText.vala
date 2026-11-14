@@ -31,7 +31,7 @@ namespace Boomerang.LinkText {
             s.short = _("Bluetooth éteint");
             s.detail = _("Allumez le Bluetooth de ce PC pour retrouver l'iPhone.");
             s.action = "bluetooth";
-            s.action_label = _("Réglages Bluetooth…");
+            s.action_label = _("Paramètres Bluetooth…");
             break;
         case "unpaired":
             s.title = _("Aucun iPhone relié");
@@ -60,8 +60,8 @@ namespace Boomerang.LinkText {
             if (problem == "le-missing") {
                 s.title = _("Notifications interrompues");
                 s.short = _("notifications interrompues");
-                s.detail = _("L'iPhone est relié mais n'envoie pas ses notifications. Vérifiez « Partager "
-                           + "les notifications système » dans Réglages › Bluetooth sur l'iPhone, sinon "
+                s.detail = _("L'iPhone est relié mais n'envoie pas ses notifications. Vérifiez « Partager "
+                           + "les notifications système » dans Réglages › Bluetooth sur l'iPhone, sinon "
                            + "appairez-le de nouveau.");
                 s.action = "pair";
                 s.action_label = _("Appairer de nouveau…");

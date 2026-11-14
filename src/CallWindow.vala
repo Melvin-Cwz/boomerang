@@ -160,14 +160,14 @@ namespace Boomerang {
                 text = saved_number ()
             };
             number.update_property (Gtk.AccessibleProperty.LABEL, _("Numéro de messagerie"), -1);
-            var hint = new Gtk.Label (_("Orange : 888 · SFR : 123 · Bouygues Telecom : 660 · Free : 666")) {
+            var hint = new Gtk.Label (_("Orange : 888 · SFR : 123 · Bouygues Telecom : 660 · Free : 666")) {
                 wrap = true,
                 max_width_chars = 34,
                 xalign = 0
             };
             hint.add_css_class (Granite.CssClass.SMALL);
             hint.add_css_class (Granite.CssClass.DIM);
-            failed = new Gtk.Label (_("Appel impossible : le profil mains libres de l'iPhone n'est pas connecté")) {
+            failed = new Gtk.Label (_("Appel impossible : le profil mains libres de l'iPhone n'est pas connecté")) {
                 wrap = true,
                 max_width_chars = 34,
                 xalign = 0,
@@ -320,7 +320,7 @@ namespace Boomerang {
             detail.append (pad);
             detail.append (voicemail);
             // The big title of the pages, then the keypad in the middle of what is left.
-            var title = new Gtk.Label (_("Pavé")) { xalign = 0, margin_top = 24, margin_start = 24, margin_end = 24 };
+            var title = new Gtk.Label (_("Composer un numéro")) { xalign = 0, margin_top = 24, margin_start = 24, margin_end = 24 };
             title.add_css_class ("title-1");
             detail.vexpand = true;
             var right = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
@@ -948,7 +948,7 @@ namespace Boomerang {
                 waiting_avatar.show_person (other, dict_string (calls.waiting, "avatar"));
                 hold_answer.sensitive = calls.can ("hold-and-answer");
                 end_answer.sensitive = calls.can ("release-and-answer");
-                announce_text (_("Double appel : %s").printf (other));
+                announce_text (_("Double appel : %s").printf (other));
             } else {
                 waiting_path = null;
             }
@@ -969,7 +969,7 @@ namespace Boomerang {
                 case "waiting":
                     duration = -1;
                     status_label.label = _("Appel entrant");
-                    spoken = _("Appel entrant : %s").printf (name);
+                    spoken = _("Appel entrant : %s").printf (name);
                     actions.visible_child_name = "ringing";
                     answer.sensitive = calls.can ("answer");
                     break;
@@ -1001,7 +1001,7 @@ namespace Boomerang {
             hangup.tooltip_markup = Granite.markup_accel_tooltip (
                 { "<Control><Shift>r" },
                 calls.conference.length > 0 ? _("Raccrocher tous les appels de la conférence")
-                : calls.held != null ? _("Raccrocher ; l'appel en attente reprend")
+                : calls.held != null ? _("Raccrocher ; l'appel en attente reprend")
                 : _("Raccrocher"));
         }
     }
@@ -1157,7 +1157,7 @@ namespace Boomerang {
             audio.visible = !ringing;
             hangup_action = conference && calls.can ("hangup-all") ? "hangup-all" : "hangup";
             set_tip (hangup, ringing ? _("Refuser") : _("Raccrocher"));
-            status_prefix = second ? _("Double appel : %s").printf (dict_string (calls.waiting, "name"))
+            status_prefix = second ? _("Double appel : %s").printf (dict_string (calls.waiting, "name"))
                           : calls.held != null ? _("%s en attente").printf (dict_string (calls.held, "name"))
                           : conference ? string.joinv (", ", calls.conference)
                           : "";

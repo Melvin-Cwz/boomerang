@@ -14,7 +14,7 @@ from gi.repository import Gio, GLib
 from . import catalog
 from .callers import Callers
 from .config import ALPHA, MODULES
-from .i18n import _
+from .i18n import _, ngettext
 from .util import log
 
 BUS_NAME = "io.github.melvincouwez.Boomerang.Daemon"
@@ -565,23 +565,26 @@ def _excerpt(text, size=60):
 
 GUARDED = {
     "Dial": lambda a: _("appeler le {number}").format(number=_excerpt(a[0], 30)),
-    "SendMessage": lambda a: _("envoyer le message « {text} »").format(text=_excerpt(a[1])),
-    "DeclineWithMessage": lambda a: _("refuser l'appel et envoyer le message « {text} »").format(
+    "SendMessage": lambda a: _("envoyer le message « {text} »").format(text=_excerpt(a[1])),
+    "DeclineWithMessage": lambda a: _("refuser l'appel et envoyer le message « {text} »").format(
         text=_excerpt(a[1])),
     "SendReaction": lambda a: _("envoyer une réaction {emoji}").format(emoji=_excerpt(a[1], 8)),
     "RetryMessage": lambda a: _("renvoyer un message"),
-    "SendFiles": lambda a: _("envoyer {count} fichier(s) à un appareil du réseau").format(
-        count=len(a[1])),
+    "SendFiles": lambda a: ngettext("envoyer {count} fichier à un appareil du réseau",
+                                    "envoyer {count} fichiers à un appareil du réseau",
+                                    len(a[1])).format(count=len(a[1])),
     "StartPairing": lambda a: _("rendre ce PC visible pour appairer un appareil Bluetooth"),
     "Forget": lambda a: _("oublier l'iPhone appairé"),
     "InstallUpdate": lambda a: _("installer une mise à jour de Boomerang"),
     "InstallApp": lambda a: _("installer l'application {name}").format(name=_excerpt(a[0], 20)),
-    "InstallBrowserHost": lambda a: _("installer l'intégration navigateur des codes SMS"),
+    "InstallBrowserHost": lambda a: _("installer l'intégration au navigateur des codes SMS"),
     "DeleteMessage": lambda a: _("supprimer un message"),
     "DeleteConversation": lambda a: _("supprimer une conversation"),
     "SaveContact": lambda a: _("modifier un contact iCloud"),
     "DeleteContact": lambda a: _("supprimer un contact iCloud"),
-    "ImportContacts": lambda a: _("importer {count} fiche(s) de contact dans iCloud").format(
+    "ImportContacts": lambda a: ngettext("importer {count} fiche de contact dans iCloud",
+                                         "importer {count} fiches de contact dans iCloud",
+                                         a[0].upper().count("BEGIN:VCARD")).format(
         count=a[0].upper().count("BEGIN:VCARD")),
 }
 # Only ever from the app: confirming a pairing code is the check itself, and typing on
@@ -678,8 +681,8 @@ class Service:
             on_result(ok)
 
         state["note"] = notifier.notify(
-            "Boomerang", "dialog-warning", _("Autoriser {program} ?").format(program=program),
-            _("« {program} » demande à Boomerang de {action}. Refusez si vous n'êtes pas à l'origine de cette demande.")
+            "Boomerang", "dialog-warning", _("Autoriser {program} ?").format(program=program),
+            _("« {program} » demande à Boomerang de {action}. Refusez si vous n'êtes pas à l'origine de cette demande.")
             .format(program=program, action=action),
             actions=[("allow", _("Autoriser")), ("deny", _("Refuser"))],
             hints={"urgency": GLib.Variant("y", 2)}, own=True,

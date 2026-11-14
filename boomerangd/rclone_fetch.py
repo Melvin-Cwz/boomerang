@@ -89,7 +89,7 @@ class FetchError(Exception):
 def arch():
     name = ARCHES.get(platform.machine().lower())
     if name is None:
-        raise FetchError(_("architecture non prise en charge : {arch}").format(arch=platform.machine()))
+        raise FetchError(_("architecture non prise en charge : {arch}").format(arch=platform.machine()))
     return name
 
 
@@ -131,7 +131,7 @@ def fetch(dest=PRIVATE_RCLONE, progress=lambda percent: None, opener=urllib.requ
         sums = response.read(1 << 20).decode("utf-8", "replace")
     signed = verify(sums)
     if signed is False:
-        raise FetchError(_("signature de rclone invalide : téléchargement refusé"))
+        raise FetchError(_("signature de rclone invalide : téléchargement refusé"))
     want = expected_sha256(sums, name + ".zip")
 
     directory = os.path.dirname(dest)

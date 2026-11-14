@@ -20,7 +20,7 @@ public class Boomerang.ContributorsView : Gtk.Box {
 
         N_("iPhone et Bluetooth"), "LocalSend", N_("Équipe LocalSend"),
         N_("Le protocole v2 que Boomerang reprend pour échanger des fichiers avec l'iPhone."),
-        N_("Protocole public ; application Apache-2.0"), "https://github.com/localsend/protocol",
+        N_("Protocole public ; application Apache-2.0"), "https://github.com/localsend/protocol",
 
         N_("iPhone et Bluetooth"), "UxPlay", N_("F. Duncanh, Florian Draschbacher et contributeurs"),
         N_("Le récepteur AirPlay de la recopie d'écran, et sa balise Bluetooth."),
@@ -96,7 +96,7 @@ public class Boomerang.ContributorsView : Gtk.Box {
         "CC0 1.0", "https://kenney.nl/assets/interface-sounds",
 
         N_("Protocoles publiés"), N_("Bluetooth HFP, MAP, PBAP, HID"), "Bluetooth SIG",
-        N_("Les profils standard qui font de l'ordinateur un accessoire de l'iPhone : appels, messages, contacts, contrôle."),
+        N_("Les profils standard qui font de l'ordinateur un accessoire de l'iPhone : appels, messages, contacts, contrôle."),
         N_("Spécifications publiques"), "https://www.bluetooth.com/specifications/specs/",
 
         N_("Protocoles publiés"), "ANCS, AMS", "Apple",
@@ -158,7 +158,7 @@ public class Boomerang.ContributorsView : Gtk.Box {
         title.add_css_class (Granite.HeaderLabel.Size.H1.to_string ());
         var intro = new Gtk.Label (
             _("Boomerang n'existerait pas sans eux. Chaque projet ci-dessous a été écrit, documenté "
-              + "et partagé par d'autres, souvent bénévolement. Boomerang s'appuie sur leur travail ; "
+              + "et partagé par d'autres, souvent bénévolement. Boomerang s'appuie sur leur travail ; "
               + "merci à toutes celles et ceux qui le rendent possible.")
         ) { xalign = 0, wrap = true };
         intro.add_css_class (Granite.CssClass.DIM);
@@ -195,7 +195,7 @@ public class Boomerang.ContributorsView : Gtk.Box {
 
         var note = new Gtk.Label (
             _("Boomerang n'est affilié à aucun de ces projets. Les licences indiquées sont celles que "
-              + "chaque projet publie. Un oubli ou une erreur ? Signalez-le sur la page du code source.")
+              + "chaque projet publie. Un oubli ou une erreur ? Signalez-le sur la page du code source.")
         ) { xalign = 0, wrap = true, margin_top = 6 };
         note.add_css_class (Granite.CssClass.DIM);
         note.add_css_class (Granite.CssClass.SMALL);

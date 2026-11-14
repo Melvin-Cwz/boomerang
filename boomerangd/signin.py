@@ -193,13 +193,13 @@ class SignInWindow(Gtk.ApplicationWindow):
         intro = Gtk.Label(
             label=_("Le courriel, les agendas, les rappels et les contacts iCloud apparaîtront "
                     "dans les apps d'elementary. Utilisez un mot de passe pour app, jamais le "
-                    "mot de passe de votre identifiant Apple."),
+                    "mot de passe de votre compte Apple."),
             wrap=True, xalign=0, max_width_chars=48,
         )
         intro.add_css_class(Granite.STYLE_CLASS_DIM_LABEL)
         box.append(intro)
 
-        self.apple_id = self._field(box, _("Identifiant Apple (adresse iCloud)"), Gtk.Entry())
+        self.apple_id = self._field(box, _("Adresse du compte Apple"), Gtk.Entry())
         self.apple_id.set_input_purpose(Gtk.InputPurpose.EMAIL)
         self.full_name = self._field(box, _("Nom affiché dans vos courriels"), Gtk.Entry())
         self.full_name.set_text(pwd.getpwuid(os.getuid()).pw_gecos.split(",")[0])
@@ -247,7 +247,7 @@ class SignInWindow(Gtk.ApplicationWindow):
         password = self.password.get_text().replace(" ", "")
         full_name = self.full_name.get_text().strip() or apple_id
         if "@" not in apple_id or not password:
-            self._set_status(_("Renseignez l'identifiant Apple et le mot de passe pour app."), True)
+            self._set_status(_("Renseignez l'adresse du compte Apple et le mot de passe pour app."), True)
             return
         self.connect_button.set_sensitive(False)
         self.spinner.start()
@@ -271,7 +271,7 @@ class SignInWindow(Gtk.ApplicationWindow):
             notify_daemon()
             GLib.idle_add(self._done, _("iCloud est connecté. Ouvrez Courriel ou Tâches."), False)
         except Exception as error:  # réseau, trousseau verrouillé…
-            GLib.idle_add(self._done, _("Échec : {error}").format(error=error.__class__.__name__), True)
+            GLib.idle_add(self._done, _("Échec : {error}").format(error=error.__class__.__name__), True)
 
     def _done(self, message, error):
         self.spinner.stop()

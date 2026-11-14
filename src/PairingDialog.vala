@@ -52,17 +52,17 @@ public class Boomerang.PairingDialog : Gtk.Window {
         var n = 1;
         steps.append (step (n++, _("Gardez l'iPhone déverrouillé, à côté de ce PC.")));
         if (repair) {
-            steps.append (step (n++, _("Sur l'iPhone, ouvrez Réglages › Bluetooth. Si « %s » figure "
-                                + "sous Mes appareils, touchez ⓘ puis « Oublier cet appareil ».")
+            steps.append (step (n++, _("Sur l'iPhone, ouvrez Réglages › Bluetooth. Si « %s » figure "
+                                + "sous Mes appareils, touchez ⓘ puis « Oublier cet appareil ».")
                                 .printf (pc_name)));
-            steps.append (step (n++, _("Touchez ensuite « %s » sous Autres appareils.").printf (pc_name)));
+            steps.append (step (n++, _("Touchez ensuite « %s » sous Autres appareils.").printf (pc_name)));
         } else {
-            steps.append (step (n++, _("Sur l'iPhone, ouvrez Réglages › Bluetooth et touchez « %s » "
+            steps.append (step (n++, _("Sur l'iPhone, ouvrez Réglages › Bluetooth et touchez « %s » "
                                 + "sous Autres appareils.").printf (pc_name)));
         }
         steps.append (step (n++, _("Comparez le code ci-dessous avec celui de l'iPhone. S'ils sont "
-                            + "identiques, touchez « Jumeler » sur l'iPhone, puis cliquez sur « Le "
-                            + "code correspond » dans cette fenêtre.")));
+                            + "identiques, touchez « Jumeler » sur l'iPhone, puis cliquez sur « Le "
+                            + "code correspond » dans cette fenêtre.")));
         steps.append (step (n++, _("Acceptez le partage des notifications et des contacts si l'iPhone "
                             + "le demande.")));
 

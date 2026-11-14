@@ -45,7 +45,7 @@ public class Boomerang.FreeSoundsCard : Gtk.Box {
         this.daemon = daemon;
 
         var intro = new Gtk.Label (
-            _("Sons libres fournis avec Boomerang : écoutez-les, puis choisissez où les utiliser.")
+            _("Sons libres fournis avec Boomerang : écoutez-les, puis choisissez où les utiliser.")
         ) { xalign = 0, wrap = true };
         intro.add_css_class (Granite.CssClass.DIM);
         append (intro);
@@ -164,7 +164,7 @@ private class Boomerang.FreeSoundRow : Gtk.ListBoxRow {
         }
         var text = "%s · %s".printf (ringtone ? _("Sonnerie") : _("Notification"), credit);
         if (used.length > 0) {
-            text += "\n" + _("Utilisé pour : %s").printf (string.joinv (", ", used));
+            text += "\n" + _("Utilisé pour : %s").printf (string.joinv (", ", used));
         }
         detail.label = text;
         play.sensitive = daemon.running;

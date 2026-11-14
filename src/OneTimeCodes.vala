@@ -86,7 +86,7 @@ public class Boomerang.CodesCard : Gtk.Box {
         var list = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE, show_separators = true };
         list.add_css_class (Granite.CssClass.CARD);
         list.append (row ("dialog-password", _("Codes de vérification"),
-                          _("Quand un SMS contient un code, la notification propose « Copier le code ». "
+                          _("Quand un SMS contient un code, la notification propose « Copier le code ». "
                             + "Boomerang vide le presse-papiers au bout de 2 minutes."), mode));
 
         auto_copy = new Gtk.Switch () { valign = Gtk.Align.CENTER, active = true };
@@ -99,7 +99,7 @@ public class Boomerang.CodesCard : Gtk.Box {
                              _("Boomerang copie le code dans le presse-papiers dès l'arrivée du SMS, sans clic de votre part."), auto_copy);
         list.append (auto_copy_row);
 
-        var install = new Gtk.Button.with_label (_("Installer l'intégration navigateur")) {
+        var install = new Gtk.Button.with_label (_("Installer l'intégration au navigateur")) {
             valign = Gtk.Align.CENTER
         };
         install.clicked.connect (() => install_browser_host.begin ());
@@ -155,12 +155,12 @@ public class Boomerang.CodesCard : Gtk.Box {
             if (browsers.length == 0) {
                 browser_status.label = _("Aucun navigateur pris en charge trouvé (Chrome, Chromium, Edge, Firefox).");
             } else {
-                browser_status.label = _("Intégration installée pour : %s. Chargez maintenant "
-                                         + "l'extension ; le mode d'emploi se trouve dans le "
+                browser_status.label = _("Intégration installée pour : %s. Chargez maintenant "
+                                         + "l'extension ; le mode d'emploi se trouve dans le "
                                          + "dossier.").printf (string.joinv (", ", browsers));
             }
         } catch (Error e) {
-            browser_status.label = _("Installation impossible : %s").printf (e.message);
+            browser_status.label = _("Installation impossible : %s").printf (e.message);
         }
     }
 

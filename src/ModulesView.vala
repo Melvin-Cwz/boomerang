@@ -54,8 +54,8 @@ public class Boomerang.ModulesView : Gtk.Box {
         var title = new Gtk.Label (_("Modules")) { xalign = 0 };
         title.add_css_class (Granite.HeaderLabel.Size.H1.to_string ());
         var intro = new Gtk.Label (
-            _("Messages, Téléphone, Contacts, Notifications et Lecture en cours font partie de Boomerang. "
-            + "Les modules s'ajoutent à la demande ; un module retiré est arrêté et ses réglages "
+            _("Les personnes (messages, appels et contacts), les notifications et la lecture en cours font partie de Boomerang. "
+            + "Les modules s'ajoutent à la demande ; un module retiré est arrêté et ses réglages "
             + "sont conservés.")
         ) { xalign = 0, wrap = true };
         intro.add_css_class (Granite.CssClass.DIM);
@@ -117,7 +117,7 @@ public class Boomerang.ModulesView : Gtk.Box {
         text.append (name);
         text.append (summary);
         if (!added && missing.length > 0) {
-            var needs = new Gtk.Label (_("Installe aussi : %s").printf (string.joinv (", ", missing))) {
+            var needs = new Gtk.Label (_("Installe aussi : %s").printf (string.joinv (", ", missing))) {
                 xalign = 0, wrap = true
             };
             needs.add_css_class (Granite.CssClass.SMALL);
@@ -165,7 +165,7 @@ public class Boomerang.ModulesView : Gtk.Box {
             try {
                 yield new PackageInstaller ().install (missing);
             } catch (Error e) {
-                failure = _("L'installation n'a pas abouti : %s").printf (e.message);
+                failure = _("L'installation n'a pas abouti : %s").printf (e.message);
                 failed_module = id;
                 busy = "";
                 fill ();

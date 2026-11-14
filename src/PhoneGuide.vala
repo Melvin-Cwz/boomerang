@@ -155,26 +155,26 @@ namespace Boomerang {
             var adapter_name = daemon.get_string ("AdapterName");
             var pc = Markup.escape_text (adapter_name != "" ? adapter_name : Environment.get_host_name ());
             pair = new SetupStep (1, _("Appairer l'iPhone"),
-                _("Gardez l'iPhone déverrouillé près de ce PC. Un code s'affiche ici et sur l'iPhone : "
+                _("Gardez l'iPhone déverrouillé près de ce PC. Un code s'affiche ici et sur l'iPhone : "
                 + "vérifiez qu'ils sont identiques."));
             pair_button = pair.add_button (_("Appairer…"), true);
             pair_button.clicked.connect (() => pair_requested ());
             settings = new SetupStep (2, _("Autoriser messages et contacts"),
-                _("Sur l'iPhone : Réglages › Bluetooth › ⓘ à côté de « %s », activez <b>Afficher "
+                _("Sur l'iPhone : Réglages › Bluetooth › ⓘ à côté de « %s », activez <b>Afficher "
                 + "les notifications</b> (messages) et <b>Synchroniser les contacts</b> (noms, "
                 + "photos, journal d'appels). Ces options apparaissent seulement après une première "
-                + "demande de Boomerang : attendez quelques secondes après l'appairage. Boomerang "
-                + "renouvelle ensuite la demande automatiquement pendant 10 minutes ; "
-                + "<b>Vérifier</b> la relance immédiatement.").printf (pc));
+                + "demande de Boomerang : attendez quelques secondes après l'appairage. Boomerang "
+                + "renouvelle ensuite la demande automatiquement pendant 10 minutes ; "
+                + "le bouton <b>Vérifier</b> la relance tout de suite.").printf (pc));
             settings.add_button (_("Vérifier")).clicked.connect (() => daemon.call.begin ("SyncMessages"));
             notifications = new SetupStep (3, _("Notifications et musique"),
                 _("L'iPhone ouvre automatiquement la liaison Bluetooth basse consommation après "
-                + "l'appairage. Sous ⓘ à côté de « %s », activez <b>Partager les notifications "
+                + "l'appairage. Sous ⓘ à côté de « %s », activez <b>Partager les notifications "
                 + "système</b>. Si aucune notification n'arrive, désactivez puis réactivez le "
                 + "Bluetooth de l'iPhone.").printf (pc));
             calls = new SetupStep (4, _("Appels sur ce PC"),
                 _("Le profil mains libres se connecte automatiquement. Les appels sonnent alors "
-                + "sur ce PC ; pendant l'appel, vous choisissez si le son passe par ce PC ou reste "
+                + "sur ce PC ; pendant l'appel, vous choisissez si le son passe par ce PC ou reste "
                 + "sur l'iPhone."));
             append (pair);
             append (settings);
@@ -219,13 +219,13 @@ namespace Boomerang {
         construct {
             password = new SetupStep (1, _("Créer un mot de passe pour app"),
                 _("Sur la page de votre compte Apple, ouvrez <b>Connexion et sécurité</b> › "
-                + "<b>Mots de passe pour les apps</b>, touchez <b>+</b>, nommez-le « Boomerang » et "
+                + "<b>Mots de passe pour les apps</b>, cliquez sur <b>+</b>, nommez-le « Boomerang » et "
                 + "copiez le code xxxx-xxxx-xxxx-xxxx. La double authentification doit être active."));
             password.add_button (_("Ouvrir la page Apple…")).clicked.connect (() => {
                 new Gtk.UriLauncher (APPLE_ACCOUNT_URL).launch.begin (get_root () as Gtk.Window, null);
             });
             signin = new SetupStep (2, _("Courriel, agendas, rappels et contacts"),
-                _("Saisissez votre identifiant Apple et ce mot de passe pour app : Boomerang le vérifie "
+                _("Saisissez l'adresse de votre compte Apple et ce mot de passe pour app : Boomerang le vérifie "
                 + "auprès d'Apple et l'enregistre dans le trousseau. Vos comptes apparaissent alors "
                 + "dans Courriel, Tâches et Agenda."));
             signin_button = signin.add_button (_("Se connecter…"), true);

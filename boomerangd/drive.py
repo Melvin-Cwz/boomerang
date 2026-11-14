@@ -246,13 +246,13 @@ def friendly(error):
     text = str(error)
     lowered = text.lower()
     if "adp" in lowered or "advanced data protection" in lowered or "pcs" in lowered:
-        return _("Apple refuse l'accès : la Protection avancée des données semble active sur ce "
+        return _("Apple refuse l'accès : la Protection avancée des données semble active sur ce "
                  "compte. Désactivez-la sur l'iPhone (Réglages › votre nom › iCloud) puis réessayez.")
     if "401" in text or "invalid" in lowered or "incorrect" in lowered or "unauthorized" in lowered:
         return _("Identifiant ou mot de passe refusé par Apple.")
     if "2fa" in lowered or "code" in lowered:
         return _("Code de vérification refusé ou expiré. Recommencez la connexion.")
-    return _("Connexion impossible : {error}").format(error=text.splitlines()[0][:200])
+    return _("Connexion impossible : {error}").format(error=text.splitlines()[0][:200])
 
 
 class Window(Gtk.ApplicationWindow):
@@ -299,18 +299,18 @@ class Window(Gtk.ApplicationWindow):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         for widget in self._title(
                 _("Connecter {service}").format(service=SERVICE.name),
-                _("Le <b>mot de passe pour app</b> ne suffit pas pour {service} : saisissez le "
+                _("Le <b>mot de passe pour app</b> ne suffit pas pour {service} : saisissez le "
                   "mot de passe de votre <b>compte Apple</b>. Apple enverra ensuite un code sur "
                   "votre iPhone. La <b>Protection avancée des données</b> doit être "
                   "désactivée.").format(service=SERVICE.name)):
             box.append(widget)
-        self.apple_id = Gtk.Entry(text=default_apple_id(), placeholder_text=_("Identifiant Apple"),
+        self.apple_id = Gtk.Entry(text=default_apple_id(), placeholder_text=_("Adresse du compte Apple"),
                                   input_purpose=Gtk.InputPurpose.EMAIL)
         self.password = Gtk.PasswordEntry(show_peek_icon=True, placeholder_text=_("Mot de passe du compte Apple"))
         self.password.connect("activate", lambda *_: self._sign_in())
         note = Gtk.Label(
             label=_("Le mot de passe est transmis directement à rclone, qui le conserve dans une "
-                    "configuration chiffrée ; la clé de chiffrement est dans votre trousseau. Le "
+                    "configuration chiffrée ; la clé de chiffrement est dans votre trousseau. Le "
                     "mot de passe n'est jamais écrit en clair ni transmis à un autre destinataire "
                     "qu'Apple."), wrap=True, xalign=0)
         note.add_css_class("dim-label")
@@ -318,7 +318,7 @@ class Window(Gtk.ApplicationWindow):
         risks = Gtk.Label(
             label=_("{service} passe par rclone, un outil tiers qui se connecte comme le site "
                     "icloud.com, avec le mot de passe de votre compte Apple. Apple ne propose pas "
-                    "officiellement cet accès : ses conditions d'utilisation d'iCloud limitent l'accès "
+                    "officiellement cet accès : ses conditions d'utilisation d'iCloud limitent l'accès "
                     "automatisé et l'autorisent à suspendre un compte. Il faut aussi désactiver la "
                     "Protection avancée des données, ce qui réduit le chiffrement de bout en bout de "
                     "vos données iCloud. Vous utilisez cette fonction à vos risques.").format(
@@ -382,7 +382,7 @@ class Window(Gtk.ApplicationWindow):
             button.set_sensitive(True)
             self.fetch_bar.set_visible(False)
             if error:
-                self.error.set_label(_("Le téléchargement n'a pas abouti : {error}").format(error=error))
+                self.error.set_label(_("Le téléchargement n'a pas abouti : {error}").format(error=error))
                 self.error.set_visible(True)
             else:
                 self.stack.set_visible_child_name("credentials")
@@ -501,11 +501,11 @@ class Window(Gtk.ApplicationWindow):
         try:
             enable_mount()
             folder = os.path.basename(mount_point())
-            where = (_("Le dossier « {folder} » apparaît dans Fichiers, en lecture seule.")
+            where = (_("Le dossier « {folder} » apparaît dans Fichiers, en lecture seule.")
                      if SERVICE.key == "photos"
-                     else _("Le dossier « {folder} » apparaît dans Fichiers.")).format(folder=folder)
+                     else _("Le dossier « {folder} » apparaît dans Fichiers.")).format(folder=folder)
         except subprocess.CalledProcessError:
-            where = _("Le dossier « {service} » n'a pas pu être monté : consultez « journalctl "
+            where = _("Le dossier « {service} » n'a pas pu être monté : consultez « journalctl "
                       "--user -u {unit} ».").format(service=SERVICE.name, unit=SERVICE.unit)
         found = (ngettext("{count} album", "{count} albums", count) if SERVICE.key == "photos"
                  else ngettext("{count} élément à la racine", "{count} éléments à la racine",

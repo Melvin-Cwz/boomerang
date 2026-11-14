@@ -376,8 +376,8 @@ namespace Boomerang {
             body.append (index);
 
             empty = new Granite.Placeholder (_("Aucun contact")) {
-                description = _("Les contacts viennent de l'iPhone. Activez « Synchroniser les "
-                              + "contacts » pour ce PC dans les réglages Bluetooth de l'iPhone."),
+                description = _("Les contacts viennent de l'iPhone. Activez « Synchroniser les "
+                              + "contacts » pour ce PC dans les réglages Bluetooth de l'iPhone."),
                 icon = new ThemedIcon (Config.APP_ID + ".Contacts")
             };
             stack = new Gtk.Stack () { vhomogeneous = false };
@@ -591,12 +591,8 @@ namespace Boomerang {
         private Gtk.Button export_button;
         private Gtk.MenuButton share_button;
         private Gtk.Label note;
-        private Gtk.CheckButton bluetooth_choice;
-        private Gtk.CheckButton icloud_choice;
-        private Gtk.CheckButton given_choice;
-        private Gtk.CheckButton family_choice;
-        private Gtk.Button import_button;
-        private Gtk.Popover options_popover;
+        private SimpleAction source_action;
+        private SimpleAction import_action;
         private Granite.Toast toast;
         private Contact? shown = null;
         private uint shown_token = 0;
@@ -632,11 +628,10 @@ namespace Boomerang {
             new_button = new Gtk.Button.from_icon_name ("list-add-symbolic") { tooltip_text = _("Nouveau contact") };
             new_button.add_css_class ("flat");
             new_button.clicked.connect (() => edit (""));
-            options_popover = build_options ();
             var options = new Gtk.MenuButton () {
                 icon_name = "open-menu-symbolic",
                 tooltip_text = _("Gestion des fiches de contact"),
-                popover = options_popover
+                menu_model = build_options ()
             };
             options.add_css_class ("flat");
             var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) { margin_start = 6, margin_end = 6 };
@@ -802,84 +797,54 @@ namespace Boomerang {
             }
         }
 
-        private Gtk.Popover build_options () {
-            var title = new Gtk.Label (_("Gestion des fiches de contact")) { xalign = 0 };
-            title.add_css_class (Granite.HeaderLabel.Size.H4.to_string ());
-            bluetooth_choice = new Gtk.CheckButton ();
-            icloud_choice = new Gtk.CheckButton () { group = bluetooth_choice };
-            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 9) {
-                margin_top = 12,
-                margin_bottom = 12,
-                margin_start = 12,
-                margin_end = 12,
-                width_request = 340
-            };
-            box.append (title);
-            box.append (choice (bluetooth_choice, _("Lecture via Bluetooth et cache local"),
-                _("Les fiches ne sont pas modifiables. Ce mode utilise seulement la connexion avec votre iPhone.")));
-            box.append (choice (icloud_choice, _("Gestion via iCloud"),
-                _("Créer, modifier et supprimer des fiches. Ce mode nécessite le compte iCloud (page "
-                + "Services Apple) et une connexion Internet ; iCloud transmet les modifications à "
-                + "l'iPhone.")));
-            bluetooth_choice.toggled.connect (() => {
-                if (!updating && bluetooth_choice.active) {
-                    daemon.call.begin ("SetContactsSource", new Variant ("(s)", "bluetooth"));
+        /* The list's menu: where the cards come from, their order, import and export. */
+        private GLib.Menu build_options () {
+            var actions = new SimpleActionGroup ();
+            source_action = new SimpleAction.stateful ("source", VariantType.STRING, new Variant.string (""));
+            source_action.change_state.connect ((action, value) => {
+                action.set_state (value);
+                if (!updating) {
+                    daemon.call.begin ("SetContactsSource", new Variant ("(s)", value.get_string ()));
                 }
             });
-            icloud_choice.toggled.connect (() => {
-                if (!updating && icloud_choice.active) {
-                    daemon.call.begin ("SetContactsSource", new Variant ("(s)", "icloud"));
-                }
+            actions.add_action (source_action);
+            var order = new SimpleAction.stateful ("order", VariantType.STRING,
+                                                   new Variant.string (ContactSort.by_family () ? "family" : "given"));
+            order.change_state.connect ((action, value) => {
+                action.set_state (value);
+                var by_family = value.get_string () == "family";
+                ContactSort.set_by_family (by_family);
+                contacts.set_order (by_family);
             });
+            actions.add_action (order);
+            import_action = new SimpleAction ("import", null);
+            import_action.activate.connect (() => choose_import.begin ());
+            actions.add_action (import_action);
+            var export_all = new SimpleAction ("export-all", null);
+            export_all.activate.connect (() => export_cards.begin ({}, _("Contacts") + ".vcf"));
+            actions.add_action (export_all);
+            insert_action_group ("contacts", actions);
 
-            box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-            var order_title = new Gtk.Label (_("Ordre de tri")) { xalign = 0 };
-            order_title.add_css_class (Granite.HeaderLabel.Size.H4.to_string ());
-            var by_family = ContactSort.by_family ();
-            given_choice = new Gtk.CheckButton.with_label (_("Prénom, puis nom")) { active = !by_family };
-            family_choice = new Gtk.CheckButton.with_label (_("Nom, puis prénom")) {
-                group = given_choice, active = by_family
-            };
-            family_choice.toggled.connect (() => {
-                ContactSort.set_by_family (family_choice.active);
-                contacts.set_order (family_choice.active);
-            });
-            box.append (order_title);
-            box.append (given_choice);
-            box.append (family_choice);
-
-            box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-            import_button = menu_button (_("Importer des fiches vCard…"));
-            import_button.clicked.connect (() => {
-                options_popover.popdown ();
-                choose_import.begin ();
-            });
-            var export_all = menu_button (_("Exporter tous les contacts…"));
-            export_all.clicked.connect (() => {
-                options_popover.popdown ();
-                export_cards.begin ({}, _("Contacts") + ".vcf");
-            });
-            box.append (import_button);
-            box.append (export_all);
-            return new Gtk.Popover () { child = box };
+            var source = new GLib.Menu ();
+            source.append (_("Lecture via Bluetooth et cache local"), "contacts.source::bluetooth");
+            source.append (_("Gestion via iCloud"), "contacts.source::icloud");
+            var sort = new GLib.Menu ();
+            sort.append (_("Prénom, puis nom"), "contacts.order::given");
+            sort.append (_("Nom, puis prénom"), "contacts.order::family");
+            var files = new GLib.Menu ();
+            files.append (_("Importer des fiches vCard…"), "contacts.import");
+            files.append (_("Exporter tous les contacts…"), "contacts.export-all");
+            var menu = new GLib.Menu ();
+            menu.append_section (_("Gestion des fiches de contact"), source);
+            menu.append_section (_("Ordre de tri"), sort);
+            menu.append_section (null, files);
+            return menu;
         }
 
         private static Gtk.Button menu_button (string text) {
             var button = new Gtk.Button () { child = new Gtk.Label (text) { xalign = 0 } };
             button.add_css_class ("flat");
             return button;
-        }
-
-        private static Gtk.Widget choice (Gtk.CheckButton check, string title, string text) {
-            var title_label = new Gtk.Label (title) { xalign = 0 };
-            var text_label = new Gtk.Label (text) { xalign = 0, wrap = true, max_width_chars = 40 };
-            text_label.add_css_class (Granite.CssClass.DIM);
-            text_label.add_css_class (Granite.CssClass.SMALL);
-            var labels = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-            labels.append (title_label);
-            labels.append (text_label);
-            check.child = labels;
-            return check;
         }
 
         private bool editable () {
@@ -893,8 +858,7 @@ namespace Boomerang {
         private void update_source () {
             var icloud = daemon.get_string ("ContactsSource") == "icloud";
             updating = true;
-            bluetooth_choice.active = !icloud;
-            icloud_choice.active = icloud;
+            source_action.change_state (new Variant.string (icloud ? "icloud" : "bluetooth"));
             updating = false;
             string text;
             switch (icloud ? daemon.get_string ("ContactsBook") : "bluetooth") {
@@ -905,7 +869,7 @@ namespace Boomerang {
                     text = _("Ouverture des contacts iCloud…");
                     break;
                 case "no-account":
-                    text = _("Compte iCloud non connecté (Services Apple)");
+                    text = _("Compte iCloud non connecté (Services iCloud)");
                     break;
                 case "missing":
                     text = _("Composant EBook manquant (gir1.2-ebook-1.2)");
@@ -919,9 +883,7 @@ namespace Boomerang {
             }
             source_label.label = text;
             new_button.visible = editable ();
-            import_button.sensitive = editable ();
-            import_button.tooltip_text = editable () ? null
-                : _("Choisissez d'abord « Gestion via iCloud » : les fiches importées vont dans iCloud.");
+            import_action.set_enabled (editable ());
             if (shown != null) {
                 edit_button.visible = editable () && shown.uid != "";
             }
@@ -929,7 +891,7 @@ namespace Boomerang {
             note.label = icloud
                 ? _("Les modifications sont enregistrées dans iCloud, qui les transmet à l'iPhone.")
                 : _("Contacts lus sur l'iPhone en Bluetooth, en lecture seule. Pour les modifier, "
-                  + "choisissez « Gestion via iCloud » dans le menu de la liste.");
+                  + "choisissez « Gestion via iCloud » dans le menu de la liste.");
         }
 
         private void edit (string uid) {
@@ -1026,7 +988,7 @@ namespace Boomerang {
             detail_name.label = name;
             detail_subtitle.label = subtitle;
             detail_subtitle.visible = subtitle != "";
-            detail_nickname.label = nickname != "" ? _("« %s »").printf (nickname) : "";
+            detail_nickname.label = nickname != "" ? _("« %s »").printf (nickname) : "";
             detail_nickname.visible = nickname != "";
         }
 
@@ -1337,7 +1299,7 @@ namespace Boomerang {
             if (!editable ()) {
                 show_problem (_("Import dans iCloud seulement"),
                     _("Les fiches importées sont enregistrées dans iCloud, qui les transmet à l'iPhone. "
-                    + "Choisissez « Gestion via iCloud » dans le menu de la liste, puis recommencez."));
+                    + "Choisissez « Gestion via iCloud » dans le menu de la liste, puis recommencez."));
                 return;
             }
             var text = new StringBuilder ();
@@ -1412,7 +1374,7 @@ namespace Boomerang {
             }
             body += " " + _("iCloud transmet les nouvelles fiches à l'iPhone.");
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (
-                ngettext ("Importer %d fiche dans iCloud ?", "Importer %d fiches dans iCloud ?", fresh).printf (fresh),
+                ngettext ("Importer %d fiche dans iCloud ?", "Importer %d fiches dans iCloud ?", fresh).printf (fresh),
                 body, "document-import", Gtk.ButtonsType.CANCEL) {
                 transient_for = get_root () as Gtk.Window,
                 modal = true

@@ -30,8 +30,9 @@ Apart from iCloud, Boomerang only reaches public Apple services, with no account
 - **Mirroring**: a four-digit code is asked of the iPhone at each start.
 
 ## Erase everything
-1. In Apple Services, disconnect iCloud Drive, iCloud Photos and the account.
-2. Delete the `~/.local/share/boomerang/`, `~/.config/boomerang/` and `~/.cache/boomerang/` folders.
-3. In the Passwords and Keys app, delete the Boomerang and iCloud entries.
+1. On the iCloud Services page, disconnect iCloud Drive and iCloud Photos (bin button of each row).
+2. In a terminal, run `boomerang-icloud-signin --remove` to remove the iCloud account, then revoke the app-specific password on account.apple.com.
+3. Delete the `~/.local/share/boomerang/`, `~/.config/boomerang/` and `~/.cache/boomerang/` folders.
+4. In the Passwords and Keys app, delete the Boomerang and iCloud entries.
 
 Uninstalling the package does not remove these files. Your contacts' messages and details remain your responsibility: do not share these folders.

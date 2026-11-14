@@ -57,7 +57,7 @@ public class Boomerang.ConversationDetails : Gtk.Box {
         // In its place when the card comes from the iPhone over Bluetooth.
         read_only = new Gtk.Label (_("Fiche de l'iPhone, lecture seule")) {
             visible = false, halign = Gtk.Align.END, margin_end = 12, margin_top = 6,
-            tooltip_text = _("Pour la modifier, choisissez « Gestion via iCloud » dans Réglages avancés › Répertoire")
+            tooltip_text = _("Pour la modifier, choisissez « Gestion via iCloud » dans Réglages › Avancés › Fiches de contact")
         };
         read_only.add_css_class (Granite.CssClass.DIM);
         read_only.add_css_class (Granite.CssClass.SMALL);
@@ -193,7 +193,7 @@ public class Boomerang.ConversationDetails : Gtk.Box {
         if (day == _("Hier")) {
             day = day.down ();
         }
-        var when = new Gtk.Label (day != "" ? (outgoing ? _("Envoyé : %s") : _("Reçu : %s")).printf (day) : "") {
+        var when = new Gtk.Label (day != "" ? (outgoing ? _("Envoyé : %s") : _("Reçu : %s")).printf (day) : "") {
             xalign = 0
         };
         when.add_css_class (Granite.CssClass.DIM);

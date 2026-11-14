@@ -110,7 +110,7 @@ namespace Boomerang.WebShortcuts {
             list.append (row (s));
         }
         var hint = new Gtk.Label (
-            _("Ces services n'ont pas d'accès ouvert à Linux : ils s'ouvrent sur iCloud.com. "
+            _("Apple ne donne pas accès à ces services depuis Linux : ils s'ouvrent sur iCloud.com. "
               + "L'interrupteur ajoute un raccourci au menu Applications.")
         ) { xalign = 0, wrap = true };
         hint.add_css_class (Granite.CssClass.DIM);

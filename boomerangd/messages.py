@@ -103,8 +103,8 @@ HISTORY_PAGES = 6
 HISTORY_DAYS = 365
 THREAD_MODES = ("", "mute", "priority")  # per conversation: normal, no alert, through DND
 # Offered as buttons on a message notification (the first two), editable in Réglages.
-QUICK_REPLIES = (N_("J'arrive"), N_("Je te rappelle"), N_("OK 👍"), N_("Merci !"),
-                 N_("Je suis occupé, je te réponds vite"))
+QUICK_REPLIES = (N_("J'arrive"), N_("Je te rappelle"), N_("OK 👍"), N_("Merci !"),
+                 N_("Pas disponible pour l'instant, je te réponds vite"))
 QUICK_MAX = 8
 QUICK_MAX_CHARS = 120
 QUICK_IN_NOTIFICATION = 2
@@ -1344,7 +1344,7 @@ class Messages:
                         ("copy-code-delete", _("Copier et supprimer"))]
         quick = []
         if inline and not m["complete"] and m["source"] == "map":
-            actions.append(("read-full", _("Tout lire")))
+            actions.append(("read-full", _("Lire la suite")))
         if not code and self.can_send(thread):
             if inline:
                 actions.append(("inline-reply", _("Répondre")))
@@ -1605,7 +1605,7 @@ class Messages:
             return
         name = self.store.display_name(m["sender"], m["sender_name"] or _("Inconnu"))
         quote = reactions.quote_of(target["body"] if target else found["quote"] or "")
-        body = _("{name} a réagi {emoji} à « {quote} »").format(
+        body = _("{name} a réagi {emoji} à « {quote} »").format(
             name=name, emoji=found["emoji"], quote=quote)
         summary = self.store.thread_title(thread) or name
         hints = {"category": GLib.Variant("s", "im.received")}
@@ -1861,7 +1861,7 @@ class Messages:
             text = _("{name} a réagi {emoji}")
         text = text.format(name=who, emoji=found["emoji"])
         if found["quote"]:
-            text += " " + _("à « {quote} »").format(quote=reactions.quote_of(found["quote"]))
+            text += " " + _("à « {quote} »").format(quote=reactions.quote_of(found["quote"]))
         return text
 
     def _author_name(self, author):

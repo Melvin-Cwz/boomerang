@@ -51,7 +51,7 @@ namespace Boomerang {
 
         construct {
             idle = new Granite.Placeholder (_("Rien en lecture sur l'iPhone")) {
-                description = _("Lancez de la musique, un podcast ou une vidéo sur l'iPhone : "
+                description = _("Lancez de la musique, un podcast ou une vidéo sur l'iPhone : "
                                 + "le titre et les commandes s'affichent ici."),
                 icon = new ThemedIcon (Config.APP_ID + ".NowPlaying")
             };
@@ -148,7 +148,7 @@ namespace Boomerang {
             player.append (progress_box);
             player.append (controls);
             player.append (volume_box);
-            var help = Guide.help_button ("sound", _("Lecture en cours : aide"));
+            var help = Guide.help_button ("sound", _("Lecture en cours : aide"));
             help.halign = Gtk.Align.CENTER;
             player.append (help);
 

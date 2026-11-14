@@ -108,7 +108,7 @@ class Viewer(Gtk.Application):
         self.picture = Gtk.Picture(content_fit=Gtk.ContentFit.CONTAIN, hexpand=True, vexpand=True)
         self.picture.add_css_class("mirror-screen")
         self.waiting = Gtk.Label(
-            label=_("En attente de l'iPhone…\nSur l'iPhone : Centre de contrôle › Recopie de l'écran › {name}")
+            label=_("En attente de l'iPhone…\nSur l'iPhone : Centre de contrôle › Recopie de l'écran › {name}")
             .format(name=self.name), justify=Gtk.Justification.CENTER, wrap=True)
         self.waiting.add_css_class("mirror-wait")
         overlay = Gtk.Overlay(child=self.picture)

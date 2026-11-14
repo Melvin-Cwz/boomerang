@@ -442,8 +442,8 @@ class Daemon:
                 except RuntimeError as error:
                     log(f"partage de connexion : {error}")
 
-        self.notifier.notify("Boomerang", "network-wireless-offline-symbolic", _("Plus de connexion"),
-                             _("Utiliser le partage de connexion de l'iPhone ?"),
+        self.notifier.notify("Boomerang", "network-wireless-offline-symbolic", _("Connexion Internet perdue"),
+                             _("Utiliser le partage de connexion de l'iPhone ?"),
                              [("share", _("Partager la connexion")), ("later", _("Pas maintenant"))],
                              own=True, on_action=answered)
 

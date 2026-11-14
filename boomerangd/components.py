@@ -112,7 +112,7 @@ def missing():
     if version is None:
         found.append(("pipewire", _("Son (PipeWire)"), True))
     elif version < PIPEWIRE_MIN:
-        found.append(("pipewire", _("PipeWire %d.%d ou plus récent pour les appels (installé : %d.%d)")
+        found.append(("pipewire", _("PipeWire %d.%d ou plus récent pour les appels (installé : %d.%d)")
                       % (PIPEWIRE_MIN[:2] + version[:2]), False))
     if not _any(["/usr/lib/*/spa-0.2/bluez5/libspa-bluez5.so", "/usr/lib/spa-0.2/bluez5/libspa-bluez5.so",
                  "/usr/lib64/spa-0.2/bluez5/libspa-bluez5.so"]):

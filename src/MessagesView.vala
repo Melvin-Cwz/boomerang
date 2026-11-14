@@ -195,7 +195,7 @@ namespace Boomerang {
                 snippet_label.label = _("<i>Brouillon :</i> ") + Markup.escape_text (draft.replace ("\n", " "));
             } else {
                 snippet_label.use_markup = false;
-                snippet_label.label = dict_bool (d, "outgoing") ? _("Vous : %s").printf (snippet) : snippet;
+                snippet_label.label = dict_bool (d, "outgoing") ? _("Vous : %s").printf (snippet) : snippet;
             }
             dot.visible = unread > 0;
             if (unread > 0) {
@@ -265,7 +265,7 @@ namespace Boomerang {
                 update_property (Gtk.AccessibleProperty.LABEL,
                                  thread_id == "" ? title : _("Conversation avec %s").printf (title), -1);
             } else {
-                var text = dict_bool (d, "outgoing") ? _("Vous : %s").printf (marked) : marked;
+                var text = dict_bool (d, "outgoing") ? _("Vous : %s").printf (marked) : marked;
                 var excerpt = new Gtk.Label (text) {
                     use_markup = true,
                     xalign = 0,
@@ -283,7 +283,7 @@ namespace Boomerang {
                 box.append (excerpt);
                 box.append (time);
                 update_property (Gtk.AccessibleProperty.LABEL,
-                                 "%s : %s".printf (title, dict_string (d, "before") + dict_string (d, "match")
+                                 "%s : %s".printf (title, dict_string (d, "before") + dict_string (d, "match")
                                                    + dict_string (d, "after")), -1);
             }
             child = box;
@@ -494,6 +494,7 @@ namespace Boomerang {
             var thread_keys = new Gtk.EventControllerKey ();
             thread_keys.key_pressed.connect (on_thread_list_key);
             thread_list.add_controller (thread_keys);
+            install_thread_menu ();
             thread_list.set_filter_func (keep_row);
             filter_empty = new Gtk.Label ("") {
                 wrap = true,
@@ -816,8 +817,8 @@ namespace Boomerang {
             find_count = new Gtk.Label ("") { width_chars = 10 };
             find_count.add_css_class (Granite.CssClass.DIM);
             find_count.add_css_class (Granite.CssClass.SMALL);
-            var older = new Gtk.Button.from_icon_name ("go-up-symbolic") { tooltip_text = _("Plus ancien (Entrée)") };
-            var newer = new Gtk.Button.from_icon_name ("go-down-symbolic") { tooltip_text = _("Plus récent (Maj+Entrée)") };
+            var older = new Gtk.Button.from_icon_name ("go-up-symbolic") { tooltip_text = _("Résultat précédent (Entrée)") };
+            var newer = new Gtk.Button.from_icon_name ("go-down-symbolic") { tooltip_text = _("Résultat suivant (Maj+Entrée)") };
             older.clicked.connect (() => find_step (-1));
             newer.clicked.connect (() => find_step (1));
             var steps = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
@@ -865,8 +866,8 @@ namespace Boomerang {
             });
             var compose_row = entry;
             send_hint = new Gtk.Label (
-                _("Premier envoi depuis ce PC : cet envoi indique à Boomerang si l'iPhone accepte "
-                + "l'envoi par Bluetooth. Boomerang demande un envoi en SMS, pas en iMessage.")
+                _("Premier message depuis ce PC : il montre si l'iPhone accepte l'envoi par Bluetooth. "
+                + "Boomerang le fait partir en SMS, pas en iMessage.")
             ) { wrap = true, xalign = 0 };
             send_hint.add_css_class (Granite.CssClass.DIM);
             send_hint.add_css_class (Granite.CssClass.SMALL);
@@ -935,8 +936,8 @@ namespace Boomerang {
             thread_box.append (scroll_overlay);
             thread_box.append (compose_stack);
 
-            var no_thread = new Granite.Placeholder (_("Personnes")) {
-                description = _("Choisissez une personne : ses messages et ses appels s'affichent ici, dans l'ordre."),
+            var no_thread = new Granite.Placeholder (_("Contacts")) {
+                description = _("Choisissez une personne : ses messages et ses appels s'affichent ici, dans l'ordre."),
                 icon = new ThemedIcon (Config.APP_ID + ".Messages")
             };
             content_stack = new Gtk.Stack () { hexpand = true, vhomogeneous = false };
@@ -1184,16 +1185,16 @@ namespace Boomerang {
             var added = Catalog.added (daemon, "files");
             var name = paths.length == 1 ? Path.get_basename (paths[0]) : "";
             var title = !added ? _("Fichier non envoyé")
-                      : paths.length == 1 ? _("Envoyer « %s » avec LocalSend ?").printf (name)
-                      : ngettext ("Envoyer %d fichier avec LocalSend ?", "Envoyer %d fichiers avec LocalSend ?",
+                      : paths.length == 1 ? _("Envoyer « %s » avec LocalSend ?").printf (name)
+                      : ngettext ("Envoyer %d fichier avec LocalSend ?", "Envoyer %d fichiers avec LocalSend ?",
                                   paths.length).printf (paths.length);
             var detail = added
-                ? _("Par Bluetooth, l'iPhone n'accepte pas de pièce jointe dans un message : le fichier "
+                ? _("Par Bluetooth, l'iPhone n'accepte pas de pièce jointe dans un message : le fichier "
                   + "ne part pas dans la conversation. LocalSend l'envoie à l'app LocalSend de l'iPhone, "
-                  + "sur le même Wi-Fi ; choisissez ensuite l'iPhone dans Envoi de fichiers.")
+                  + "sur le même Wi-Fi ; choisissez ensuite l'iPhone dans la page Envoi de fichiers.")
                 : _("Par Bluetooth, l'iPhone n'accepte pas de pièce jointe dans un message. Pour envoyer "
-                  + "des fichiers à l'iPhone, ajoutez le module « Envoi de fichiers » (LocalSend) dans "
-                  + "Modules ; le fichier ne part pas dans la conversation.");
+                  + "des fichiers à l'iPhone, ajoutez le module « Envoi de fichiers » (LocalSend) dans "
+                  + "Modules ; le fichier ne part pas dans la conversation.");
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (
                 title, detail, added ? "document-send" : "dialog-information",
                 added ? Gtk.ButtonsType.CANCEL : Gtk.ButtonsType.CLOSE) {
@@ -1217,38 +1218,32 @@ namespace Boomerang {
 
         /* A small menu by the search, as in Apple's Messages: the list itself stays bare. */
         private Gtk.Widget filter_button () {
-            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
-                margin_top = 6, margin_bottom = 6, margin_start = 6, margin_end = 6
-            };
+            var actions = new SimpleActionGroup ();
+            var show = new SimpleAction.stateful ("show", VariantType.INT32, new Variant.int32 (0));
+            show.change_state.connect (on_filter_changed);
+            actions.add_action (show);
+            var menu = new GLib.Menu ();
+            menu.append (_("Toutes les personnes"), "list-filter.show(0)");
+            menu.append (_("Messages non lus"), "list-filter.show(1)");
+            menu.append (_("Expéditeurs inconnus"), "list-filter.show(2)");
             filter_menu = new Gtk.MenuButton () {
                 icon_name = "view-sort-descending-symbolic",
                 tooltip_text = _("Filtrer la liste"),
-                popover = new Gtk.Popover () { child = box }
+                menu_model = menu
             };
+            filter_menu.insert_action_group ("list-filter", actions);
             filter_menu.add_css_class ("flat");
-            Gtk.CheckButton? first = null;
-            string[] names = { _("Toutes les personnes"), _("Messages non lus"), _("Expéditeurs inconnus") };
-            for (int i = 0; i < names.length; i++) {
-                var button = new Gtk.CheckButton.with_label (names[i]) { group = first, active = i == 0 };
-                button.set_data<int> ("filter", i);
-                button.toggled.connect (on_filter_toggled);
-                first = first ?? button;
-                box.append (button);
-            }
             return filter_menu;
         }
 
-        private void on_filter_toggled (Gtk.CheckButton button) {
-            if (!button.active) {
-                return;
-            }
-            list_filter = button.get_data<int> ("filter");
+        private void on_filter_changed (SimpleAction action, Variant? value) {
+            action.set_state (value);
+            list_filter = value.get_int32 ();
             // Not by colour alone: a filter on shows its name by the icon.
             filter_menu.label = list_filter == 0 ? null : list_filter == 1 ? _("Non lus") : _("Inconnus");
             if (list_filter == 0) {
                 filter_menu.icon_name = "view-sort-descending-symbolic";
             }
-            filter_menu.popdown ();
             filter_empty.label = list_filter == 1 ? _("Aucune conversation non lue")
                                : list_filter == 2 ? _("Aucun expéditeur inconnu") : "";
             thread_list.invalidate_filter ();
@@ -1447,10 +1442,10 @@ namespace Boomerang {
             bool retry = false;
             switch (state) {
                 case "disabled":
-                    text = _("Le module Messages et contacts est désactivé dans la page iPhone.");
+                    text = _("Le module Messages et contacts est désactivé dans les Réglages.");
                     break;
                 case "no-obex":
-                    text = _("Le service Bluetooth OBEX (paquet bluez-obexd) est absent : "
+                    text = _("Le service Bluetooth OBEX (paquet bluez-obexd) est absent : "
                            + "installez-le pour lire les messages de l'iPhone.");
                     break;
                 case "absent":
@@ -1461,7 +1456,7 @@ namespace Boomerang {
                     break;
                 case "forbidden":
                     text = _("L'iPhone refuse l'accès aux messages. Sur l'iPhone, ouvrez Réglages › "
-                           + "Bluetooth, touchez ⓘ à côté de ce PC et activez « Afficher les "
+                           + "Bluetooth, touchez ⓘ à côté de ce PC et activez « Afficher les "
                            + "notifications », puis réessayez.");
                     retry = true;
                     break;
@@ -1471,7 +1466,7 @@ namespace Boomerang {
                     break;
                 default:
                     if (contacts == "forbidden") {
-                        text = _("Pour afficher les noms, activez « Synchroniser les contacts » "
+                        text = _("Pour afficher les noms, activez « Synchroniser les contacts » "
                                + "dans les réglages Bluetooth de l'iPhone pour ce PC. Boomerang "
                                + "renouvelle la demande automatiquement pendant 10 minutes.");
                         retry = true;
@@ -1690,7 +1685,7 @@ namespace Boomerang {
                 }
             }
             if (shown == 0) {
-                search_empty.label = _("Aucun résultat pour « %s »").printf (query);
+                search_empty.label = _("Aucun résultat pour « %s »").printf (query);
                 list_stack.visible_child_name = "search-empty";
             } else {
                 list_stack.visible_child_name = "search";
@@ -1809,105 +1804,101 @@ namespace Boomerang {
                    || (keyval == Gdk.Key.F10 && (state & Gdk.ModifierType.SHIFT_MASK) != 0);
         }
 
+        /* The conversation menu's actions, the thread id as parameter: methods, not closures, so
+           no row is held by the list (as for the bubbles). */
+        private void install_thread_menu () {
+            var actions = new SimpleActionGroup ();
+            foreach (var name in new string[] { "pin", "read", "card", "export", "delete" }) {
+                var action = new SimpleAction (name, VariantType.STRING);
+                action.activate.connect (on_thread_action);
+                actions.add_action (action);
+            }
+            thread_list.insert_action_group ("thread", actions);
+        }
+
         /* Right click on a conversation: pin, read state (Boomerang only), delete. */
         private void show_thread_menu (ThreadRow row, double x, double y) {
-            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) {
-                margin_top = 3,
-                margin_bottom = 3
-            };
-            var popover = new Gtk.Popover () {
-                child = box,
+            var target = new Variant.string (row.thread_id);
+            var local = new GLib.Menu ();
+            local.append_item (thread_item (row.pinned ? _("Retirer des favoris") : _("Ajouter aux favoris"),
+                                            "thread.pin", target));
+            local.append_item (thread_item (row.unread > 0 ? _("Marquer comme lu") : _("Marquer comme non lu"),
+                                            "thread.read", target));
+            var more = new GLib.Menu ();
+            more.append_item (thread_item (_("Fiche de la personne"), "thread.card", target));
+            more.append_item (thread_item (_("Exporter…"), "thread.export", target));
+            var remove = new GLib.Menu ();
+            remove.append_item (thread_item (_("Supprimer la conversation…"), "thread.delete", target));
+            var menu = new GLib.Menu ();
+            menu.append_section (_("Dans Boomerang seulement : l'iPhone n'est pas modifié"), local);
+            menu.append_section (null, more);
+            menu.append_section (null, remove);
+            var popover = new Gtk.PopoverMenu.from_model (menu) {
                 has_arrow = false,
                 pointing_to = { (int) x, (int) y, 1, 1 }
             };
-            popover.add_css_class ("menu");
-            // The buttons live inside the popover: held strongly, it would never be freed.
-            unowned Gtk.Popover menu = popover;
-            var id = row.thread_id;
-            var title = row.title;
-            var pinned = row.pinned;
-            var unread = row.unread > 0;
-
-            var pin = menu_item (pinned ? _("Retirer des favoris") : _("Ajouter aux favoris"));
-            pin.clicked.connect (() => {
-                menu.popdown ();
-                daemon.call.begin ("PinThread", new Variant ("(sb)", id, !pinned));
-            });
-            box.append (pin);
-
-            var read = menu_item (unread ? _("Marquer comme lu") : _("Marquer comme non lu"));
-            read.tooltip_text = _("Dans Boomerang seulement : l'iPhone n'est pas modifié");
-            read.clicked.connect (() => {
-                menu.popdown ();
-                if (unread) {
-                    daemon.call.begin ("MarkThreadSeen", new Variant ("(s)", id));
-                    return;
-                }
-                if (id == current) {
-                    // Leave it, or opening it would mark it read again at once.
-                    thread_list.unselect_all ();
-                    current = null;
-                    rendered = "";
-                    content_stack.visible_child_name = "none";
-                    update_viewing ();
-                }
-                daemon.call.begin ("MarkThreadUnread", new Variant ("(sb)", id, true));
-            });
-            box.append (read);
-
-            var look = menu_item (_("Fiche de la personne"));
-            look.clicked.connect (() => {
-                menu.popdown ();
-                if (id != current) {
-                    var target = find_row (id);
-                    if (target != null) {
-                        thread_list.select_row (target);
-                        show_thread (target);
-                    }
-                }
-                details_button.active = true;
-            });
-            box.append (look);
-
-            var export = menu_item (_("Exporter…"));
-            export.clicked.connect (() => {
-                menu.popdown ();
-                ConversationExport.run.begin (get_root () as Gtk.Window, daemon, id,
-                                              ThreadStyle.load (id).shown_name (title));
-            });
-            box.append (export);
-
-            box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
-            var remove = menu_item (_("Supprimer la conversation…"));
-            remove.clicked.connect (() => {
-                menu.popdown ();
-                confirm_delete_thread (id, title);
-            });
-            box.append (remove);
-
             popover.set_parent (row);
-            popover.closed.connect (() => Idle.add (() => {
-                menu.unparent ();
-                return Source.REMOVE;
-            }));
+            popover.closed.connect (unparent_later);
             popover.popup ();
         }
 
-        private ThreadRow? find_row (string id) {
-            for (int i = 0; ; i++) {
-                var row = thread_list.get_row_at_index (i) as ThreadRow;
-                if (row == null || row.thread_id == id) {
-                    return row;
-                }
+        private static GLib.MenuItem thread_item (string label, string action, Variant target) {
+            var item = new GLib.MenuItem (label, null);
+            item.set_action_and_target_value (action, target);
+            return item;
+        }
+
+        private void on_thread_action (SimpleAction action, Variant? param) {
+            var row = find_row (param.get_string ());
+            if (row == null) {
+                return;
+            }
+            var id = row.thread_id;
+            switch (action.name) {
+                case "pin":
+                    daemon.call.begin ("PinThread", new Variant ("(sb)", id, !row.pinned));
+                    break;
+                case "read":
+                    if (row.unread > 0) {
+                        daemon.call.begin ("MarkThreadSeen", new Variant ("(s)", id));
+                        break;
+                    }
+                    if (id == current) {
+                        // Leave it, or opening it would mark it read again at once.
+                        thread_list.unselect_all ();
+                        current = null;
+                        rendered = "";
+                        content_stack.visible_child_name = "none";
+                        update_viewing ();
+                    }
+                    daemon.call.begin ("MarkThreadUnread", new Variant ("(sb)", id, true));
+                    break;
+                case "card":
+                    if (id != current) {
+                        thread_list.select_row (row);
+                        show_thread (row);
+                    }
+                    details_button.active = true;
+                    break;
+                case "export":
+                    ConversationExport.run.begin (get_root () as Gtk.Window, daemon, id,
+                                                  ThreadStyle.load (id).shown_name (row.title));
+                    break;
+                case "delete":
+                    confirm_delete_thread (id, row.title);
+                    break;
             }
         }
 
-        private static Gtk.Button menu_item (string text) {
-            var button = new Gtk.Button () {
-                child = new Gtk.Label (text) { xalign = 0 }
-            };
-            button.add_css_class ("flat");
-            return button;
+        private ThreadRow? find_row (string id) {
+            Gtk.ListBoxRow? row;
+            for (int i = 0; (row = thread_list.get_row_at_index (i)) != null; i++) {
+                var thread = row as ThreadRow;  // search results are other rows
+                if (thread != null && thread.thread_id == id) {
+                    return thread;
+                }
+            }
+            return null;
         }
 
         // --- thread ------------------------------------------------------------------
@@ -2430,14 +2421,14 @@ namespace Boomerang {
         }
 
         private void confirm_delete_message (string id) {
-            confirm (_("Supprimer ce message de Boomerang ?"),
+            confirm (_("Supprimer ce message de Boomerang ?"),
                      _("Le message reste sur l'iPhone, car iOS ne permet pas de supprimer un "
                      + "message par Bluetooth. Il ne réapparaîtra pas dans Boomerang."),
                      () => daemon.call.begin ("DeleteMessage", new Variant ("(s)", id)));
         }
 
         private void confirm_delete_thread (string id, string title, bool always = false) {
-            confirm (_("Supprimer la conversation avec %s ?").printf (title),
+            confirm (_("Supprimer la conversation avec %s ?").printf (title),
                      _("Les messages restent sur l'iPhone et ne réapparaîtront pas dans Boomerang. "
                      + "Les prochains messages s'afficheront normalement."),
                      () => daemon.call.begin ("DeleteConversation", new Variant ("(s)", id)), always);
@@ -2467,8 +2458,8 @@ namespace Boomerang {
                 if (tip.len > 0) {
                     tip.append ("\n");
                 }
-                tip.append (waiting ? _("%s : %s (envoi…)").printf (name, emoji)
-                                    : _("%s : %s").printf (name, emoji));
+                tip.append (waiting ? _("%s : %s (envoi…)").printf (name, emoji)
+                                    : _("%s : %s").printf (name, emoji));
                 pending = pending || waiting;
             }
             var text = new StringBuilder ();
@@ -2503,9 +2494,9 @@ namespace Boomerang {
                 return;
             }
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (
-                _("Lire le message en entier ?"),
+                _("Lire le message en entier ?"),
                 _("L'iPhone transmet seulement les 120 premiers caractères d'un message non lu. "
-                  + "Pour récupérer la suite, Boomerang doit télécharger le message : il sera "
+                  + "Pour récupérer la suite, Boomerang doit télécharger le message : il sera "
                   + "alors marqué comme lu sur l'iPhone."),
                 Config.APP_ID + ".Messages", Gtk.ButtonsType.CANCEL) {
                 transient_for = get_root () as Gtk.Window,
@@ -2513,7 +2504,7 @@ namespace Boomerang {
             };
             var quiet = new Gtk.CheckButton.with_label (_("Ne plus afficher"));
             dialog.custom_bin.append (quiet);
-            var go = dialog.add_button (_("Tout lire"), Gtk.ResponseType.ACCEPT);
+            var go = dialog.add_button (_("Lire la suite"), Gtk.ResponseType.ACCEPT);
             go.add_css_class (Granite.CssClass.SUGGESTED);
             dialog.response.connect ((response) => {
                 var accepted = response == Gtk.ResponseType.ACCEPT;
@@ -2534,7 +2525,7 @@ namespace Boomerang {
             var ok = yield daemon.call ("ReadFullText", new Variant ("(s)", id));
             if (!ok) {
                 button.sensitive = true;
-                button.label = _("Tout lire");
+                button.label = _("Lire la suite");
                 toast.title = _("Texte complet indisponible pour l'instant");
                 toast.send_notification ();
             }
@@ -2547,10 +2538,10 @@ namespace Boomerang {
                 return;
             }
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (
-                _("Réagir par SMS ?"),
-                _("Le Bluetooth transmet seulement du texte : Boomerang envoie la réaction en "
-                  + "SMS, par exemple « A adoré « à demain » ». Un iPhone récent peut l'afficher "
-                  + "comme une réaction ; les autres téléphones affichent ce texte tel quel."),
+                _("Réagir par SMS ?"),
+                _("Le Bluetooth transmet seulement du texte : Boomerang envoie la réaction en "
+                  + "SMS, par exemple « A adoré « à demain » ». Un iPhone récent peut l'afficher "
+                  + "comme une réaction ; les autres téléphones affichent ce texte tel quel."),
                 Config.APP_ID + ".Messages", Gtk.ButtonsType.CANCEL) {
                 transient_for = get_root () as Gtk.Window,
                 modal = true
@@ -2599,12 +2590,12 @@ namespace Boomerang {
         private async void run_sync () {
             try {
                 var count = yield daemon.sync_all ();
-                toast.title = count == 0 ? _("Synchronisé : aucun nouveau message")
-                    : ngettext ("Synchronisé : %u nouveau message", "Synchronisé : %u nouveaux messages",
+                toast.title = count == 0 ? _("Synchronisé : aucun nouveau message")
+                    : ngettext ("Synchronisé : %u nouveau message", "Synchronisé : %u nouveaux messages",
                                 count).printf (count);
             } catch (Error e) {
                 DBusError.strip_remote_error (e);
-                toast.title = _("Synchronisation impossible : %s").printf (e.message);
+                toast.title = _("Synchronisation impossible : %s").printf (e.message);
             }
             toast.send_notification ();
             yield reload_threads ();
@@ -2824,7 +2815,7 @@ namespace Boomerang {
             var time = dict_int64 (d, "time");
             var tip = long_time (time);
             if (!complete) {
-                tip += _("\nDébut du message : le texte complet sera récupéré une fois le message "
+                tip += _("\nDébut du message : le texte complet sera récupéré une fois le message "
                        + "lu sur l'iPhone.");
             }
             if (dict_string (d, "source") == "ancs") {
@@ -2923,7 +2914,7 @@ namespace Boomerang {
                 column.append (sent);
             }
             if (!outgoing && !complete && dict_string (d, "source") == "map") {
-                var more = new Gtk.Button.with_label (_("Tout lire")) {
+                var more = new Gtk.Button.with_label (_("Lire la suite")) {
                     halign = Gtk.Align.START,
                     tooltip_text = _("Récupérer le texte complet (le message sera marqué comme lu sur l'iPhone)")
                 };
@@ -3053,10 +3044,10 @@ namespace Boomerang {
             string limit = "";
             if (current_group) {
                 limit = _("Vous pouvez lire les conversations de groupe ici, mais il faut y répondre "
-                        + "depuis l'iPhone : par Bluetooth, l'iPhone envoie un SMS à un seul "
+                        + "depuis l'iPhone : par Bluetooth, l'iPhone envoie un SMS à un seul "
                         + "destinataire.");
             } else if (!current_can_send) {
-                limit = _("Pas de numéro de téléphone connu pour cette conversation : "
+                limit = _("Pas de numéro de téléphone connu pour cette conversation : "
                         + "répondez depuis l'iPhone.");
             }
             limit_label.label = limit;
@@ -3064,12 +3055,12 @@ namespace Boomerang {
             // Hints only: the field always stays usable; a message that cannot
             // leave is kept in the thread with "Réessayer".
             if (state != "ready") {
-                send_hint.label = _("L'iPhone n'est pas connecté pour les messages : les messages que "
+                send_hint.label = _("L'iPhone n'est pas connecté pour les messages : les messages que "
                                   + "vous écrivez sont conservés ici et pourront être renvoyés.");
             } else if (send == "no") {
                 send_hint.label = _("Le dernier envoi a été refusé par l'iPhone. Vous pouvez réessayer.");
             } else if (send == "unknown") {
-                send_hint.label = _("Premier envoi depuis ce PC : l'iPhone envoie ce message en SMS.");
+                send_hint.label = _("Premier envoi depuis ce PC : l'iPhone envoie ce message en SMS.");
             } else {
                 send_hint.label = "";
             }
@@ -3103,7 +3094,7 @@ namespace Boomerang {
                     send_bar_hide = 0;
                 }
                 send_bar.visible = false;
-                toast.title = _("Message non envoyé mais conservé : cliquez sur « Réessayer »");
+                toast.title = _("Message non envoyé mais conservé : cliquez sur « Réessayer »");
                 toast.send_notification ();
             }
         }

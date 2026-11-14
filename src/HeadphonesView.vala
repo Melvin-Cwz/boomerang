@@ -73,7 +73,7 @@ namespace Boomerang {
             demo = Environment.get_variable ("BOOMERANG_HEADPHONES_DEMO") == "1";
 
             var none = new Granite.Placeholder (_("Aucun écouteur appairé")) {
-                description = _("Pour appairer vos AirPods : ouvrez le boîtier près du PC, avec les "
+                description = _("Pour appairer vos AirPods : ouvrez le boîtier près du PC, avec les "
                               + "écouteurs à l'intérieur, puis maintenez le bouton du boîtier jusqu'à ce "
                               + "que le voyant clignote en blanc. Choisissez ensuite les écouteurs dans "
                               + "les paramètres Bluetooth."),
@@ -247,7 +247,7 @@ namespace Boomerang {
                     auto_pause_row.sensitive = ear_detection.active;
                 }
             });
-            ear_detection_row = switch_row (_("Détection automatique du port"),
+            ear_detection_row = switch_row (_("Détection automatique de l'oreille"),
                 _("Le son passe aux écouteurs quand vous les mettez, et s'arrête quand vous les retirez."),
                 ear_detection);
             auto_pause_row = switch_row (_("Pause quand vous retirez un écouteur"),

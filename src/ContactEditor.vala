@@ -416,7 +416,7 @@ public class Boomerang.ContactEditor : Gtk.Window {
             stack.visible_child_name = "form";
         } catch (Error e) {
             stack.visible_child_name = "form";
-            show_error (_("Fiche illisible : %s").printf (clean (e)));
+            show_error (_("Fiche illisible : %s").printf (clean (e)));
             save_button.sensitive = false;
         }
     }
@@ -463,7 +463,7 @@ public class Boomerang.ContactEditor : Gtk.Window {
             pixbuf = new Gdk.Pixbuf.from_file_at_scale (file.get_path (), 2048, 2048, true);
             pixbuf = pixbuf.apply_embedded_orientation () ?? pixbuf;
         } catch (Error e) {
-            show_error (_("Image illisible : %s").printf (e.message));
+            show_error (_("Image illisible : %s").printf (e.message));
             return;
         }
         var crop = new PhotoCropDialog (this, pixbuf);
@@ -534,17 +534,17 @@ public class Boomerang.ContactEditor : Gtk.Window {
         given.remove_css_class (Granite.CssClass.ERROR);
         string? problem = null;
         problem = problem ?? check_list (phones, (v) => valid_phone (v),
-                                         _("Numéro de téléphone non valable : « %s »."));
+                                         _("Numéro de téléphone non valable : « %s »."));
         problem = problem ?? check_list (emails, (v) => valid_email (v),
-                                         _("Adresse de courriel non valable : « %s »."));
+                                         _("Adresse de courriel non valable : « %s »."));
         problem = problem ?? check_list (urls, (v) => !v.contains (" ") && v.length > 3,
-                                         _("Adresse de site non valable : « %s »."));
+                                         _("Adresse de site non valable : « %s »."));
         problem = problem ?? check_list (dates, (v) => parse_date (v) != "",
-                                         _("Date non valable : « %s ». Écrivez jj/mm/aaaa, ou jj/mm."));
+                                         _("Date non valable : « %s ». Écrivez jj/mm/aaaa, ou jj/mm."));
         if (problem == null && birthday.text.strip () != "" && parse_date (birthday.text) == "") {
             birthday.add_css_class (Granite.CssClass.ERROR);
             birthday.grab_focus ();
-            problem = _("Anniversaire non valable : « %s ». Écrivez jj/mm/aaaa, ou jj/mm.")
+            problem = _("Anniversaire non valable : « %s ». Écrivez jj/mm/aaaa, ou jj/mm.")
                 .printf (birthday.text.strip ());
         } else {
             birthday.remove_css_class (Granite.CssClass.ERROR);
@@ -603,7 +603,7 @@ public class Boomerang.ContactEditor : Gtk.Window {
             saved (new_uid);
             close ();
         } catch (Error e) {
-            show_error (_("Non enregistré : %s").printf (clean (e)));
+            show_error (_("Non enregistré : %s").printf (clean (e)));
             save_button.sensitive = true;
         }
     }
@@ -611,7 +611,7 @@ public class Boomerang.ContactEditor : Gtk.Window {
     private void confirm_delete () {
         var name = (given.text + " " + family.text).strip ();
         var dialog = new Granite.MessageDialog.with_image_from_icon_name (
-            _("Supprimer %s ?").printf (name != "" ? name : _("ce contact")),
+            _("Supprimer %s ?").printf (name != "" ? name : _("ce contact")),
             _("La fiche est supprimée d'iCloud, donc aussi de l'iPhone et de vos autres appareils."),
             "edit-delete", Gtk.ButtonsType.CANCEL) {
             transient_for = this,
@@ -634,7 +634,7 @@ public class Boomerang.ContactEditor : Gtk.Window {
             saved ("");
             close ();
         } catch (Error e) {
-            show_error (_("Non supprimé : %s").printf (clean (e)));
+            show_error (_("Non supprimé : %s").printf (clean (e)));
         }
     }
 
@@ -752,7 +752,7 @@ private class Boomerang.PhotoCropper : Gtk.Widget {
         focusable = true;
         overflow = Gtk.Overflow.HIDDEN;
         update_property (Gtk.AccessibleProperty.LABEL,
-                         _("Photo à recadrer : flèches pour déplacer, plus et moins pour agrandir"), -1);
+                         _("Photo à recadrer : flèches pour déplacer, plus et moins pour agrandir"), -1);
         try {
             uint8[] png;
             source.save_to_bufferv (out png, "png", null, null);

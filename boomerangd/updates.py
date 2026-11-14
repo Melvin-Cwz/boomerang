@@ -318,7 +318,7 @@ class Updates:
             return on_done(_("aucune mise à jour à installer"))
         url, size, sha = deb_asset(self.release, _arch())
         if not url or not sha:
-            return on_done(_("pas de paquet vérifiable pour cette version : "
+            return on_done(_("pas de paquet vérifiable pour cette version : "
                              "installez-la depuis la page GitHub"))
         if not url.startswith("https://github.com/") and \
                 not url.startswith("https://objects.githubusercontent.com/"):

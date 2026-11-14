@@ -43,7 +43,7 @@ DESTDIR="$root" meson install -C "$work/build" --no-rebuild >/dev/null
 rm -f "$root/usr/share/icons/hicolor/icon-theme.cache" \
       "$root/usr/share/applications/mimeinfo.cache"
 find "$root" -name __pycache__ -type d -prune -exec rm -rf {} +
-strip --strip-unneeded "$root/usr/bin/io.github.melvincouwez.Boomerang"
+strip --strip-unneeded "$root"/usr/libexec/boomerang/boomerang-granite*
 
 install -Dm644 debian/copyright "$root/usr/share/doc/boomerang/copyright"
 gzip -9n -c debian/changelog > "$work/changelog.Debian.gz"
@@ -55,16 +55,12 @@ for script in postinst prerm postrm; do
     chmod 755 "$root/DEBIAN/$script"
 done
 
-# ${shlibs:Depends} from the binary, then control from debian/control.
+# ${shlibs:Depends} from the binaries, then control from debian/control. Granite is left
+# out: the package carries both builds and names the alternative itself (debian/control).
 cp -r debian "$work/pkg-debian"
 ( cd "$work" && ln -s pkg-debian debian &&
-  dpkg-shlibdeps -O "-e$root/usr/bin/io.github.melvincouwez.Boomerang" 2>/dev/null ) > "$work/substvars"
-# dpkg-shlibdeps takes the version from the build machine's symbols file, where elementary's
-# daily PPA dates granite_header_label_set_secondary_text 7.8.0 (the property exists since 7.1).
-# The newest API Boomerang really uses is HeaderLabel.size (Granite 7.7.0).
-sed -i 's/libgranite7 ([^)]*)/libgranite7 (>= 7.7.0)/' "$work/substvars"
-# elementary's own packages name Granite libgranite7, Ubuntu's libgranite-7-7: accept both.
-sed -i 's/libgranite7 (\([^)]*\))/libgranite7 (\1) | libgranite-7-7 (\1)/' "$work/substvars"
+  dpkg-shlibdeps -O -xlibgranite9 -xlibgranite7 -xlibgranite-7-7 \
+      $(printf -- '-e%s ' "$root"/usr/libexec/boomerang/boomerang-granite*) 2>/dev/null ) > "$work/substvars"
 echo "misc:Depends=" >> "$work/substvars"
 size=$(du -sk --exclude=DEBIAN "$root" | cut -f1)
 dpkg-gencontrol -pboomerang -c"debian/control" -l"debian/changelog" -T"$work/substvars" \

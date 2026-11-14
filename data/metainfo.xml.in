@@ -10,9 +10,9 @@
   <summary xml:lang="fr">Utiliser un iPhone et iCloud depuis elementary OS</summary>
   <description>
     <p>Boomerang brings notifications, messages, calls, contacts and music from your iPhone, and your iCloud mail, calendars, reminders, contacts and files, to elementary OS. It also shows the battery and settings of AirPods paired with the computer. Everything goes directly between your computer, your iPhone and Apple: there is no Boomerang server.</p>
-    <p xml:lang="fr">Boomerang apporte à elementary OS les notifications, messages, appels, contacts et la musique de votre iPhone, ainsi que votre courriel, vos agendas, rappels, contacts et fichiers iCloud. Il affiche aussi la batterie et les réglages des AirPods jumelés à l'ordinateur. Les échanges passent directement entre votre ordinateur, votre iPhone et Apple ; il n'existe aucun serveur Boomerang.</p>
+    <p xml:lang="fr">Boomerang apporte à elementary OS les notifications, messages, appels, contacts et la musique de votre iPhone, ainsi que votre courriel, vos agendas, rappels, contacts et fichiers iCloud. Il affiche aussi la batterie et les réglages des AirPods jumelés à l'ordinateur. Les échanges passent directement entre votre ordinateur, votre iPhone et Apple ; il n'existe aucun serveur Boomerang.</p>
     <p>Boomerang is an independent free software project. It is not affiliated with, endorsed, sponsored or approved by Apple Inc. Apple, iPhone, iCloud, iMessage, Apple Music and AirPods are trademarks of Apple Inc., registered in the U.S. and other countries and regions. AirPods support follows the protocol documented by the LibrePods project; thanks to its creator and contributors.</p>
-    <p xml:lang="fr">Boomerang est un projet libre et indépendant. Il n'est ni affilié à Apple Inc., ni approuvé, sponsorisé ou soutenu par Apple Inc. Apple, iPhone, iCloud, iMessage, Apple Music et AirPods sont des marques d'Apple Inc., déposées aux États-Unis et dans d'autres pays et régions. La prise en charge des AirPods suit le protocole documenté par le projet LibrePods ; merci à son créateur et à ses contributeurs.</p>
+    <p xml:lang="fr">Boomerang est un projet libre et indépendant. Il n'est ni affilié à Apple Inc., ni approuvé, sponsorisé ou soutenu par Apple Inc. Apple, iPhone, iCloud, iMessage, Apple Music et AirPods sont des marques d'Apple Inc., déposées aux États-Unis et dans d'autres pays et régions. La prise en charge des AirPods suit le protocole documenté par le projet LibrePods ; merci à son créateur et à ses contributeurs.</p>
   </description>
   <launchable type="desktop-id">@APP_ID@.desktop</launchable>
   <developer id="io.github.melvincouwez">
@@ -25,89 +25,89 @@
     <release version="@VERSION@" date="2026-11-02" type="development">
       <description>
         <p>Fourth alpha: richer apps. Messages loads older history, filters unread and unknown senders and has keyboard shortcuts; Phone handles call waiting, merging and the call's audio output, with favourites and voicemail; Contacts shows full cards, edits them with a photo and imports or exports vCard files; AirPods warn of a low battery and pause when taken out; Mirroring takes screenshots. Boomerang now builds against elementary OS 9 (Granite 9) and uses Bluetooth more sparingly.</p>
-        <p xml:lang="fr">Quatrième alpha : des applications plus riches. Messages charge l'historique plus ancien, filtre les non-lus et les inconnus et se pilote au clavier ; Téléphone gère le double appel, la conférence et la sortie audio de l'appel, avec favoris et messagerie vocale ; Contacts affiche des fiches complètes, les modifie avec photo et importe ou exporte des fichiers vCard ; les AirPods préviennent d'une batterie faible et se mettent en pause quand on les retire ; la Recopie fait des captures. Boomerang se construit désormais pour elementary OS 9 (Granite 9) et sollicite moins le Bluetooth.</p>
+        <p xml:lang="fr">Quatrième alpha : des applications plus riches. Messages charge l'historique plus ancien, filtre les non-lus et les inconnus et se pilote au clavier ; Téléphone gère le double appel, la conférence et la sortie audio de l'appel, avec favoris et messagerie vocale ; Contacts affiche des fiches complètes, les modifie avec photo et importe ou exporte des fichiers vCard ; les AirPods préviennent d'une batterie faible et se mettent en pause quand on les retire ; la Recopie fait des captures. Boomerang se construit désormais pour elementary OS 9 (Granite 9) et sollicite moins le Bluetooth.</p>
       </description>
     </release>
     <release version="2.0.0~alpha3" date="2026-11-02" type="development">
       <description>
         <p>Third alpha: notifications no longer linger or come back after being cleared, « Pair again » really repairs a link whose notifications stopped, and the background service stays steady when Bluetooth is busy or the message cache is damaged.</p>
-        <p xml:lang="fr">Troisième alpha : les notifications ne traînent plus et ne reviennent plus une fois effacées, « Appairer à nouveau » répare vraiment une liaison dont les notifications se sont arrêtées, et le service d'arrière-plan tient bon quand le Bluetooth est occupé ou que le cache des messages est abîmé.</p>
+        <p xml:lang="fr">Troisième alpha : les notifications ne traînent plus et ne reviennent plus une fois effacées, « Appairer à nouveau » répare vraiment une liaison dont les notifications se sont arrêtées, et le service d'arrière-plan tient bon quand le Bluetooth est occupé ou que le cache des messages est abîmé.</p>
       </description>
     </release>
     <release version="2.0.0~alpha2" date="2026-10-28" type="development">
       <description>
         <p>Second alpha: iPhone notifications keep working after a reconnection or a restart, without pairing again. The Wingpanel indicator can be installed from Réglages.</p>
-        <p xml:lang="fr">Deuxième alpha : les notifications de l'iPhone continuent après une reconnexion ou un redémarrage, sans appairer à nouveau. L'indicateur de Wingpanel s'installe depuis Réglages.</p>
+        <p xml:lang="fr">Deuxième alpha : les notifications de l'iPhone continuent après une reconnexion ou un redémarrage, sans appairer à nouveau. L'indicateur de Wingpanel s'installe depuis Réglages.</p>
       </description>
     </release>
     <release version="2.0.0~alpha1" date="2026-10-16" type="development">
       <description>
         <p>Boomerang 2, first alpha: the iPhone link in the header bar, faster reconnection, a watchdog for the background service, and modules added on demand (AirPods, iCloud, files, mirror and more) next to a fixed core: messages, calls, contacts, notifications and Now Playing.</p>
-        <p xml:lang="fr">Boomerang 2, première alpha : la liaison avec l'iPhone dans la barre d'en-tête, une reconnexion plus rapide, un service d'arrière-plan surveillé, et des modules ajoutés à la demande (AirPods, iCloud, fichiers, recopie, etc.) à côté d'un cœur fixe : messages, appels, contacts, notifications et lecture en cours.</p>
+        <p xml:lang="fr">Boomerang 2, première alpha : la liaison avec l'iPhone dans la barre d'en-tête, une reconnexion plus rapide, un service d'arrière-plan surveillé, et des modules ajoutés à la demande (AirPods, iCloud, fichiers, recopie, etc.) à côté d'un cœur fixe : messages, appels, contacts, notifications et lecture en cours.</p>
       </description>
     </release>
     <release version="0.8.3" date="2026-10-11" type="development">
       <description>
         <p>French texts reviewed, MelvinCwz signature, and the new GitHub address: github.com/Melvin-Cwz/boomerang. The website moves to melvin-cwz.github.io/boomerang.</p>
-        <p xml:lang="fr">Relecture des textes en français, signature MelvinCwz et nouvelle adresse GitHub : github.com/Melvin-Cwz/boomerang. Le site est désormais à l'adresse melvin-cwz.github.io/boomerang.</p>
+        <p xml:lang="fr">Relecture des textes en français, signature MelvinCwz et nouvelle adresse GitHub : github.com/Melvin-Cwz/boomerang. Le site est désormais à l'adresse melvin-cwz.github.io/boomerang.</p>
       </description>
     </release>
     <release version="0.8.2" date="2026-10-08" type="development">
       <description>
         <p>The package installs again with Granite 7.7, its description is in French, and the English demo names its headphones "Demo AirPods Pro".</p>
-        <p xml:lang="fr">Le paquet s'installe de nouveau avec Granite 7.7, sa description est en français, et la démo anglaise nomme ses écouteurs « Demo AirPods Pro ».</p>
+        <p xml:lang="fr">Le paquet s'installe de nouveau avec Granite 7.7, sa description est en français, et la démo anglaise nomme ses écouteurs « Demo AirPods Pro ».</p>
       </description>
     </release>
     <release version="0.8.1" date="2026-10-08" type="development">
       <description>
         <p>Boomerang and its daemon do much less in the background (fewer commands and refreshes, conversations that update without being redrawn), and Boomerang gets a new icon drawn like elementary's own: the raspberry tile in front of the iPhone.</p>
-        <p xml:lang="fr">Boomerang et son démon consomment beaucoup moins de ressources en arrière-plan (moins de commandes et de rafraîchissements, conversations mises à jour sans être redessinées), et Boomerang a une nouvelle icône, dessinée dans le style d'elementary : une tuile framboise devant l'iPhone.</p>
+        <p xml:lang="fr">Boomerang et son démon consomment beaucoup moins de ressources en arrière-plan (moins de commandes et de rafraîchissements, conversations mises à jour sans être redessinées), et Boomerang a une nouvelle icône, dessinée dans le style d'elementary : une tuile framboise devant l'iPhone.</p>
         <p>Messages: conversations open on the newest message; each conversation can get a nickname, an emoji, its own bubble colours, background, text size and notification settings (priority, muted, own sound). Search within a conversation (Ctrl+F), a button back to the newest message, an "Unread" line, keyboard shortcuts, optional link previews, custom quick replies and export to PDF or text. The standalone Messages app gets elementary header bars, and Boomerang raspberry header bars and a left column that folds to icons with badges.</p>
-        <p xml:lang="fr">Messages : les conversations s'ouvrent sur le dernier message ; chaque conversation peut avoir un surnom, un emoji, ses couleurs de bulles, son fond, sa taille de texte et ses notifications (prioritaires, muettes, son propre). Recherche dans la conversation (Ctrl+F), bouton pour revenir au dernier message, repère « Non lus », raccourcis clavier, aperçu des liens facultatif, réponses rapides personnalisées et export en PDF ou en texte. L'app Messages séparée utilise désormais les barres d'en-tête d'elementary, et Boomerang des barres d'en-tête framboise et une colonne de gauche repliable en icônes avec pastilles.</p>
+        <p xml:lang="fr">Messages : les conversations s'ouvrent sur le dernier message ; chaque conversation peut avoir un surnom, un emoji, ses couleurs de bulles, son fond, sa taille de texte et ses notifications (prioritaires, muettes, son propre). Recherche dans la conversation (Ctrl+F), bouton pour revenir au dernier message, repère « Non lus », raccourcis clavier, aperçu des liens facultatif, réponses rapides personnalisées et export en PDF ou en texte. L'app Messages séparée utilise désormais les barres d'en-tête d'elementary, et Boomerang des barres d'en-tête framboise et une colonne de gauche repliable en icônes avec pastilles.</p>
         <p>New Contributors page, under Settings: every project Boomerang builds on, with its authors, license and link. Experimental: answer or decline a call with a nod or a shake of the head while wearing AirPods (from LibrePods), and a Bluetooth beacon for screen mirroring. Mirroring keeps the screen awake and can record to the Videos folder.</p>
-        <p xml:lang="fr">Nouvelle page Contributeurs, sous Réglages : chaque projet sur lequel Boomerang s'appuie, avec ses auteurs, sa licence et son lien. Expérimental : répondre ou refuser un appel d'un hochement ou d'une secousse de la tête avec les AirPods (d'après LibrePods), et balise Bluetooth pour la recopie d'écran. Pendant la recopie, l'écran reste allumé, et la recopie peut être enregistrée dans le dossier Vidéos.</p>
+        <p xml:lang="fr">Nouvelle page Contributeurs, sous Réglages : chaque projet sur lequel Boomerang s'appuie, avec ses auteurs, sa licence et son lien. Expérimental : répondre ou refuser un appel d'un hochement ou d'une secousse de la tête avec les AirPods (d'après LibrePods), et balise Bluetooth pour la recopie d'écran. Pendant la recopie, l'écran reste allumé, et la recopie peut être enregistrée dans le dossier Vidéos.</p>
       </description>
     </release>
     <release version="0.7.0" date="2026-10-04" type="development">
       <description>
         <p>Covalence is now Boomerang: new name, new icon. Settings, messages, iCloud accounts, the dock and notification settings are carried over at the first start.</p>
-        <p xml:lang="fr">Covalence devient Boomerang : nouveau nom, nouvelle icône. Réglages, messages, comptes iCloud, dock et réglages des notifications sont repris au premier lancement.</p>
+        <p xml:lang="fr">Covalence devient Boomerang : nouveau nom, nouvelle icône. Réglages, messages, comptes iCloud, dock et réglages des notifications sont repris au premier lancement.</p>
       </description>
     </release>
     <release version="0.6.1" date="2026-10-04" type="development">
       <description>
         <p>Calls from the PC are heard again: a microphone muted during a call is always given back, even after a restart. Agenda and Cassette now come from their own repositories and releases. Missing English strings and credits added.</p>
-        <p xml:lang="fr">Le micro de l'ordinateur ne reste plus coupé après un appel : Boomerang le rétablit toujours, même après un redémarrage. Agenda et Cassette viennent désormais de leurs propres dépôts et versions. Chaînes anglaises et crédits manquants ajoutés.</p>
+        <p xml:lang="fr">Le micro de l'ordinateur ne reste plus coupé après un appel : Boomerang le rétablit toujours, même après un redémarrage. Agenda et Cassette viennent désormais de leurs propres dépôts et versions. Chaînes anglaises et crédits manquants ajoutés.</p>
       </description>
     </release>
     <release version="0.6.0" date="2026-09-29" type="development">
       <description>
         <p>Agenda and Cassette (Apple Music) install from Apple Services; SMS codes are copied as soon as they arrive; a quiet mode leaves calls to the iPhone (settings and top bar); icons redrawn for every size; credits completed.</p>
-        <p xml:lang="fr">Agenda et Cassette (Apple Music) s'installent depuis Services Apple ; les codes SMS sont copiés dès leur réception ; un mode silencieux laisse l'iPhone gérer les appels (réglages et barre du haut) ; icônes redessinées pour chaque taille ; crédits complétés.</p>
+        <p xml:lang="fr">Agenda et Cassette (Apple Music) s'installent depuis Services Apple ; les codes SMS sont copiés dès leur réception ; un mode silencieux laisse l'iPhone gérer les appels (réglages et barre du haut) ; icônes redessinées pour chaque taille ; crédits complétés.</p>
       </description>
     </release>
     <release version="0.5.1" date="2026-09-28" type="development">
       <description>
         <p>AirPods Pro 3 recognised: noise control, adaptive audio and conversation awareness are back; headphones newer than Boomerang keep every control. The app-specific password step no longer runs past its card.</p>
-        <p xml:lang="fr">AirPods Pro 3 reconnus : contrôle du bruit, audio adaptatif et détection de conversation s'affichent de nouveau ; les écouteurs que Boomerang ne connaît pas encore gardent toutes leurs commandes. L'étape du mot de passe pour app ne déborde plus de sa carte.</p>
+        <p xml:lang="fr">AirPods Pro 3 reconnus : contrôle du bruit, audio adaptatif et détection de conversation s'affichent de nouveau ; les écouteurs que Boomerang ne connaît pas encore gardent toutes leurs commandes. L'étape du mot de passe pour app ne déborde plus de sa carte.</p>
       </description>
     </release>
     <release version="0.5.0" date="2026-09-28" type="development">
       <description>
         <p>Security and stability pass: pairing code confirmed on the PC, other programs must ask before calling, sending or pairing, safer updates and file transfers, SMS codes tied to their website; no more duplicate or misplaced messages.</p>
-        <p xml:lang="fr">Révision de la sécurité et de la stabilité : code d'appairage confirmé sur l'ordinateur, autorisation obligatoire pour les autres programmes avant d'appeler, d'envoyer ou d'appairer, mises à jour et transferts de fichiers plus sûrs, codes SMS liés à leur site ; plus de messages en double ni mal classés.</p>
+        <p xml:lang="fr">Révision de la sécurité et de la stabilité : code d'appairage confirmé sur l'ordinateur, autorisation obligatoire pour les autres programmes avant d'appeler, d'envoyer ou d'appairer, mises à jour et transferts de fichiers plus sûrs, codes SMS liés à leur site ; plus de messages en double ni mal classés.</p>
       </description>
     </release>
     <release version="0.4.2" date="2026-09-28" type="development">
       <description>
         <p>Pairing from the iPhone's Bluetooth settings (no extra app), steadier reconnection, "Forget" button.</p>
-        <p xml:lang="fr">Appairage depuis les réglages Bluetooth de l'iPhone (sans app supplémentaire), reconnexion plus stable, bouton « Oublier ».</p>
+        <p xml:lang="fr">Appairage depuis les réglages Bluetooth de l'iPhone (sans app supplémentaire), reconnexion plus stable, bouton « Oublier ».</p>
       </description>
     </release>
     <release version="0.4.1" date="2026-09-28" type="development">
       <description>
         <p>Screen mirroring as its own app, iPhone control (experimental), more free sounds, settings by kind of feature.</p>
-        <p xml:lang="fr">La recopie devient une app distincte ; contrôle de l'iPhone (expérimental), sons libres supplémentaires, réglages classés par type de fonctionnalité.</p>
+        <p xml:lang="fr">La recopie devient une app distincte ; contrôle de l'iPhone (expérimental), sons libres supplémentaires, réglages classés par type de fonctionnalité.</p>
       </description>
     </release>
     <release version="0.4.0" date="2026-09-28" type="development">
@@ -119,7 +119,7 @@
     <release version="0.3.3" date="2026-09-27" type="development">
       <description>
         <p>Automatic emojis while typing; updates no longer stay shown as in progress.</p>
-        <p xml:lang="fr">Emojis automatiques à la saisie ; une mise à jour ne reste plus affichée « en cours ».</p>
+        <p xml:lang="fr">Emojis automatiques à la saisie ; une mise à jour ne reste plus affichée « en cours ».</p>
       </description>
     </release>
     <release version="0.3.2" date="2026-09-27" type="development">
@@ -134,11 +134,11 @@
         <p xml:lang="fr">Réactions, codes SMS, sons et mises à jour.</p>
         <ul>
           <li>Reactions show on the right message, once, and add up; hover a message to react, copy or delete it.</li>
-          <li xml:lang="fr">Les réactions s'affichent sur le bon message, sans doublon, et se cumulent ; au survol d'un message : réagir, copier ou supprimer.</li>
+          <li xml:lang="fr">Les réactions s'affichent sur le bon message, sans doublon, et se cumulent ; au survol d'un message : réagir, copier ou supprimer.</li>
           <li>One-time SMS codes: copy from the notification; browser fill-in for Chrome, Chromium, Edge and Firefox (alpha).</li>
-          <li xml:lang="fr">Codes SMS : copie depuis la notification ; remplissage dans Chrome, Chromium, Edge et Firefox (alpha).</li>
+          <li xml:lang="fr">Codes SMS : copie depuis la notification ; remplissage dans Chrome, Chromium, Edge et Firefox (alpha).</li>
           <li>Read in full: the rest of a long unread message on request, or always.</li>
-          <li xml:lang="fr">Tout lire : affichage de la suite d'un long message non lu, à la demande ou systématiquement.</li>
+          <li xml:lang="fr">Tout lire : affichage de la suite d'un long message non lu, à la demande ou systématiquement.</li>
           <li>Sync button in Messages.</li>
           <li xml:lang="fr">Bouton Synchroniser dans Messages.</li>
           <li>Sounds for messages, iPhone notifications and incoming calls.</li>
@@ -146,7 +146,7 @@
           <li>Update checker and installer in Settings.</li>
           <li xml:lang="fr">Recherche et installation des mises à jour dans Réglages.</li>
           <li>Alpha features in Settings: extended history, mark read on the iPhone, notification actions, favourites.</li>
-          <li xml:lang="fr">Fonctions alpha dans Réglages : historique étendu, marquer comme lu sur l'iPhone, actions des notifications, favoris.</li>
+          <li xml:lang="fr">Fonctions alpha dans Réglages : historique étendu, marquer comme lu sur l'iPhone, actions des notifications, favoris.</li>
         </ul>
       </description>
     </release>

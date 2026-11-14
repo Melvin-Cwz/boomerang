@@ -91,7 +91,7 @@ namespace Boomerang.IndicatorSetting {
     private void set_subtitle (Gtk.Label label, bool is_installed) {
         label.label = is_installed
             ? _("Batterie de l'iPhone, lecture en cours, appel et messages non lus, à côté de l'horloge.")
-            : _("Module facultatif : ajouté à Wingpanel seulement si vous le demandez.");
+            : _("Facultatif : ajouté à la barre du haut seulement si vous le demandez.");
     }
 
     /* Installs or removes the add-on through the root helper (polkit asks for the password). */
@@ -112,10 +112,10 @@ namespace Boomerang.IndicatorSetting {
             sw.active = adding;
             show_installed (button, sw);
             subtitle.label = adding
-                ? _("Installé. Relancez Wingpanel (ou la session) pour afficher l'indicateur.")
-                : _("Retiré. Relancez Wingpanel pour le masquer.");
+                ? _("Installé. Fermez puis rouvrez la session pour afficher l'indicateur.")
+                : _("Retiré. L'indicateur disparaîtra à la prochaine ouverture de session.");
         } catch (Error e) {
-            subtitle.label = _("Opération impossible : %s").printf (e.message);
+            subtitle.label = _("Opération impossible : %s").printf (e.message);
         }
         button.sensitive = true;
     }

@@ -33,7 +33,7 @@ public class Boomerang.ServicesView : Gtk.Box {
 
     construct {
         var head = page_header ("preferences-desktop-online-accounts", _("Services iCloud"),
-            _("Votre compte Apple par Internet : courriel, agendas, rappels, contacts, fichiers "
+            _("Votre compte Apple par Internet : courriel, agendas, rappels, contacts, fichiers "
             + "iCloud et Apple Music dans les apps d'elementary. Indépendant de l'iPhone."));
 
         // iCloud account (app-specific password, Evolution Data Server)
@@ -47,7 +47,7 @@ public class Boomerang.ServicesView : Gtk.Box {
         account_button = new Gtk.Button.with_label (_("Se connecter…")) { valign = Gtk.Align.CENTER };
         account_button.clicked.connect (() => Setup.run_helper ("boomerang-icloud-signin"));
         var account = card_row ("preferences-desktop-online-accounts", _("Compte iCloud"), account_state,
-                                { Guide.help_button ("apple", _("Mot de passe pour app : procédure")),
+                                { Guide.help_button ("apple", _("Mot de passe pour app : procédure")),
                                   account_button, account_switch });
 
         // iCloud Drive (rclone)
@@ -64,12 +64,12 @@ public class Boomerang.ServicesView : Gtk.Box {
         drive_remove.clicked.connect (() => confirm_removal (false));
         drive_options = new Gtk.Button.from_icon_name ("preferences-system-symbolic") {
             valign = Gtk.Align.CENTER,
-            tooltip_text = _("Options d'iCloud Drive : emplacement, hors ligne, réseau")
+            tooltip_text = _("Options d'iCloud Drive : emplacement, hors ligne, réseau")
         };
         drive_options.add_css_class ("flat");
         drive_options.clicked.connect (() => new DriveOptions (get_root () as Gtk.Window).present ());
         var drive = card_row ("folder-remote", _("iCloud Drive"), drive_state,
-                              { Guide.help_button ("apple", _("iCloud Drive et Photos : à lire avant de vous connecter")),
+                              { Guide.help_button ("apple", _("iCloud Drive et Photos : à lire avant de vous connecter")),
                                 drive_open, drive_connect, drive_options, drive_remove });
 
         // iCloud Photos (rclone, read-only)
@@ -86,7 +86,7 @@ public class Boomerang.ServicesView : Gtk.Box {
         photos_remove.clicked.connect (() => confirm_removal (true));
         photos_options = new Gtk.Button.from_icon_name ("preferences-system-symbolic") {
             valign = Gtk.Align.CENTER,
-            tooltip_text = _("Options d'iCloud Photos : emplacement, hors ligne, réseau")
+            tooltip_text = _("Options d'iCloud Photos : emplacement, hors ligne, réseau")
         };
         photos_options.add_css_class ("flat");
         photos_options.clicked.connect (() => new DriveOptions (get_root () as Gtk.Window, true).present ());
@@ -154,13 +154,13 @@ public class Boomerang.ServicesView : Gtk.Box {
         string text;
         switch (state) {
             case "connected":
-                text = _("Connecté : courriel, agendas, rappels et contacts");
+                text = _("Connecté : courriel, agendas, rappels et contacts");
                 break;
             case "attention":
                 text = _("Connecté, mais une source n'a pas pu s'authentifier");
                 break;
             case "rejected":
-                text = _("Mot de passe pour app refusé : créez-en un nouveau");
+                text = _("Mot de passe pour app refusé : créez-en un nouveau");
                 break;
             case "disabled":
                 text = _("Désactivé");
@@ -177,7 +177,7 @@ public class Boomerang.ServicesView : Gtk.Box {
 
         var drive = Setup.drive_state ();
         drive_state.label = drive == "mounted"
-                          ? _("Dans Fichiers : dossier « %s »").printf (Path.get_basename (Setup.drive_folder ()))
+                          ? _("Dans Fichiers : dossier « %s »").printf (Path.get_basename (Setup.drive_folder ()))
                           : drive == "configured" ? _("Connecté, dossier non monté pour l'instant")
                           : _("Non connecté");
         drive_open.visible = drive == "mounted";
@@ -188,10 +188,10 @@ public class Boomerang.ServicesView : Gtk.Box {
 
         var photos = Setup.drive_state (true);
         photos_state.label = photos == "mounted"
-                           ? _("Dans Fichiers : dossier « %s », en lecture seule").printf (
+                           ? _("Dans Fichiers : dossier « %s », en lecture seule").printf (
                                  Path.get_basename (Setup.drive_folder (true)))
                            : photos == "configured" ? _("Connecté, dossier non monté pour l'instant")
-                           : _("Non connecté : vos albums en lecture seule dans Fichiers");
+                           : _("Non connecté : vos albums en lecture seule dans Fichiers");
         photos_open.visible = photos == "mounted";
         photos_connect.visible = photos != "mounted";
         photos_connect.label = photos == "absent" ? _("Connecter…") : _("Reconnecter…");
@@ -282,7 +282,7 @@ public class Boomerang.ServicesView : Gtk.Box {
 
     private void confirm_removal (bool photos) {
         var dialog = new Granite.MessageDialog.with_image_from_icon_name (
-            photos ? _("Déconnecter iCloud Photos ?") : _("Déconnecter iCloud Drive ?"),
+            photos ? _("Déconnecter iCloud Photos ?") : _("Déconnecter iCloud Drive ?"),
             photos ? _("Le dossier disparaît de Fichiers et la connexion est oubliée sur ce PC. "
                        + "Vos photos restent dans iCloud.")
                    : _("Le dossier disparaît de Fichiers et la connexion est oubliée sur ce PC. "

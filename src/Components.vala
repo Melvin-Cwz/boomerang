@@ -276,7 +276,7 @@ public class Boomerang.ComponentsCard : Gtk.Box {
         }
         yield refresh ();
         if (failure != null) {
-            status.label = _("L'installation n'a pas abouti : %s").printf (failure);
+            status.label = _("L'installation n'a pas abouti : %s").printf (failure);
         }
     }
 
@@ -306,7 +306,7 @@ public class Boomerang.ComponentsCard : Gtk.Box {
         }
         button.sensitive = true;
         if (failure != null) {
-            detail.label = _("Le téléchargement n'a pas abouti : %s").printf (failure);
+            detail.label = _("Le téléchargement n'a pas abouti : %s").printf (failure);
             return;
         }
         yield refresh ();

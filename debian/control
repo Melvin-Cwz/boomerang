@@ -24,6 +24,7 @@ Conflicts: covalence
 Replaces: covalence
 Depends: ${shlibs:Depends},
          ${misc:Depends},
+         libgranite9 | libgranite7 (>= 7.7.0) | libgranite-7-7 (>= 7.7.0),
          bluez,
          bluez-obexd,
          python3,

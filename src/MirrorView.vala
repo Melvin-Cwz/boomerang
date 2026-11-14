@@ -154,7 +154,7 @@ public class Boomerang.MirrorView : Gtk.Box {
         ready_box.append (steps);
         var note = new Gtk.Label (
             _("Boomerang utilise UxPlay, un récepteur AirPlay libre. UxPlay écoute le réseau seulement "
-              + "pendant la recopie. Pour terminer, fermez la fenêtre de recopie ou cliquez sur « "
+              + "pendant la recopie. Pour terminer, fermez la fenêtre de recopie ou cliquez sur « "
               + "Arrêter ».")
         ) { xalign = 0, wrap = true };
         note.add_css_class (Granite.CssClass.DIM);
@@ -250,7 +250,7 @@ public class Boomerang.MirrorView : Gtk.Box {
         }
         drop_action.visible = true;
         if (!Catalog.added (daemon, "files")) {
-            drop_title.label = _("Le module « Envoi de fichiers » n'est pas ajouté");
+            drop_title.label = _("Le module « Envoi de fichiers » n'est pas ajouté");
             drop_detail.label = _("Ajoutez-le pour déposer ici des fichiers à envoyer à l'app LocalSend de l'iPhone.");
             drop_action.label = _("Ajouter le module");
             drop_action_kind = "add";
@@ -261,7 +261,7 @@ public class Boomerang.MirrorView : Gtk.Box {
             drop_action_kind = "enable";
         } else {
             drop_title.label = _("Déposez des fichiers ici");
-            drop_detail.label = _("Ils partent vers l'app LocalSend de l'iPhone, ouverte sur le même Wi-Fi.");
+            drop_detail.label = _("Ils sont envoyés à l'app LocalSend de l'iPhone, ouverte et connectée au même Wi-Fi.");
             drop_action.visible = false;
             drop_action_kind = "";
         }
@@ -307,12 +307,12 @@ public class Boomerang.MirrorView : Gtk.Box {
             yield daemon.call_checked ("SendFiles", new Variant ("(s^as)", chosen, paths));
             sending = false;
             update_drop_zone ();
-            drop_detail.label = _("Envoyés à %s : acceptez-les dans LocalSend sur l'iPhone.").printf (chosen_name);
+            drop_detail.label = _("Envoyés à %s : acceptez-les dans LocalSend sur l'iPhone.").printf (chosen_name);
         } catch (Error e) {
             sending = false;
             update_drop_zone ();
             DBusError.strip_remote_error (e);
-            drop_detail.label = _("L'envoi a échoué : %s").printf (e.message);
+            drop_detail.label = _("L'envoi a échoué : %s").printf (e.message);
         }
     }
 
@@ -349,7 +349,7 @@ public class Boomerang.MirrorView : Gtk.Box {
             }
         });
         list.append (option_row (_("Profil"),
-                                 _("Fluide : le moins de retard possible, pour piloter l'iPhone. Qualité "
+                                 _("Fluide : le moins de retard possible, pour piloter l'iPhone. Qualité "
                                    + ": le son reste synchronisé avec l'image, pour une vidéo."), profile));
 
         rotation = new Gtk.DropDown.from_strings ({ _("Aucune"), _("Vers la droite"), _("Vers la gauche") });
@@ -459,9 +459,9 @@ public class Boomerang.MirrorView : Gtk.Box {
             selection_mode = Gtk.SelectionMode.NONE, max_children_per_line = 4, column_spacing = 6,
             row_spacing = 6, homogeneous = false
         };
-        shortcuts.append (shortcut_button (_("Accueil"), _("⌘H : retour à l'écran d'accueil"), KEY_H));
-        shortcuts.append (shortcut_button (_("Recherche"), _("⌘Espace : recherche de l'iPhone"), KEY_SPACE));
-        shortcuts.append (shortcut_button (_("Changer d'app"), _("⌘Tab : app précédente"), KEY_TAB));
+        shortcuts.append (shortcut_button (_("Accueil"), _("⌘H : retour à l'écran d'accueil"), KEY_H));
+        shortcuts.append (shortcut_button (_("Recherche"), _("⌘Espace : recherche de l'iPhone"), KEY_SPACE));
+        shortcuts.append (shortcut_button (_("Changer d'app"), _("⌘Tab : app précédente"), KEY_TAB));
         shortcuts.append (gesture_button (_("Centre de contrôle"),
                                           _("Glissement du pointeur vers le bas depuis le coin supérieur droit"),
                                           "control_centre"));
@@ -520,10 +520,10 @@ public class Boomerang.MirrorView : Gtk.Box {
         video_label.add_css_class (Granite.CssClass.SMALL);
         var auto_row = option_row (_("Suivre l'image de la recopie"),
                                    _("Pendant la recopie, la hauteur suit les proportions et l'orientation "
-                                     + "de l'image reçue : seul le côté court est à régler"), auto_size);
+                                     + "de l'image reçue : seul le côté court est à régler"), auto_size);
         size_list.append (auto_row);
         size_list.append (option_row (_("Largeur de l'écran pour le pointeur"),
-                                      _("Si « Recentrer le pointeur » ne place pas le pointeur au centre, "
+                                      _("Si « Recentrer le pointeur » ne place pas le pointeur au centre, "
                                         + "ajustez cette valeur (iPhone tenu verticalement)"),
                                       width_spin));
         height_row = option_row (_("Hauteur de l'écran pour le pointeur"), "", height_spin);
@@ -595,7 +595,7 @@ public class Boomerang.MirrorView : Gtk.Box {
             var layout = area.create_pango_layout (
                 area.has_focus
                 ? _("Souris et clavier dirigés vers l'iPhone")
-                : _("Cliquez ici, puis déplacez la souris : le pointeur de l'iPhone suit"));
+                : _("Cliquez ici, puis déplacez la souris : le pointeur de l'iPhone suit"));
             layout.set_width ((width - 24) * Pango.SCALE);
             layout.set_alignment (Pango.Alignment.CENTER);
             int text_width, text_height;
@@ -701,14 +701,14 @@ public class Boomerang.MirrorView : Gtk.Box {
         var error = Props.str (mirror, "error");
         var pin = Props.str (mirror, "pin");
         if (running && pin != "") {
-            state_label.label = _("En attente de l'iPhone sous le nom « %s ». Code à saisir sur "
-                                  + "l'iPhone : %s").printf (name, pin);
+            state_label.label = _("En attente de l'iPhone sous le nom « %s ». Code à saisir sur "
+                                  + "l'iPhone : %s").printf (name, pin);
         } else if (running) {
-            state_label.label = _("En attente de l'iPhone sous le nom « %s »").printf (name);
+            state_label.label = _("En attente de l'iPhone sous le nom « %s »").printf (name);
         } else if (error == "exited") {
             state_label.label = _("Le récepteur s'est arrêté. Vérifiez qu'Avahi fonctionne et réessayez.");
         } else if (error != "" && error != "missing") {
-            state_label.label = _("Le récepteur s'est arrêté : %s").printf (error);
+            state_label.label = _("Le récepteur s'est arrêté : %s").printf (error);
         } else {
             state_label.label = _("Arrêté");
         }
@@ -725,8 +725,8 @@ public class Boomerang.MirrorView : Gtk.Box {
                 + "(paquet gstreamer1.0-gtk4)");
         capture_path = Props.str (mirror, "screenshot");
         capture_done.visible = capture_path != "";
-        capture_label.label = _("Dernière capture : %s").printf (Path.get_basename (capture_path));
-        steps.label = _("1. Ouvrez le Centre de contrôle.\n2. Touchez « Recopie de l'écran ».\n"
+        capture_label.label = _("Dernière capture : %s").printf (Path.get_basename (capture_path));
+        steps.label = _("1. Ouvrez le Centre de contrôle.\n2. Touchez « Recopie de l'écran ».\n"
                         + "3. Choisissez <b>%s</b>.\n4. Saisissez le code affiché ici.").printf (
                         Markup.escape_text (name));
         profile.selected = Props.str (mirror, "profile") == "quality" ? 1 : 0;
@@ -746,15 +746,15 @@ public class Boomerang.MirrorView : Gtk.Box {
         control_box.visible = enabled && Props.flag (control, "registered");
         var control_error = Props.str (control, "error");
         if (!enabled) {
-            control_state.label = _("Activez l'interrupteur, puis suivez le guide : appairage dans Réglages › "
+            control_state.label = _("Activez l'interrupteur, puis suivez le guide : appairage dans Réglages › "
                                     + "Bluetooth de l'iPhone et AssistiveTouch pour le pointeur.");
         } else if (control_error != "") {
-            control_state.label = _("Bluetooth a refusé la souris et le clavier : %s").printf (control_error);
+            control_state.label = _("Bluetooth a refusé la souris et le clavier : %s").printf (control_error);
         } else if (Props.flag (control, "connected")) {
             control_state.label = _("L'iPhone utilise la souris et le clavier de Boomerang.");
         } else {
-            control_state.label = _("Souris et clavier publiés. Sur l'iPhone : Réglages › Bluetooth, "
-                                    + "touchez « Boomerang » sous Autres appareils (ou reconnectez-le).");
+            control_state.label = _("Souris et clavier prêts. Sur l'iPhone : Réglages › Bluetooth, "
+                                    + "touchez « Boomerang » sous Autres appareils (ou reconnectez-le).");
         }
         var width = Props.integer (control, "width");
         var height = Props.integer (control, "height");
@@ -772,9 +772,9 @@ public class Boomerang.MirrorView : Gtk.Box {
         }
         if (video_width > 0 && video_height > 0) {
             video_label.label = automatic
-                ? _("Image reçue : %d × %d. Course du pointeur : %d × %d.").printf (
+                ? _("Image reçue : %d × %d. Course du pointeur : %d × %d.").printf (
                     video_width, video_height, Props.integer (control, "width"), Props.integer (control, "height"))
-                : _("Image reçue : %d × %d.").printf (video_width, video_height);
+                : _("Image reçue : %d × %d.").printf (video_width, video_height);
         } else {
             video_label.label = automatic
                 ? _("La hauteur se recale dès que la recopie affiche l'image de l'iPhone.")

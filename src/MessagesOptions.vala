@@ -196,7 +196,7 @@ public class Boomerang.MessagesSettings : Gtk.Box {
         append (new Granite.HeaderLabel (_("Liens")));
         append (new MessagesOptionsCard (daemon));
         append (new Granite.HeaderLabel (_("Apparence des conversations")) {
-            secondary_text = _("Pour toutes les conversations. Chacune peut garder la sienne : "
+            secondary_text = _("Pour toutes les conversations. Chacune peut garder la sienne : "
                                + "cliquez sur son nom en haut de la conversation.")
         });
         append (default_look_card (daemon, (owned) look_changed));
@@ -242,7 +242,7 @@ public class Boomerang.MessagesSettings : Gtk.Box {
     }
 
     private static Gtk.Widget build_read_full_card (Daemon daemon) {
-        var title_label = new Gtk.Label (_("Toujours lire les messages en entier")) { xalign = 0 };
+        var title_label = new Gtk.Label (_("Toujours récupérer le texte complet")) { xalign = 0 };
         var subtitle_label = new Gtk.Label (
             _("Boomerang récupère dès leur arrivée le texte complet des messages de plus de "
               + "120 caractères. Ces messages sont alors marqués comme lus sur l'iPhone.")
@@ -264,8 +264,8 @@ public class Boomerang.MessagesSettings : Gtk.Box {
                 return false;
             }
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (
-                _("Toujours lire les messages en entier ?"),
-                _("Pour obtenir le texte complet d'un message non lu, Boomerang doit le télécharger "
+                _("Toujours récupérer le texte complet ?"),
+                _("Pour obtenir le texte complet d'un message non lu, Boomerang doit le télécharger "
                   + ": le message sera marqué comme lu sur l'iPhone dès son arrivée, même si vous ne "
                   + "l'avez pas ouvert."),
                 Config.APP_ID + ".Messages", Gtk.ButtonsType.CANCEL) {
@@ -317,7 +317,7 @@ public class Boomerang.MessagesSettings : Gtk.Box {
     private static Gtk.Widget auto_emoji_row () {
         var title_label = new Gtk.Label (_("Emojis automatiques")) { xalign = 0 };
         var subtitle_label = new Gtk.Label (
-            _("« :) » devient 🙂, « :D » devient 😃, « <3 » devient ❤️… La touche Retour arrière annule la conversion.")
+            _("« :) » devient 🙂, « :D » devient 😃, « <3 » devient ❤️… La touche Retour arrière annule la conversion.")
         ) { xalign = 0, wrap = true };
         subtitle_label.add_css_class (Granite.CssClass.DIM);
         subtitle_label.add_css_class (Granite.CssClass.SMALL);

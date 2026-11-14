@@ -88,7 +88,7 @@ public class Boomerang.UpdatesCard : Gtk.Box {
         status_row.append (spinner);
         status_row.append (check_button);
 
-        var auto_label = new Gtk.Label (_("Mises à jour automatiques : rechercher")) { xalign = 0, hexpand = true };
+        var auto_label = new Gtk.Label (_("Mises à jour automatiques : rechercher")) { xalign = 0, hexpand = true };
         auto_switch = new Gtk.Switch () { valign = Gtk.Align.CENTER };
         auto_switch.update_property (Gtk.AccessibleProperty.LABEL, auto_label.label, -1);
         auto_switch.notify["active"].connect (() => {
@@ -139,7 +139,7 @@ public class Boomerang.UpdatesCard : Gtk.Box {
         var card = feature.get_data<Gtk.Widget> ("card");
         if (v == null) {
             card.visible = false;
-            status_label.label = _("Version installée : %s").printf (Config.VERSION);
+            status_label.label = _("Version installée : %s").printf (Config.VERSION);
             check_button.sensitive = false;
             auto_switch.sensitive = false;
             return;
@@ -163,15 +163,15 @@ public class Boomerang.UpdatesCard : Gtk.Box {
 
         var when = checked > 0 ? _("vérifié %s").printf (relative (checked)) : _("jamais vérifié");
         if (state == "ready") {
-            status_label.label = _("Mise à jour installée : relancez Boomerang pour l'utiliser");
+            status_label.label = _("Mise à jour installée : relancez Boomerang pour l'utiliser");
         } else if (state == "checking") {
             status_label.label = _("Recherche de mises à jour…");
         } else if (latest != "") {
-            status_label.label = _("Version installée : %s, %s").printf (current, when);
+            status_label.label = _("Version installée : %s, %s").printf (current, when);
         } else if (state == "error") {
             status_label.label = error;
         } else {
-            status_label.label = _("Boomerang est à jour : %s, %s").printf (current, when);
+            status_label.label = _("Boomerang est à jour : %s, %s").printf (current, when);
         }
 
         card.visible = latest != "" || state == "ready";
@@ -216,7 +216,7 @@ public class Boomerang.UpdatesCard : Gtk.Box {
             feature_status.remove_css_class (Granite.CssClass.DIM);
             feature_status.add_css_class (Granite.CssClass.ERROR);
         } else if (!can_install) {
-            feature_status.label = _("Pas de paquet vérifiable pour cette version : installez-la depuis GitHub.");
+            feature_status.label = _("Pas de paquet vérifiable pour cette version : installez-la depuis GitHub.");
         } else {
             feature_status.visible = false;
         }

@@ -12,7 +12,7 @@
 public class Boomerang.MainWindow : Gtk.ApplicationWindow {
     private Daemon daemon;
     private Gtk.Stack stack;
-    private Gtk.Stack modes;  // Personnes, Pavé, iPhone
+    private Gtk.Stack modes;  // Contacts, Composer, iPhone
     private Gtk.StackSwitcher mode_switcher;
     private MessagesView people;
     private PhoneView keypad;
@@ -101,7 +101,7 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         var help_action = new SimpleAction ("help", null);
         help_action.activate.connect (open_help);
         add_action (help_action);
-        // Ctrl+1, 2, 3: Personnes, Pavé, iPhone (accels in Application).
+        // Ctrl+1, 2, 3: Contacts, Composer, iPhone (accels in Application).
         var mode_action = new SimpleAction ("mode", VariantType.STRING);
         mode_action.activate.connect ((param) => {
             if (stack.visible_child_name == "main") {
@@ -130,6 +130,7 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         keypad.history.message_requested.connect (write_to);
         var contacts_book = new ContactsView (daemon);
         contacts_book.message_requested.connect (write_to);
+        pages.add_titled (build_overview_page (), "device", _("Vue d'ensemble"));
         pages.add_titled (new FeedView (daemon), "feed", _("Le Fil"));
         pages.add_titled (contacts_book, "contacts-book", _("Répertoire"));
         pages.add_titled (new NotificationsView (daemon), "notifications", _("Notifications"));
@@ -146,16 +147,18 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         modules_view.open_page.connect ((page) => show_page (page));
         pages.add_titled (modules_view, "modules", _("Modules"));
         // The core, always there (PRODUCT.md), then the modules the user added, then the device.
-        sidebar.add ("feed", "", "document-open-recent-symbolic", _("Le Fil"));
-        sidebar.add ("notifications", "", "preferences-system-notifications-symbolic", _("Notifications"));
-        sidebar.add ("nowplaying", "", "multimedia-audio-player-symbolic", _("Lecture en cours"));
+        var mine = _("Mon iPhone");
+        sidebar.add ("device", mine, "phone-apple-iphone-symbolic", _("Vue d'ensemble"));
+        sidebar.add ("feed", mine, "document-open-recent-symbolic", _("Le Fil"));
+        sidebar.add ("notifications", mine, "preferences-system-notifications-symbolic", _("Notifications"));
+        sidebar.add ("nowplaying", mine, "multimedia-audio-player-symbolic", _("Lecture en cours"));
         sidebar.add ("headphones", _("Modules"), "audio-headphones-symbolic", _("Écouteurs"));
         sidebar.add ("services", _("Modules"), "preferences-desktop-online-accounts-symbolic", _("Services iCloud"));
         sidebar.add ("files", _("Modules"), "document-send-symbolic", _("Envoi de fichiers"));
         sidebar.add ("photos", _("Modules"), "multimedia-photo-viewer-symbolic", _("Import de photos"));
         sidebar.add ("mirror", _("Modules"), "video-display-symbolic", _("Recopie d'écran"));
         sidebar.add ("modules", _("Modules"), "list-add-symbolic", _("Ajouter des modules…"));
-        sidebar.add ("settings", "", "preferences-system-symbolic", _("Réglages"));
+        sidebar.add_footer ("settings", "preferences-system-symbolic", _("Réglages"));
         var mini_player = new MiniPlayer (daemon);
         mini_player.open_requested.connect (() => pages.visible_child_name = "nowplaying");
         sidebar.set_player (mini_player);
@@ -174,8 +177,8 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         });
 
         var offline = new Granite.Placeholder (_("Le service Boomerang ne répond pas")) {
-            description = _("Démarrez-le avec « systemctl --user start boomerangd », "
-                          + "ou consultez son journal avec « journalctl --user -u boomerangd »."),
+            description = _("Démarrez-le avec « systemctl --user start boomerangd », "
+                          + "ou consultez son journal avec « journalctl --user -u boomerangd »."),
             icon = new ThemedIcon ("dialog-warning")
         };
         var retry = offline.append_button (new ThemedIcon ("view-refresh"), _("Réessayer"),
@@ -195,8 +198,8 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         };
         sidebar.attach_paned (paned);
 
-        modes.add_titled (people, "people", _("Personnes"));
-        modes.add_titled (keypad, "keypad", _("Pavé"));
+        modes.add_titled (people, "people", _("Contacts"));
+        modes.add_titled (keypad, "keypad", _("Composer"));
         modes.add_titled (paned, "iphone", "iPhone");
         modes.notify["visible-child-name"].connect (on_mode_shown);
         notify["is-active"].connect (on_mode_shown);
@@ -239,6 +242,121 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         daemon.connect_bus.begin ();
     }
 
+    /* Essentiels | Avancés, at the top of both pages of Réglages. */
+    private Gtk.Widget settings_tabs (string active) {
+        var tabs = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { halign = Gtk.Align.START, margin_bottom = 6 };
+        tabs.add_css_class ("linked");
+        Gtk.ToggleButton? first = null;
+        foreach (var entry in new string[] { "basic", "advanced" }) {
+            var button = new Gtk.ToggleButton.with_label (entry == "basic" ? _("Essentiels") : _("Avancés")) {
+                active = entry == active
+            };
+            if (first == null) {
+                first = button;
+            } else {
+                button.group = first;
+            }
+            var target = entry;
+            button.toggled.connect (() => {
+                if (button.active) {
+                    settings_nav.visible_child_name = target;
+                }
+            });
+            tabs.append (button);
+        }
+        return tabs;
+    }
+
+    /* Vue d'ensemble: the iPhone, then the four shortcuts that used to be buried in Réglages. */
+    private Gtk.Widget build_overview_page () {
+        var column = settings_column ();
+        var title = new Gtk.Label (_("Vue d'ensemble")) { xalign = 0 };
+        title.add_css_class ("title-1");
+        column.append (title);
+        column.append (build_device_card ());
+
+        var heading = new Granite.HeaderLabel (_("Raccourcis"));
+        var tiles = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { homogeneous = true, margin_top = 6, margin_bottom = 6 };
+        var cell = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        cell.add_css_class (Granite.CssClass.CARD);
+        cell.append (tiles);
+        var provider = new Gtk.CssProvider ();
+        provider.load_from_string (Style.colors ("""
+            .shortcut-circle { background-color: alpha(@fg_color, 0.1); border-radius: 999px; min-width: 46px; min-height: 46px; }
+            .shortcut-circle.on { background-color: @accent_color; color: white; }
+        """));
+        Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), provider,
+                                                   Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+        Gtk.Box hotspot_circle, quiet_circle, mirror_circle, proximity_circle;
+        var hotspot = shortcut ("network-wireless-hotspot-symbolic", _("Partage de connexion"), out hotspot_circle);
+        hotspot.clicked.connect (() =>
+            daemon.call.begin ("SetTethering", new Variant ("(b)", daemon.get_string ("TetheringState") != "on")));
+        var quiet = shortcut ("notification-disabled-symbolic", _("Appels en silence"), out quiet_circle);
+        quiet.clicked.connect (() =>
+            daemon.call.begin ("SetCallsQuiet", new Variant ("(b)", !daemon.get_bool ("CallsQuiet"))));
+        var mirror = shortcut ("video-display-symbolic", _("Recopie de l'écran"), out mirror_circle);
+        mirror.clicked.connect (() =>
+            daemon.call.begin (Props.flag (daemon.get_value ("Mirror"), "running") ? "StopMirror" : "StartMirror"));
+        var proximity = shortcut ("changes-prevent-symbolic", _("Verrouillage de proximité"), out proximity_circle);
+        proximity.clicked.connect (() => {
+            var near = daemon.get_value ("Proximity");
+            var distance = near != null ? near.lookup_value ("distance", VariantType.STRING) : null;
+            var delay = near != null ? near.lookup_value ("delay", VariantType.UINT32) : null;
+            if (distance != null && delay != null) {
+                daemon.call.begin ("SetProximity", new Variant ("(bsu)", !Props.flag (near, "enabled"),
+                                                                 distance.get_string (), delay.get_uint32 ()));
+            }
+        });
+        tiles.append (gate ("hotspot", hotspot));
+        tiles.append (quiet);
+        tiles.append (gate ("mirror", mirror));
+        tiles.append (gate ("proximity", proximity));
+        column.append (heading);
+        column.append (cell);
+
+        SourceFunc refresh = () => {
+            light (hotspot_circle, daemon.get_string ("TetheringState") == "on");
+            light (quiet_circle, daemon.get_bool ("CallsQuiet"));
+            light (mirror_circle, Props.flag (daemon.get_value ("Mirror"), "running"));
+            light (proximity_circle, Props.flag (daemon.get_value ("Proximity"), "enabled"));
+            return Source.REMOVE;
+        };
+        daemon.changed.connect (() => {
+            if (daemon.touched ({ "TetheringState", "CallsQuiet", "Mirror", "Proximity" })) {
+                refresh ();
+            }
+        });
+        refresh ();
+        return scrolled (column);
+    }
+
+    private static void light (Gtk.Box circle, bool on) {
+        if (on) {
+            circle.add_css_class ("on");
+        } else {
+            circle.remove_css_class ("on");
+        }
+    }
+
+    /* A round shortcut with its caption underneath; `circle` is the disc that lights up. */
+    private static Gtk.Button shortcut (string icon, string label, out Gtk.Box circle) {
+        circle = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { halign = Gtk.Align.CENTER };
+        circle.add_css_class ("shortcut-circle");
+        circle.append (new Gtk.Image.from_icon_name (icon) { pixel_size = 20, hexpand = true, halign = Gtk.Align.CENTER });
+        var caption = new Gtk.Label (label) {
+            wrap = true, justify = Gtk.Justification.CENTER, max_width_chars = 14, lines = 2
+        };
+        caption.add_css_class (Granite.CssClass.SMALL);
+        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) { margin_top = 6, margin_bottom = 6 };
+        box.append (circle);
+        box.append (caption);
+        var button = new Gtk.Button () { child = box, hexpand = true };
+        button.add_css_class ("flat");
+        button.update_property (Gtk.AccessibleProperty.LABEL, label, -1);
+        return button;
+    }
+
     /* Réglages, in two levels as on the iPhone: the iPhone and the few settings people change,
        then one row to Réglages avancés, where every other setting stays, in sections. */
     private Gtk.Widget build_settings_page () {
@@ -246,7 +364,7 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         var title = new Gtk.Label (_("Réglages")) { xalign = 0 };
         title.add_css_class ("title-1");
         basic.append (title);
-        basic.append (build_device_card ());
+        basic.append (settings_tabs ("basic"));
 
         notifications_row = new ModuleRow ("notifications", "preferences-system-notifications",
                                            _("Notifications de l'iPhone"));
@@ -264,19 +382,14 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         basic.append (main_list);
 
         settings_nav = new Gtk.Stack () { transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT, vexpand = true };
-        var more = settings_list ();
-        more.append (nav_row ("preferences-system", _("Réglages avancés"),
-                              _("Connexion, messages, fiches, sons, affichage, mises à jour"), "advanced"));
-        more.row_activated.connect (() => settings_nav.visible_child_name = "advanced");
-        basic.append (more);
         settings_nav.add_named (scrolled (basic), "basic");
 
         // Réglages avancés: one row per section, each opening its own page, as on the iPhone.
         var advanced = settings_column ();
-        advanced.append (back_button (_("Réglages"), "basic"));
-        var advanced_title = new Gtk.Label (_("Réglages avancés")) { xalign = 0 };
+        var advanced_title = new Gtk.Label (_("Réglages")) { xalign = 0 };
         advanced_title.add_css_class ("title-1");
         advanced.append (advanced_title);
+        advanced.append (settings_tabs ("advanced"));
         var index = settings_list ();
         advanced.append (index);
         settings_nav.add_named (scrolled (advanced), "advanced");
@@ -293,7 +406,7 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         forget_button.add_css_class (Granite.CssClass.DESTRUCTIVE);
         forget_button.clicked.connect (confirm_forget);
         section (index, "connection", "preferences-bluetooth", _("Connexion"),
-                 _("Partage de connexion, verrouillage, guide, oubli"), {
+                 _("Partage de connexion, verrouillage, guide, oubli de l'iPhone"), {
             gate ("hotspot", new Granite.HeaderLabel (_("Internet via l'iPhone"))),
             gate ("hotspot", build_hotspot_card ()),
             gate ("proximity", new Granite.HeaderLabel (_("Verrouillage de proximité"))),
@@ -307,7 +420,7 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
 
         var book = settings_list ();
         book.append (action_row ("x-office-address-book", _("Répertoire"),
-                                 _("Toutes les fiches : leur source (Bluetooth ou iCloud), l'ordre de tri, "
+                                 _("Toutes les fiches : leur source (Bluetooth ou iCloud), l'ordre de tri, "
                                    + "l'import et l'export"),
                                  _("Ouvrir"), () => show_page ("contacts-book")));
         section (index, "contacts", "x-office-address-book", _("Fiches de contact"),
@@ -441,8 +554,8 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
     private Gtk.Widget build_calls_quiet_row () {
         var title_label = new Gtk.Label (_("Appels de l'iPhone en silence")) { xalign = 0 };
         var subtitle_label = new Gtk.Label (
-            _("Ni sonnerie ni fenêtre sur ce PC, par exemple quand Teams y sonne déjà ; "
-              + "l'appel reste visible dans Pavé")
+            _("Ni sonnerie ni fenêtre sur ce PC, par exemple quand Teams y sonne déjà ; "
+              + "l'appel reste visible dans l'onglet Composer")
         ) { xalign = 0, wrap = true };
         subtitle_label.add_css_class (Granite.CssClass.DIM);
         subtitle_label.add_css_class (Granite.CssClass.SMALL);
@@ -517,13 +630,13 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         list.append (alpha_row ("mark_read", _("Marquer comme lu sur l'iPhone"),
                                 _("Ouvrir une conversation dans Boomerang la marque comme lue sur l'iPhone")));
         list.append (alpha_row ("ancs_actions", _("Actions des notifications"),
-                                _("Boutons de l'iPhone (Marquer comme lu, Supprimer…) dans Notifications")));
+                                _("Boutons de l'iPhone (Marquer comme lu, Supprimer…) dans la page Notifications")));
         list.append (alpha_row ("pbap_favorites", _("Favoris de l'iPhone"),
                                 _("Une étoile signale les contacts favoris, récupérés à la prochaine synchronisation")));
         list.append (alpha_row ("iphone_control", _("Contrôler l'iPhone depuis le PC"),
                                 _("Le PC comme souris et clavier Bluetooth de l'iPhone (app Recopie)")));
         list.append (alpha_row ("head_gestures", _("Répondre d'un geste de tête"),
-                                _("AirPods portés : hocher la tête répond à un appel entrant, la secouer "
+                                _("AirPods portés : hocher la tête répond à un appel entrant, la secouer "
                                   + "le refuse (d'après LibrePods)")));
         list.append (alpha_row ("mirror_ble", _("Balise Bluetooth pour la recopie"),
                                 _("L'iPhone trouve le PC par Bluetooth quand le réseau bloque la découverte "
@@ -668,7 +781,7 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
     /* Removes the iPhone and its keys from this PC, to start pairing again from scratch. */
     private void confirm_forget () {
         var dialog = new Granite.MessageDialog.with_image_from_icon_name (
-            _("Oublier cet iPhone ?"),
+            _("Oublier cet iPhone ?"),
             _("Boomerang supprime l'appairage sur ce PC. Pour repartir de zéro, oubliez aussi ce "
               + "PC sur l'iPhone (Réglages › Bluetooth › ⓘ › Oublier cet appareil), puis appairez de "
               + "nouveau les deux appareils."),
@@ -746,7 +859,7 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         sound_output.sensitive = state != "off";
         string status;
         if (state == "off") {
-            status = _("Désactivé : le son des vidéos et de la musique reste sur l'iPhone");
+            status = _("Désactivé : le son des vidéos et de la musique reste sur l'iPhone");
         } else if (state == "playing") {
             status = _("En lecture sur ce PC");
         } else if (connected) {
@@ -816,7 +929,7 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         forget_button.visible = name != "" && bluetooth;
 
         string waiting_le = connected
-            ? _("En attente : l'iPhone doit se connecter à « Boomerang » en Bluetooth basse consommation")
+            ? _("En attente : l'iPhone doit se connecter à « Boomerang » en Bluetooth basse consommation")
             : _("iPhone absent");
 
         var on = daemon.module_enabled ("notifications");
@@ -826,14 +939,14 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
 
         on = daemon.module_enabled ("media");
         media_row.update (on, !on ? _("Désactivée")
-            : daemon.get_bool ("MediaLinked") ? _("Pilotable depuis Lecture en cours et l'indicateur de son")
+            : daemon.get_bool ("MediaLinked") ? _("Pilotable depuis la page Lecture en cours et l'indicateur de son")
             : paired ? waiting_le : _("iPhone non appairé"));
 
         on = daemon.module_enabled ("calls");
         var calls_off = calls_unavailable (daemon);
         calls_row.update (on, calls_off ? _(CALLS_UNAVAILABLE)
             : !on ? _("Désactivés")
-            : daemon.get_bool ("CallsLinked") ? _("Prêt : les appels entrants s'affichent ici")
+            : daemon.get_bool ("CallsLinked") ? _("Prêt : les appels entrants s'affichent ici")
             : connected ? _("Profil mains libres non connecté")
             : _("iPhone absent"), !calls_off);
 
@@ -842,11 +955,11 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
         switch (daemon.get_string ("MessagesState")) {
             case "ready":
                 messages_status = daemon.get_string ("MessagesSend") == "no"
-                    ? _("Lecture depuis l'iPhone ; réponse sur l'iPhone seulement")
+                    ? _("Lecture depuis l'iPhone ; réponse sur l'iPhone seulement")
                     : _("Messages de l'iPhone lus en Bluetooth");
                 break;
             case "forbidden":
-                messages_status = _("Refusé : activez « Afficher les notifications » pour ce PC "
+                messages_status = _("Refusé : activez « Afficher les notifications » pour ce PC "
                                   + "dans les réglages Bluetooth de l'iPhone");
                 break;
             case "no-obex":
@@ -926,9 +1039,6 @@ public class Boomerang.MainWindow : Gtk.ApplicationWindow {
 
     /* A page by its name: messages and contacts are Personnes, phone the Pavé, the rest the Centre. */
     private void select (string name) {
-        if (name == "device") {
-            name = "settings";  // the iPhone card is at the top of Réglages
-        }
         if (settings_nav.get_child_by_name (name) != null) {  // advanced, advanced/sounds…
             select ("settings");
             settings_nav.visible_child_name = name;

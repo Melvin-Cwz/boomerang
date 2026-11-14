@@ -14,4 +14,4 @@ Boomerang uses published protocols: Bluetooth HFP, MAP and PBAP, ANCS and AMS (s
 - LibrePods (Kavish Devar and contributors) for the AirPods protocol.
 - rclone, BlueZ, PipeWire, Evolution Data Server, GTK and Granite.
 
-The version and licence details are in **About Boomerang**, from [Settings](app:settings).
+The **About Boomerang** window shows the version and the licence details. Open it from the menu at the top right of the window, or from [Settings › Advanced › Help](app:advanced/help).

@@ -40,10 +40,10 @@ public class Boomerang.Onboarding : Gtk.Box {
         var phone_guide = new PhoneGuide (daemon);
         phone_guide.pair_requested.connect (() => pair_requested ());
         stack.add_named (step_page ("phone", _("Connexion avec votre iPhone"),
-            _("Par Bluetooth : notifications, musique, messages, contacts et appels."), phone_guide),
+            _("Par Bluetooth : notifications, musique, messages, contacts et appels."), phone_guide),
             "phone");
         stack.add_named (step_page ("folder-remote", _("Services Apple"),
-            _("Par Internet, avec votre compte Apple : courriel, agendas, rappels, contacts et fichiers iCloud."),
+            _("Par Internet, avec votre compte Apple : courriel, agendas, rappels, contacts et fichiers iCloud."),
             new AppleGuide (daemon)), "apple");
         stack.add_named (apps_page (), "apps");
         stack.add_named (done_page (), "done");
@@ -188,7 +188,7 @@ public class Boomerang.Onboarding : Gtk.Box {
         var language = Language.welcome_row (this);
         language.margin_bottom = 6;
         box.append (language);
-        box.append (body (_("Votre iPhone et iCloud sur elementary OS : notifications, "
+        box.append (body (_("Votre iPhone et iCloud sur elementary OS : notifications, "
                           + "messages, appels, contacts, musique, courriel, agendas et fichiers iCloud.")));
         var privacy = body (_("Tout passe directement entre ce PC, votre iPhone et Apple. Boomerang n'utilise "
                             + "aucun serveur et ne conserve ni ne journalise le contenu de vos messages "
@@ -237,15 +237,15 @@ public class Boomerang.Onboarding : Gtk.Box {
 
     private Gtk.Widget choice_page () {
         want_phone = choice_card ("phone", _("Votre iPhone"),
-            _("Par Bluetooth : notifications, musique, messages, contacts et appels sur ce PC."));
+            _("Par Bluetooth : notifications, musique, messages, contacts et appels sur ce PC."));
         want_apple = choice_card ("folder-remote", _("Services Apple"),
-            _("Par Internet : courriel, agendas, rappels, contacts et iCloud Drive."));
+            _("Par Internet : courriel, agendas, rappels, contacts et iCloud Drive."));
         var cards = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 18) { homogeneous = true };
         cards.append (want_phone);
         cards.append (want_apple);
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
-        box.append (title (_("Que voulez-vous connecter ?")));
-        box.append (body (_("Les deux connexions sont indépendantes : vous pourrez ajouter l'autre plus tard.")));
+        box.append (title (_("Que voulez-vous connecter ?")));
+        box.append (body (_("Les deux connexions sont indépendantes : vous pourrez ajouter l'autre plus tard.")));
         cards.margin_top = 12;
         box.append (cards);
         return centered (box, 620);
@@ -261,7 +261,7 @@ public class Boomerang.Onboarding : Gtk.Box {
         card.add_css_class ("setup-column");
         card.append (guide);
         box.append (card);
-        var later = body (_("Vous pouvez passer une étape : chaque réglage reste disponible dans Boomerang."));
+        var later = body (_("Vous pouvez passer une étape : chaque réglage reste disponible dans Boomerang."));
         later.add_css_class (Granite.CssClass.SMALL);
         box.append (later);
         return centered (box);
@@ -298,7 +298,7 @@ public class Boomerang.Onboarding : Gtk.Box {
                                  _("Batterie, contrôle du bruit et réglages de vos AirPods.")));
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
         box.append (title (_("Apps séparées")));
-        box.append (body (_("Écouteurs est toujours dans Boomerang. Vous pouvez aussi l'afficher comme app "
+        box.append (body (_("La page Écouteurs reste dans Boomerang. Vous pouvez aussi l'afficher comme app "
                           + "séparée dans le menu Applications et le dock.")));
         list.margin_top = 12;
         box.append (list);
@@ -309,7 +309,7 @@ public class Boomerang.Onboarding : Gtk.Box {
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
         box.append (new Gtk.Image.from_icon_name ("process-completed") { pixel_size = 96 });
         box.append (title (_("Configuration terminée")));
-        box.append (body (_("Boomerang fonctionne en arrière-plan : les notifications, les messages et "
+        box.append (body (_("Boomerang fonctionne en arrière-plan : les notifications, les messages et "
                           + "les appels arrivent même quand la fenêtre est fermée. Pour refaire cette "
                           + "configuration, ouvrez le menu en haut à droite de Boomerang.")));
         return centered (box);

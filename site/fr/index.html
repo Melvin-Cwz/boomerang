@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Boomerang : votre iPhone et iCloud sur elementary OS</title>
+  <title>Boomerang : votre iPhone et iCloud sur elementary OS</title>
   <meta name="description" content="Boomerang intègre à elementary OS les notifications, messages, appels et contacts de l'iPhone, les AirPods et iCloud. Logiciel libre, sans serveur ni télémétrie.">
   <link rel="icon" href="../icon.svg" type="image/svg+xml">
   <link rel="alternate" hreflang="en" href="../">
@@ -74,7 +74,7 @@
           <img src="../screenshots/services.png" width="1044" height="740" alt="Page Services Apple">
           <img src="../screenshots/guide.png" width="1044" height="740" alt="Le guide intégré">
         </div>
-        <p class="note"><strong>À propos d'iCloud Drive et Photos.</strong> rclone se connecte comme le site icloud.com, avec le mot de passe de votre compte Apple et la double authentification. Apple ne propose pas cet accès officiellement : ses conditions d'utilisation d'iCloud limitent l'accès automatisé et l'autorisent à suspendre un compte. Cette fonction demande de désactiver la Protection avancée des données, ce qui réduit le chiffrement de bout en bout de vos données iCloud. Le jeton de connexion expire environ une fois par mois. Vous utilisez cette fonction à vos risques.</p>
+        <p class="note"><strong>À propos d'iCloud Drive et Photos.</strong> rclone se connecte comme le site icloud.com, avec le mot de passe de votre compte Apple et la double authentification. Apple ne propose pas cet accès officiellement : ses conditions d'utilisation d'iCloud limitent l'accès automatisé et l'autorisent à suspendre un compte. Cette fonction demande de désactiver la Protection avancée des données, ce qui réduit le chiffrement de bout en bout de vos données iCloud. Le jeton de connexion expire environ une fois par mois. Vous utilisez cette fonction à vos risques.</p>
       </div>
     </section>
 
@@ -83,7 +83,7 @@
         <h2>Installation</h2>
         <ol class="steps">
           <li>Téléchargez <a href="https://github.com/Melvin-Cwz/boomerang/releases/tag/v0.8.3"><code>boomerang_0.8.3-1_amd64.deb</code></a>.</li>
-          <li>Installez-le dans un terminal : <code>sudo apt install ./boomerang_0.8.3-1_amd64.deb</code>. apt installe également les dépendances nécessaires. Sur Ubuntu, un double-clic sur le fichier l'ouvre aussi dans l'App Center.</li>
+          <li>Installez-le dans un terminal : <code>sudo apt install ./boomerang_0.8.3-1_amd64.deb</code>. apt installe également les dépendances nécessaires. Sur Ubuntu, un double-clic sur le fichier l'ouvre aussi dans l'App Center.</li>
           <li>Fermez puis rouvrez votre session, puis ouvrez Boomerang. L'assistant vous guide pour appairer l'iPhone et vous connecter à iCloud.</li>
         </ol>
         <p>Si un composant manque par la suite, Boomerang le signale et l'installe en un clic. Un guide intégré, en français et en anglais, explique chaque étape (touche F1).</p>
@@ -98,17 +98,17 @@
     <section id="questions">
       <div class="wrap">
         <h2>Questions</h2>
-        <details><summary>Puis-je envoyer des iMessages ?</summary><p>Non. Le Bluetooth ne permet à un ordinateur que d'envoyer un SMS à une seule personne. Les réponses de groupe et les pièces jointes restent sur l'iPhone.</p></details>
-        <details><summary>Et le presse-papiers universel, Handoff ou AirDrop ?</summary><p>Non. Ces fonctions exigent le chiffrement et la pile Wi-Fi propres à Apple.</p></details>
-        <details><summary>Où vont mes messages ?</summary><p>Vos messages restent sur votre ordinateur. Boomerang n'a pas de serveur et n'envoie aucune statistique. Lisez la <a href="https://github.com/Melvin-Cwz/boomerang/blob/HEAD/docs/confidentialite.md">notice de confidentialité</a>.</p></details>
-        <details><summary>Mon iPhone ne voit pas l'ordinateur dans ses réglages Bluetooth.</summary><p>Cliquez d'abord sur « Appairer un iPhone… » dans l'Aperçu de Boomerang : l'ordinateur devient visible pendant trois minutes sous Réglages › Bluetooth › Autres appareils. Si l'ordinateur n'apparaît toujours pas, coupez puis réactivez le Bluetooth de l'iPhone. Le guide intégré détaille chaque étape.</p></details>
+        <details><summary>Puis-je envoyer des iMessages ?</summary><p>Non. Le Bluetooth ne permet à un ordinateur que d'envoyer un SMS à une seule personne. Les réponses de groupe et les pièces jointes restent sur l'iPhone.</p></details>
+        <details><summary>Et le presse-papiers universel, Handoff ou AirDrop ?</summary><p>Non. Ces fonctions exigent le chiffrement et la pile Wi-Fi propres à Apple.</p></details>
+        <details><summary>Où vont mes messages ?</summary><p>Vos messages restent sur votre ordinateur. Boomerang n'a pas de serveur et n'envoie aucune statistique. Lisez la <a href="https://github.com/Melvin-Cwz/boomerang/blob/HEAD/docs/confidentialite.md">notice de confidentialité</a>.</p></details>
+        <details><summary>Mon iPhone ne voit pas l'ordinateur dans ses réglages Bluetooth.</summary><p>Cliquez d'abord sur « Appairer un iPhone… » dans l'Aperçu de Boomerang : l'ordinateur devient visible pendant trois minutes sous Réglages › Bluetooth › Autres appareils. Si l'ordinateur n'apparaît toujours pas, coupez puis réactivez le Bluetooth de l'iPhone. Le guide intégré détaille chaque étape.</p></details>
       </div>
     </section>
 
     <section class="alt">
       <div class="wrap who">
         <h2>Fait par un passionné</h2>
-        <p>Je ne suis pas développeur. Je suis un passionné d'elementary OS, utilisateur d'iPhone, avec quelques idées, et je construis Boomerang en « vibe coding » avec Claude, l'assistant d'Anthropic. Je décris ce que je veux, je teste chaque jour sur mon propre ordinateur, et nous corrigeons ensemble. Le code est ouvert pour que les personnes qui s'y connaissent mieux puissent le lire, signaler les erreurs et aider. Signalements et conseils bienveillants sont les bienvenus.</p>
+        <p>Je ne suis pas développeur. Je suis un passionné d'elementary OS, utilisateur d'iPhone, avec quelques idées, et je construis Boomerang en « vibe coding » avec Claude, l'assistant d'Anthropic. Je décris ce que je veux, je teste chaque jour sur mon propre ordinateur, et nous corrigeons ensemble. Le code est ouvert pour que les personnes qui s'y connaissent mieux puissent le lire, signaler les erreurs et aider. Signalements et conseils bienveillants sont les bienvenus.</p>
         <p>MelvinCwz</p>
         <h3>Merci</h3>
         <p>Boomerang repose sur
@@ -129,7 +129,7 @@
           <a href="https://github.com/strukturag/libheif">libheif</a>,
           les <a href="https://github.com/elementary/icons">icônes elementary</a>,
           <a href="https://github.com/rsms/inter">Inter</a> et des sons de l'Android Open Source Project et de <a href="https://kenney.nl/assets/interface-sounds">Kenney</a>.
-          Agenda et Cassette, installées depuis Boomerang, ont leur propre dépôt et leurs téléchargements : <a href="https://github.com/Melvin-Cwz/agenda">Agenda</a> (GPL-3.0-or-later) et <a href="https://github.com/Melvin-Cwz/cassette">Cassette</a>, issue de <a href="https://github.com/wimpysworld/sidra">Sidra</a>, de Martin Wimpress (Blue Oak 1.0.0).
+          Agenda et Cassette, installées depuis Boomerang, ont leur propre dépôt et leurs téléchargements : <a href="https://github.com/Melvin-Cwz/agenda">Agenda</a> (GPL-3.0-or-later) et <a href="https://github.com/Melvin-Cwz/cassette">Cassette</a>, issue de <a href="https://github.com/wimpysworld/sidra">Sidra</a>, de Martin Wimpress (Blue Oak 1.0.0).
           Un merci particulier à l'équipe de LibrePods pour son travail de rétro-ingénierie sur les AirPods.</p>
       </div>
     </section>
@@ -140,9 +140,9 @@
       <p>Boomerang est un logiciel libre sous <a href="https://github.com/Melvin-Cwz/boomerang/blob/HEAD/LICENSE">licence GNU GPL version 3 ou ultérieure</a>, fourni sans aucune garantie.</p>
       <p>Boomerang est un projet indépendant. Il n'est ni affilié à Apple Inc. ou à elementary, Inc., ni approuvé, sponsorisé ou soutenu par eux. Apple, iPhone, iCloud, iMessage, AirPods, AirPlay et Apple Music sont des marques d'Apple Inc., déposées aux États-Unis et dans d'autres pays et régions.</p>
       <h3>Mentions légales</h3>
-      <p>Éditeur : MelvinCwz, particulier, projet non commercial. Contact : <a href="https://github.com/Melvin-Cwz/boomerang/issues">page Issues du projet</a>.</p>
-      <p>Hébergeur : GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</p>
-      <p>Ce site ne dépose aucun cookie et ne collecte aucune donnée. GitHub peut conserver des journaux techniques d'accès, voir <a href="https://docs.github.com/fr/site-policy/privacy-policies/github-general-privacy-statement">sa déclaration de confidentialité</a>. Pour l'application : <a href="https://github.com/Melvin-Cwz/boomerang/blob/HEAD/docs/confidentialite.md">notice de confidentialité</a>.</p>
+      <p>Éditeur : MelvinCwz, particulier, projet non commercial. Contact : <a href="https://github.com/Melvin-Cwz/boomerang/issues">page Issues du projet</a>.</p>
+      <p>Hébergeur : GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</p>
+      <p>Ce site ne dépose aucun cookie et ne collecte aucune donnée. GitHub peut conserver des journaux techniques d'accès, voir <a href="https://docs.github.com/fr/site-policy/privacy-policies/github-general-privacy-statement">sa déclaration de confidentialité</a>. Pour l'application : <a href="https://github.com/Melvin-Cwz/boomerang/blob/HEAD/docs/confidentialite.md">notice de confidentialité</a>.</p>
     </div>
   </footer>
 </body>

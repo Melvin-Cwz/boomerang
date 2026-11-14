@@ -166,12 +166,12 @@ namespace Boomerang {
                 action.label = _("Ouvrir");
                 action.tooltip_text = null;
                 state.label = choice.content_type != null
-                    ? _("App par défaut pour vos calendriers iCloud")
+                    ? _("App par défaut pour vos agendas iCloud")
                     : _("App affichée dans le menu Applications");
             } else {
                 action.label = _("Installer…");
                 action.tooltip_text = _("Ouvrir la fiche dans AppCenter");
-                state.label = _("Pas encore installée : cette app deviendra l'app par défaut après son installation");
+                state.label = _("Pas encore installée : cette app deviendra l'app par défaut après son installation");
             }
         }
     }

@@ -84,7 +84,7 @@ public class Boomerang.InstallBox : Gtk.Box {
     public void set_missing (string[] missing, string what) {
         packages = missing;
         visible = missing.length > 0;
-        text.label = _("%s a besoin d'outils absents : %s.").printf (what, string.joinv (", ", missing));
+        text.label = _("%s a besoin d'outils absents : %s.").printf (what, string.joinv (", ", missing));
     }
 
     private async void run () {
@@ -116,7 +116,7 @@ public class Boomerang.InstallBox : Gtk.Box {
         bar.visible = false;
         button.sensitive = true;
         if (failure != null) {
-            text.label = _("L'installation n'a pas abouti : %s").printf (failure);
+            text.label = _("L'installation n'a pas abouti : %s").printf (failure);
         } else {
             installed ();
         }

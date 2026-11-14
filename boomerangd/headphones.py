@@ -746,7 +746,7 @@ class Headphones:
         self.low_notes[pods.address] = self.notifier.notify(
             "Boomerang", "battery-caution",
             _("Batterie de {name} faible").format(name=pods.alias),
-            _("Il reste : {parts}.").format(parts=parts),
+            _("Il reste : {parts}.").format(parts=parts),
             replaces=self.low_notes.get(pods.address, 0), own=True)
 
     def _close_warnings(self):

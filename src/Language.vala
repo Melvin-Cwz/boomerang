@@ -146,7 +146,7 @@ namespace Boomerang.Language {
         var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
         heading.append (title);
         heading.append (beta);
-        var subtitle = new Gtk.Label (_("L'anglais est en bêta : quelques textes peuvent rester en français. "
+        var subtitle = new Gtk.Label (_("L'anglais est en bêta : quelques textes peuvent rester en français. "
                                         + "Le guide a son propre bouton FR / EN.")) {
             xalign = 0,
             wrap = true

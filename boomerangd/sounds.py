@@ -40,7 +40,7 @@ LABELS = {
     "network-connectivity-established": N_("Réseau connecté"),
     "network-connectivity-lost": N_("Réseau perdu"), "power-plug": N_("Secteur branché"),
     "power-unplug": N_("Secteur débranché"), "screen-capture": N_("Capture d'écran"),
-    "service-login": N_("Connexion"), "service-logout": N_("Déconnexion"),
+    "service-login": N_("Ouverture de session"), "service-logout": N_("Fermeture de session"),
     "suspend-error": N_("Erreur de mise en veille"), "trash-empty": N_("Corbeille vidée"),
 }
 

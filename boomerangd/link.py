@@ -537,7 +537,7 @@ class Link:
                                      CONFIRM_SECONDS, lambda: self._answer_code(False) and False)}
             self.pairing_note = self.notifier.notify(
                 "Boomerang", "bluetooth", _("Appairage avec l'iPhone"),
-                _("L'iPhone affiche-t-il le code {code} ?").format(code=f"{passkey:06d}"),
+                _("L'iPhone affiche-t-il le code {code} ?").format(code=f"{passkey:06d}"),
                 actions=[("match", _("Le code correspond")), ("cancel", _("Annuler"))],
                 replaces=self.pairing_note, own=True,
                 on_action=lambda key: self.confirm_pairing(key == "match"))
@@ -1029,7 +1029,7 @@ class Link:
         self.notifier.notify(
             "Boomerang", "dialog-warning", _("Notifications de l'iPhone interrompues"),
             _("L'iPhone est connecté mais n'envoie plus ses notifications. Vérifiez "
-              "« Partager les notifications système » sur l'iPhone, sinon appairez-le à nouveau."),
+              "« Partager les notifications système » sur l'iPhone, sinon appairez-le à nouveau."),
             actions=[("open", _("Ouvrir Boomerang"))], own=True,
             on_action=lambda _key: launch(["io.github.melvincouwez.Boomerang", "--page", "device"]))
 

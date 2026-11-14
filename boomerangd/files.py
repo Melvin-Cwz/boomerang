@@ -98,7 +98,7 @@ class Files:
         except OSError as error:
             self.receiver = None
             # EADDRINUSE: the LocalSend app itself probably runs on this PC.
-            self.error = _("Port 53317 déjà utilisé (LocalSend est-il ouvert sur ce PC ?)") \
+            self.error = _("Port 53317 déjà utilisé (LocalSend est-il ouvert sur ce PC ?)") \
                 if getattr(error, "errno", 0) == 98 else _("Démarrage impossible")
             log(f"fichiers : démarrage impossible ({type(error).__name__})")
             self.changed()
@@ -150,8 +150,8 @@ class Files:
         names = ", ".join(f["name"] for f in list(session.files.values())[:3])
         if count > 3:
             names += ", …"
-        body = ngettext("{name} veut vous envoyer {n} fichier ({size}) : {names}",
-                        "{name} veut vous envoyer {n} fichiers ({size}) : {names}", count).format(
+        body = ngettext("{name} veut vous envoyer {n} fichier ({size}) : {names}",
+                        "{name} veut vous envoyer {n} fichiers ({size}) : {names}", count).format(
             name=peer.get("alias") or "LocalSend", n=count,
             size=localsend.human_size(session.total), names=names)
         settled = []
@@ -216,7 +216,7 @@ class Files:
         if self.sending:
             return _("Un envoi est déjà en cours")
         self.sending, self.cancel_send = True, False
-        self.activity = _("Envoi à {name} : en attente de son accord").format(name=peer["alias"])
+        self.activity = _("Envoi à {name} : en attente de son accord").format(name=peer["alias"])
         self.progress = 0.0
         self.changed()
         info = self.info

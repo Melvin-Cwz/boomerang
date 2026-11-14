@@ -75,7 +75,7 @@ public class Boomerang.NotificationsView : Gtk.Box {
         items.set_filter_func ((row) => filter == null || row.get_data<string> ("app") == filter);
         var empty = new Granite.Placeholder (_("Aucune notification")) {
             description = _("Les notifications de l'iPhone s'afficheront ici, tant que l'iPhone est relié "
-                          + "à « Boomerang » en Bluetooth basse consommation. Elles ne sont jamais "
+                          + "à « Boomerang » en Bluetooth basse consommation. Elles ne sont jamais "
                           + "enregistrées sur le disque."),
             icon = new ThemedIcon ("preferences-system-notifications")
         };
@@ -93,7 +93,7 @@ public class Boomerang.NotificationsView : Gtk.Box {
 
         clear = new Gtk.Button.with_label (_("Effacer la liste")) { halign = Gtk.Align.END };
         clear.add_css_class ("flat");
-        clear.tooltip_text = _("Vide la liste de Boomerang ; rien ne change sur l'iPhone");
+        clear.tooltip_text = _("Vide la liste de Boomerang ; rien ne change sur l'iPhone");
         clear.clicked.connect (() => daemon.call.begin ("ClearNotifications"));
         var page_title = new Gtk.Label (_("Notifications")) { xalign = 0, hexpand = true };
         page_title.add_css_class ("title-1");

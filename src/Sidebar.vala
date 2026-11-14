@@ -76,6 +76,26 @@ public class Boomerang.Sidebar : Gtk.Box {
             box-shadow: 0 1px 2px alpha(black, 0.35);
             transform: translate(7px, -6px);
         }
+        /* Where you are must be obvious: a tinted pill, an accent bar and the label in bold. */
+        .navigation-sidebar row {
+            min-height: 36px;
+            margin: 1px 6px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .navigation-sidebar row:hover { background-color: alpha(@fg_color, 0.07); }
+        .navigation-sidebar row:selected {
+            background-color: alpha(@accent_color, 0.18);
+            box-shadow: inset 3px 0 0 @accent_color;
+            font-weight: 700;
+        }
+        .navigation-sidebar row:selected image { color: @accent_color; }
+        label.sidebar-section {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: alpha(@fg_color, 0.7);
+        }
         separator.sidebar-section-separator {
             margin: 6px 12px;
         }
@@ -101,7 +121,7 @@ public class Boomerang.Sidebar : Gtk.Box {
                     row.set_header (null);
                 }
             } else if (section != previous && section != "") {  // "": the core, no heading
-                var label = new Gtk.Label (section) { xalign = 0, margin_start = 9, margin_top = 12 };
+                var label = new Gtk.Label (section.up ()) { xalign = 0, margin_start = 12, margin_top = 14, margin_bottom = 2 };
                 label.add_css_class (Granite.CssClass.DIM);
                 label.add_css_class (Granite.CssClass.SMALL);
                 label.add_css_class ("sidebar-section");
@@ -110,18 +130,18 @@ public class Boomerang.Sidebar : Gtk.Box {
                 row.set_header (null);
             }
         });
-        list.row_selected.connect ((row) => {
-            if (row != null && !syncing) {
-                pages.visible_child_name = row.get_data<string> ("page");
-            }
+        // Activated (click, Enter), not merely selected: the list takes the focus when the window
+        // opens and would select its first row, undoing the page opened from the footer.
+        list.row_activated.connect ((row) => {
+            pages.visible_child_name = row.get_data<string> ("page");
         });
+        // A selection that is not the page on show (the focus landing on a row): back to the page.
+        list.row_selected.connect (() => resync_later ());
         // Réglages stay at the bottom, apart from the sections.
         footer = new Gtk.ListBox ();
         footer.add_css_class ("navigation-sidebar");
-        footer.row_selected.connect ((row) => {
-            if (row == null || syncing) {
-                return;
-            }
+        footer.row_selected.connect (() => resync_later ());
+        footer.row_activated.connect ((row) => {
             var page = row.get_data<string> ("page");
             if (actions.contains (page)) {
                 // Opens a window rather than a page: keep the current page selected.
@@ -370,6 +390,15 @@ public class Boomerang.Sidebar : Gtk.Box {
         }
         entry.count = count == 0 ? "" : (count > 99 ? "99+" : count.to_string ());
         update_entry (entry);
+    }
+
+    private void resync_later () {
+        if (!syncing) {
+            Idle.add (() => {
+                sync ();
+                return Source.REMOVE;
+            });
+        }
     }
 
     private void sync () {

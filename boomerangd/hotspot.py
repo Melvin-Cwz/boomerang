@@ -271,7 +271,7 @@ class Hotspot:
             if state == "on" or count[0] <= 0:
                 if state != "on" and self.pending:
                     self.error = _("L'iPhone n'a pas accepté. Sur l'iPhone, ouvrez Réglages › "
-                                   "Partage de connexion et activez « Autoriser d'autres "
+                                   "Partage de connexion et activez « Autoriser d'autres "
                                    "utilisateurs », puis réessayez.")
                 self.pending, self.timer = False, 0
                 self.on_changed()
@@ -287,5 +287,5 @@ def explain(message):
     lower = (message or "").lower()
     if "bluetooth" in lower or "nap" in lower or "timed out" in lower or "timeout" in lower:
         return _("L'iPhone n'a pas accepté. Sur l'iPhone, ouvrez Réglages › Partage de connexion "
-                 "et activez « Autoriser d'autres utilisateurs », puis réessayez.")
+                 "et activez « Autoriser d'autres utilisateurs », puis réessayez.")
     return message or _("échec inconnu")

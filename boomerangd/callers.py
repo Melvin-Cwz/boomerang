@@ -13,7 +13,8 @@ actions that make no sense outside the app (typing on the iPhone).
 The app is recognised by the executable of the calling process
 (/proc/<pid>/exe, which a program cannot fake by renaming itself): a Boomerang
 binary installed by the package (owned by root), or one next to this daemon
-(meson install in ~/.local). A process of the same user could still start the
+(meson install in ~/.local), under bin/ or, for the Granite 9 and 7 builds the
+launcher starts, libexec/boomerang/. A process of the same user could still start the
 real app with its own arguments; the app only acts on explicit clicks, so that
 is out of scope here.
 """
@@ -26,6 +27,8 @@ from .i18n import _
 from .util import call_sync, log
 
 APP_BINARY = "io.github.melvincouwez.Boomerang"
+# Since 2.0.0~beta2 the launcher execs one of these (<libexecdir>/boomerang/).
+APP_VARIANTS = ("boomerang-granite9", "boomerang-granite7")
 BUS_DAEMON = ("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus")
 
 
@@ -40,7 +43,8 @@ def _own_prefix():
 
 def is_app_executable(exe, prefix=None):
     """True for a Boomerang app binary we trust (see the module comment)."""
-    if not exe or not os.path.basename(exe).startswith(APP_BINARY):
+    name = os.path.basename(exe or "")
+    if not name.startswith(APP_BINARY) and name not in APP_VARIANTS:
         return False
     if exe.endswith(" (deleted)"):
         return False  # replaced on disk since it started: not the file we would check
@@ -51,7 +55,8 @@ def is_app_executable(exe, prefix=None):
     if info.st_uid == 0 and not info.st_mode & 0o022:
         return True  # installed by the package
     prefix = prefix if prefix is not None else _own_prefix()
-    return bool(prefix) and os.path.dirname(exe) == os.path.join(prefix, "bin")
+    return bool(prefix) and os.path.dirname(exe) in (os.path.join(prefix, "bin"),
+                                                     os.path.join(prefix, "libexec", "boomerang"))
 
 
 class Callers:

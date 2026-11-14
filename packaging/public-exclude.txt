@@ -8,3 +8,4 @@ data/icon-proposals
 .impeccable
 PRODUCT.md
 DESIGN.md
+docs/maquettes

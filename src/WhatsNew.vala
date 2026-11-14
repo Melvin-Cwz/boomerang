@@ -16,27 +16,38 @@ namespace Boomerang.WhatsNew {
 
     private static Item[] items () {
         return {
+            { "view-grid-symbolic", _("Un menu qui dit où vous êtes"),
+              _("Dans l'onglet iPhone, le menu de gauche est en trois groupes et la page courante est "
+                + "bien visible. La nouvelle « Vue d'ensemble » réunit l'iPhone et ses raccourcis.") },
+            { "preferences-system-symbolic", _("Des réglages en deux onglets"),
+              _("Les réglages d'usage courant sont dans « Essentiels », tout le reste dans « Avancés ».") },
+            { "preferences-desktop-notification-symbolic", _("Un panneau de la barre du haut refait"),
+              _("Raccourcis, messages et appels à rattraper, appel en cours ou entrant, et un état "
+                + "clair quand l'iPhone est hors de portée.") },
+            { "system-users-symbolic", _("Une personne, un fil"),
+              _("Les messages et les appels d'une même personne se suivent dans un seul fil, avec "
+                + "sa fiche à droite. Trois onglets : Contacts, Composer et iPhone.") },
             { "mail-unread-symbolic", _("Messages plus complets"),
               _("L'historique plus ancien se charge en remontant, les filtres isolent les non-lus et "
                 + "les inconnus, et Ctrl+? affiche tous les raccourcis.") },
             { "call-start-symbolic", _("Le double appel"),
               _("Mettez un appel en attente pour répondre au second, permutez ou réunissez-les, et "
-                + "choisissez où passe le son. Favoris et messagerie vocale sont dans Téléphone.") },
+                + "choisissez où passe le son. Favoris et messagerie vocale sont dans l'onglet Composer.") },
             { "x-office-address-book-symbolic", _("Des fiches de contact complètes"),
-              _("Adresses, sites, anniversaires et photo, modifiables avec iCloud ; import et export "
+              _("Adresses, sites, anniversaires et photo, modifiables avec iCloud ; import et export "
                 + "de fichiers vCard.") },
             { "audio-headphones-symbolic", _("AirPods et recopie"),
               _("Alerte de batterie faible, pause quand vous retirez un écouteur, captures d'écran "
                 + "de la recopie dans le dossier Images.") },
-            { "edit-clear-all-symbolic", _("Plus de notifications fantômes"),
+            { "edit-clear-all-symbolic", _("Fini les notifications fantômes"),
               _("Une notification effacée sur l'iPhone disparaît aussi de ce PC, même si elle a été "
                 + "effacée pendant une coupure, et une notification fermée ici ne revient plus.") },
             { "emblem-synchronizing-symbolic", _("Une réparation guidée"),
-              _("Quand les notifications s'arrêtent, « Appairer à nouveau » efface les anciennes clés "
+              _("Quand les notifications s'arrêtent, « Appairer à nouveau » efface les anciennes clés "
                 + "et vous guide pas à pas pour refaire un appairage propre.") },
-            { "preferences-system-notifications-symbolic", _("Notifications qui tiennent"),
+            { "preferences-system-notifications-symbolic", _("Des notifications plus fiables"),
               _("Les notifications de l'iPhone reviennent seules après une reconnexion ou un "
-                + "redémarrage : plus besoin d'appairer à nouveau.") },
+                + "redémarrage : plus besoin d'appairer à nouveau.") },
             { "bluetooth-active-symbolic", _("L'iPhone en haut de la fenêtre"),
               _("Son nom, sa batterie et un arc en trois parties qui se remplit à mesure que la "
                 + "liaison s'établit. Un clic explique ce qui se passe et propose quoi faire.") },
@@ -45,12 +56,12 @@ namespace Boomerang.WhatsNew {
                 + "sans attendre son prochain essai. Le service redémarre seul s'il se fige.") },
             { "list-add-symbolic", _("Modules à la demande"),
               _("Messages, appels, contacts, notifications et lecture en cours restent toujours là. "
-                + "AirPods, iCloud, fichiers, recopie et le reste s'ajoutent depuis « Ajouter des "
-                + "modules… ». Ce que vous utilisiez déjà reste ajouté.") },
+                + "AirPods, iCloud, fichiers, recopie et le reste s'ajoutent depuis « Ajouter des "
+                + "modules… ». Les modules que vous utilisiez déjà restent en place.") },
             { "open-menu-symbolic", _("Une colonne plus courte"),
               _("Réglages, guide, contributeurs et À propos passent dans le menu de la barre d'en-tête.") },
             { "call-missed-symbolic", _("Appels manqués d'un clic"),
-              _("Téléphone › Récents filtre tous les appels ou seulement les manqués.") },
+              _("Dans l'onglet Composer, la liste des appels montre tous les appels ou seulement les manqués.") },
         };
     }
 

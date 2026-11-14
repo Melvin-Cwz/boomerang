@@ -156,7 +156,7 @@ public class Boomerang.FilesView : Gtk.Box {
         } else if (error != "") {
             state_label.label = error;
         } else {
-            state_label.label = _("Visible sous le nom « %s »").printf (Props.str (files, "alias"));
+            state_label.label = _("Visible sous le nom « %s »").printf (Props.str (files, "alias"));
         }
         on_box.visible = enabled && error == "";
         var activity = Props.str (files, "activity");
@@ -246,7 +246,7 @@ public class Boomerang.FilesView : Gtk.Box {
     public void queue (string[] paths) {
         pending = paths;
         pending_label.visible = paths.length > 0;
-        pending_label.label = ngettext ("%u fichier prêt à envoyer : choisissez l'appareil.",
+        pending_label.label = ngettext ("%u fichier prêt à envoyer : choisissez l'appareil.",
                                         "%u fichiers prêts à envoyer : choisissez l'appareil.",
                                         (ulong) paths.length).printf ((uint) paths.length);
         load_peers.begin ();
