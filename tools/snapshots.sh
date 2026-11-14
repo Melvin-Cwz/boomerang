@@ -1,7 +1,7 @@
 #!/bin/sh
 # Screenshots of the app with the demo daemon, off screen (Broadway), never on the desktop.
 #   tools/snapshots.sh [build dir] [out dir] [page...]
-# Env: BOOMERANG_DEMO_LINK=absent|classic|... (link state), SNAP_THEME=dark, SNAP_SIZE=1080x740.
+# Env: SNAP_LANG=en (English interface), SNAP_THREAD=t2 (open that conversation instead of --page), BOOMERANG_DEMO_LINK=absent|classic|... (link state), SNAP_THEME=dark, SNAP_SIZE=1080x740.
 set -e
 cd "$(dirname "$0")/.."
 BUILD=${1:-build-dev}; OUT=${2:-.impeccable/review}; shift 2 2>/dev/null || shift $#
@@ -14,6 +14,7 @@ cp data/icons/*.svg "$TMP/share/icons/hicolor/scalable/apps/"
 VERSION=$(sed -n "s/^  version: '\(.*\)',$/\1/p" meson.build)
 # Setup done and this version's « what's new » seen: the window itself, nothing on top.
 printf '[setup]\ndone=true\n[general]\nwhats-new=%s\n' "$VERSION" > "$TMP/config/boomerang/apps.conf"
+[ -n "$SNAP_LANG" ] && printf 'language=%s\n' "$SNAP_LANG" >> "$TMP/config/boomerang/apps.conf"
 if [ "$SNAP_THEME" = dark ]; then
     mkdir -p "$TMP/config/gtk-4.0"
     printf '[Settings]\ngtk-application-prefer-dark-theme=true\ngtk-interface-color-scheme=dark\n' > "$TMP/config/gtk-4.0/settings.ini"
@@ -32,6 +33,6 @@ for page in $PAGES; do
         BOOMERANG_DAEMON_NAME=$BUS BOOMERANG_SNAPSHOT="$PWD/$OUT/$page$suffix.png" \
         BOOMERANG_SNAPSHOT_SIZE=${SNAP_SIZE:-1080x740} GSETTINGS_BACKEND=memory \
         XDG_DATA_DIRS="$TMP/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}" \
-        timeout 12 "${BIN:-$BUILD/src/io.github.melvincouwez.Boomerang}" --page "$page" >/dev/null 2>&1 || true
+        timeout 12 "${BIN:-$BUILD/src/io.github.melvincouwez.Boomerang}" $([ -n "$SNAP_THREAD" ] && echo "--thread $SNAP_THREAD" || echo "--page $page") >/dev/null 2>&1 || true
     [ -f "$OUT/$page$suffix.png" ] && echo "$OUT/$page$suffix.png"
 done

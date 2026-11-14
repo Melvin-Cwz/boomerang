@@ -22,7 +22,7 @@ et se pilotent depuis le bureau, dans une application native : les fenêtres, l
 notifications, la couleur d'accentuation et le mode sombre sont ceux du système.
 
 <p align="center">
-  <img src="docs/screenshots/fr/personnes.png" width="85%" alt="Boomerang : le fil d'Alice, messages et appels réunis, sa fiche à droite">
+  <img src="docs/screenshots/fr/contacts.png" width="85%" alt="Boomerang : le fil d'Alice, messages et appels réunis, sa fiche à droite">
   <br>
   <sub>L'onglet Contacts : les messages et les appels d'Alice dans un seul fil, sa fiche à droite.</sub>
 </p>
@@ -56,7 +56,7 @@ Trois onglets structurent l'application :
 
 <p align="center">
 <img src="docs/screenshots/fr/fil.png" width="49%" alt="Le Fil : tout ce qui est revenu de l'iPhone aujourd'hui, dans l'ordre">
-<img src="docs/screenshots/fr/personnes-sombre.png" width="49%" alt="Contacts, en mode sombre">
+<img src="docs/screenshots/fr/contacts-sombre.png" width="49%" alt="Contacts, en mode sombre">
 </p>
 
 ## Ce que ça change au quotidien
@@ -96,7 +96,7 @@ entièrement.
 
 <p align="center">
 <img src="docs/screenshots/fr/ecouteurs.png" width="49%" alt="Écouteurs">
-<img src="docs/screenshots/fr/reglages.png" width="49%" alt="Réglages : l'iPhone relié, sa batterie et les fonctions actives">
+<img src="docs/screenshots/fr/reglages.png" width="49%" alt="Réglages, onglet Essentiels : les fonctions actives">
 </p>
 
 > **À propos d'iCloud Drive et Photos.** rclone se connecte comme le site icloud.com, avec le
